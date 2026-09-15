@@ -1,0 +1,52 @@
+{
+  "compilerOptions": {
+    /* ── Entorno de ejecución ── */
+    "target": "ES2017", /* Nivel de sintaxis JavaScript de salida */
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ], /* APIs disponibles en el entorno */
+    "allowJs": true, /* Permite importar archivos .js desde .ts */
+    "skipLibCheck": true, /* Omite verificación de tipos en node_modules *//* ── Módulos ── */
+    "module": "esnext", /* Sistema de módulos de salida */
+    "moduleResolution": "bundler", /* Resolución de módulos compatible con Next.js/Vite */
+    "resolveJsonModule": true, /* Permite importar archivos .json */
+    "jsx": "preserve", /* Preserva JSX para que Next.js lo transforme *//* ── Salida ── */
+    "noEmit": true, /* No emite archivos: TypeScript solo verifica tipos */
+    "incremental": true, /* Compilación incremental (más rápida) *//* ── Estrictez — ninguna regla relaxada ── */
+    "strict": true, /* Activa todas las comprobaciones estrictas */
+    "noUnusedLocals": true, /* Error en variables declaradas y no usadas */
+    "noUnusedParameters": true, /* Error en parámetros declarados y no usados */
+    "noUncheckedIndexedAccess": true, /* Índices de array devuelven T | undefined */
+    "exactOptionalPropertyTypes": true, /* Distingue propiedad ausente de propiedad undefined */
+    "noImplicitReturns": true, /* Error si una función puede retornar sin valor */
+    "noFallthroughCasesInSwitch": true, /* Error en casos switch sin break/return */
+    "forceConsistentCasingInFileNames": true, /* Error si el casing del import no coincide con el archivo *//* ── Rutas de importación ── */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ] /* Alias @/ → raíz del proyecto */
+    },
+    /* ── Interoperabilidad ESM / CJS ── */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    /* ── Plugins ── */
+    "plugins": [
+      {
+        "name": "next"
+      } /* Plugin de TypeScript para Next.js App Router */
+    ],
+    "isolatedModules": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

@@ -1,0 +1,449 @@
+// This is your Prisma schema file for PROMPT MAESTRO
+// SENA Regional Magdalena — Integración con la Media Técnica
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// GESTIÓN INSTITUCIONAL
+// ============================================================
+
+model Institucion {
+  id            String   @id @default(cuid())
+  nit           String   @unique
+  nombre        String
+  municipio     String
+  departamento  String   @default("Magdalena")
+  direccion     String
+  telefono      String?
+  email         String?
+  rector        String?
+  estado        Estado   @default(ACTIVO)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  sedes  Sede[]
+  fichas Ficha[]
+
+  @@map("instituciones")
+}
+
+model Sede {
+  id            String   @id @default(cuid())
+  nombre        String
+  institucionId String
+  direccion     String?
+  barrio        String?
+  municipio     String?
+  esPrincipal   Boolean  @default(false)
+  coordinador   String?
+  telefono      String?
+  estado        Estado   @default(ACTIVO)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  institucion Institucion @relation(fields: [institucionId], references: [id], onDelete: Cascade)
+  fichas      Ficha[]
+
+  @@map("sedes")
+}
+
+model Programa {
+  id              String          @id @default(cuid())
+  codigo          String          @unique
+  nombre          String
+  nivelFormacion  NivelFormacion  @default(TECNICO)
+  estado          Estado          @default(ACTIVO)
+  creadoEn        DateTime        @default(now())
+  actualizadoEn   DateTime        @updatedAt
+
+  competencias    Competencia[]
+  fichas          Ficha[]
+
+  @@map("programas")
+}
+
+model Ficha {
+  id            String      @id @default(cuid())
+  codigo        String      @unique
+  programaId    String
+  institucionId String
+  sedeId        String
+  fechaInicio   DateTime
+  fechaFin      DateTime
+  estado        Estado      @default(ACTIVO)
+  jornada       String?
+  creadoEn      DateTime    @default(now())
+  actualizadoEn DateTime    @updatedAt
+
+  programa    Programa    @relation(fields: [programaId], references: [id])
+  institucion Institucion @relation(fields: [institucionId], references: [id])
+  sede        Sede        @relation(fields: [sedeId], references: [id])
+  aprendices  Aprendiz[]
+  actividades Actividad[]
+  asistencias Asistencia[]
+
+  @@map("fichas")
+}
+
+// ============================================================
+// ACTORES
+// ============================================================
+
+model Aprendiz {
+  id                   String        @id @default(cuid())
+  tipoDocumento        TipoDocumento @default(CC)
+  numeroDocumento      String        @unique
+  nombres              String
+  apellidos            String
+  fechaNacimiento      DateTime?
+  genero               String?
+  telefono             String?
+  emailPersonal        String?
+  emailSena            String?
+  direccion            String?
+  fichaId              String
+  estado               EstadoAprendiz @default(EN_FORMACION)
+  nivelRiesgo          NivelRiesgo    @default(BAJO)
+  porcentajeAsistencia Float          @default(100.0)
+  promedioAcumulado    Float          @default(0.0)
+  creadoEn             DateTime       @default(now())
+  actualizadoEn        DateTime       @updatedAt
+
+  ficha       Ficha         @relation(fields: [fichaId], references: [id])
+  entregas    Entrega[]
+  evaluaciones EvaluacionAprendiz[]
+  alertas     AlertaRiesgo[]
+
+  @@map("aprendices")
+}
+
+model Instructor {
+  id            String   @id @default(cuid())
+  tipoDocumento TipoDocumento @default(CC)
+  numeroDocumento String @unique
+  nombres       String
+  apellidos     String
+  email         String   @unique
+  telefono      String?
+  profesion     String?
+  estado        Estado   @default(ACTIVO)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  asistencias Asistencia[]
+
+  @@map("instructores")
+}
+
+model Docente {
+  id              String   @id @default(cuid())
+  nombres         String
+  apellidos       String
+  email           String   @unique
+  telefono        String?
+  asignatura      String?
+  institucionNombre String?
+  sedeNombre      String?
+  estado          Estado   @default(ACTIVO)
+  creadoEn        DateTime @default(now())
+  actualizadoEn   DateTime @updatedAt
+
+  @@map("docentes")
+}
+
+// ============================================================
+// ESTRUCTURA ACADÉMICA
+// ============================================================
+
+model Competencia {
+  id            String   @id @default(cuid())
+  codigo        String   @unique
+  nombre        String   @db.Text
+  programaId    String
+  tipo          TipoCompetencia @default(TECNICA)
+  duracionHoras Int
+  estado        Estado   @default(ACTIVO)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  programa           Programa              @relation(fields: [programaId], references: [id])
+  resultadosAprendizaje ResultadoAprendizaje[]
+
+  @@map("competencias")
+}
+
+model ResultadoAprendizaje {
+  id            String   @id @default(cuid())
+  codigo        String
+  nombre        String   @db.Text
+  competenciaId String
+  fase          FaseProyecto @default(ANALISIS)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  competencia  Competencia          @relation(fields: [competenciaId], references: [id])
+  evaluaciones EvaluacionAprendiz[]
+
+  @@map("resultados_aprendizaje")
+}
+
+// ============================================================
+// EJECUCIÓN
+// ============================================================
+
+model Actividad {
+  id              String        @id @default(cuid())
+  fichaId         String
+  nombre          String
+  descripcion     String?       @db.Text
+  tipo            TipoActividad @default(TALLER)
+  fechaVencimiento DateTime
+  estado          EstadoActividad @default(ACTIVA)
+  creadoEn        DateTime      @default(now())
+  actualizadoEn   DateTime      @updatedAt
+
+  ficha    Ficha     @relation(fields: [fichaId], references: [id])
+  entregas Entrega[]
+
+  @@map("actividades")
+}
+
+model Entrega {
+  id           String        @id @default(cuid())
+  actividadId  String
+  aprendizId   String
+  fechaEntrega DateTime      @default(now())
+  urlArchivo   String?
+  comentario   String?       @db.Text
+  estado       EstadoEntrega @default(PENDIENTE)
+  calificacion String?
+  creadoEn     DateTime      @default(now())
+  actualizadoEn DateTime     @updatedAt
+
+  actividad Actividad @relation(fields: [actividadId], references: [id])
+  aprendiz  Aprendiz  @relation(fields: [aprendizId], references: [id])
+
+  @@unique([actividadId, aprendizId])
+  @@map("entregas")
+}
+
+model Asistencia {
+  id           String      @id @default(cuid())
+  fichaId      String
+  instructorId String
+  fecha        DateTime
+  totalPresentes Int       @default(0)
+  totalFaltas    Int       @default(0)
+  totalExcusas   Int       @default(0)
+  observaciones  String?   @db.Text
+  estado         EstadoAsistencia @default(PENDIENTE)
+  creadoEn       DateTime  @default(now())
+  actualizadoEn  DateTime  @updatedAt
+
+  ficha      Ficha      @relation(fields: [fichaId], references: [id])
+  instructor Instructor @relation(fields: [instructorId], references: [id])
+
+  @@unique([fichaId, fecha])
+  @@map("asistencias")
+}
+
+model EvaluacionAprendiz {
+  id                    String        @id @default(cuid())
+  aprendizId            String
+  resultadoAprendizajeId String
+  juicio                JuicioValorativo @default(PENDIENTE)
+  fecha                 DateTime?
+  observaciones         String?       @db.Text
+  creadoEn              DateTime      @default(now())
+  actualizadoEn         DateTime      @updatedAt
+
+  aprendiz             Aprendiz             @relation(fields: [aprendizId], references: [id])
+  resultadoAprendizaje ResultadoAprendizaje @relation(fields: [resultadoAprendizajeId], references: [id])
+
+  @@unique([aprendizId, resultadoAprendizajeId])
+  @@map("evaluaciones_aprendiz")
+}
+
+// ============================================================
+// SEGUIMIENTO Y RIESGOS
+// ============================================================
+
+model AlertaRiesgo {
+  id             String       @id @default(cuid())
+  aprendizId     String
+  motivo         String
+  nivel          NivelRiesgo  @default(MEDIO)
+  fechaDeteccion DateTime     @default(now())
+  gestionada     Boolean      @default(false)
+  observaciones  String?      @db.Text
+  creadoEn       DateTime     @default(now())
+  actualizadoEn  DateTime     @updatedAt
+
+  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id])
+
+  @@map("alertas_riesgo")
+}
+
+model VisitaSeguimiento {
+  id            String            @id @default(cuid())
+  institucionNombre String
+  fecha         DateTime
+  responsable   String
+  novedades     Int               @default(0)
+  observaciones String?           @db.Text
+  estado        EstadoVisita      @default(PROGRAMADA)
+  creadoEn      DateTime          @default(now())
+  actualizadoEn DateTime          @updatedAt
+
+  @@map("visitas_seguimiento")
+}
+
+// ============================================================
+// ADMINISTRACIÓN Y SEGURIDAD
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  nombre        String
+  email         String    @unique
+  passwordHash  String
+  rolId         String
+  estado        Estado    @default(ACTIVO)
+  ultimoAcceso  DateTime?
+  creadoEn      DateTime  @default(now())
+  actualizadoEn DateTime  @updatedAt
+
+  rol      Rol       @relation(fields: [rolId], references: [id])
+  auditLog AuditLog[]
+
+  @@map("users")
+}
+
+model Rol {
+  id          String @id @default(cuid())
+  nombre      String @unique
+  descripcion String?
+  users       User[]
+
+  @@map("roles")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  modulo    String
+  accion    String
+  detalle   String   @db.Text
+  ip        String?
+  fecha     DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Estado {
+  ACTIVO
+  INACTIVO
+}
+
+enum EstadoAprendiz {
+  EN_FORMACION
+  EGRESADO
+  RETIRADO
+  APLAZADO
+  CANCELADO
+}
+
+enum NivelRiesgo {
+  BAJO
+  MEDIO
+  ALTO
+}
+
+enum NivelFormacion {
+  TECNICO
+  TECNOLOGO
+  OPERARIO
+}
+
+enum TipoDocumento {
+  CC
+  TI
+  CE
+  PP
+}
+
+enum TipoCompetencia {
+  TECNICA
+  TRANSVERSAL
+  BASICA
+}
+
+enum FaseProyecto {
+  ANALISIS
+  PLANEACION
+  EJECUCION
+  EVALUACION
+}
+
+enum TipoActividad {
+  TALLER
+  PROYECTO
+  FORO
+  QUIZ
+}
+
+enum EstadoActividad {
+  ACTIVA
+  CERRADA
+  BORRADOR
+}
+
+enum EstadoEntrega {
+  PENDIENTE
+  CALIFICADA
+  TARDIA
+}
+
+enum EstadoAsistencia {
+  PENDIENTE
+  REGISTRADA
+}
+
+enum JuicioValorativo {
+  APROBADO
+  DEFICIENTE
+  PENDIENTE
+}
+
+enum EstadoVisita {
+  PROGRAMADA
+  REALIZADA
+  APLAZADA
+}
+
+
+model Documento {
+  id              String   @id @default(cuid())
+  nombre          String
+  tipo            String   @default("OTRO")
+  institucionId   String?
+  url             String
+  tamanoBytes     Int?
+  creadoEn        DateTime @default(now())
+  actualizadoEn   DateTime @updatedAt
+
+  @@map("documentos")
+}

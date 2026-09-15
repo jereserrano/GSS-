@@ -78,4 +78,6 @@ Thumbs.db
 # ================================
 # Secrets / Certificates
 # ================================
-*.pem
+*.pem.comments/ 
+
+.comments/

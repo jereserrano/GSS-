@@ -1,0 +1,29 @@
+/* ── shadcn/ui: configuración del sistema de componentes ── */
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  /* 
+   * Estilo "default": tokens de diseño neutros compatibles con 
+   * nuestra paleta institucional personalizada 
+   */
+  "style": "default",
+  /* RSC: React Server Components habilitado (Next.js App Router) */
+  "rsc": true,
+  /* tsx: generar componentes en TypeScript con JSX */
+  "tsx": true,
+  "tailwind": {
+    /* Archivo CSS global donde se inyectan las variables CSS de shadcn */
+    "css": "app/globals.css",
+    /* Prefijo para las clases de utilidad (sin prefijo = estándar) */
+    "prefix": "",
+    /* baseColor: el color base del tema que shadcn usa como punto de partida */
+    "baseColor": "slate"
+  },
+  "aliases": {
+    /* Alias de importación alineado con tsconfig.json paths */
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  }
+}

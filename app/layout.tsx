@@ -1,5 +1,6 @@
 import React from "react";
 import { Providers } from "@/components/providers";
+import { SecurityGuard } from "@/components/shared/SecurityGuard";
 import "./globals.css";
 
 export const metadata = {
@@ -16,7 +17,9 @@ export default function RootLayout({
     <html lang="es">
       <body className="antialiased bg-app">
         <Providers>
-          {children}
+          <SecurityGuard>
+            {children}
+          </SecurityGuard>
         </Providers>
       </body>
     </html>

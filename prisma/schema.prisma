@@ -142,22 +142,6 @@ model Instructor {
   @@map("instructores")
 }
 
-model Docente {
-  id              String   @id @default(cuid())
-  nombres         String
-  apellidos       String
-  email           String   @unique
-  telefono        String?
-  asignatura      String?
-  institucionNombre String?
-  sedeNombre      String?
-  estado          Estado   @default(ACTIVO)
-  creadoEn        DateTime @default(now())
-  actualizadoEn   DateTime @updatedAt
-
-  @@map("docentes")
-}
-
 // ============================================================
 // ESTRUCTURA ACADÉMICA
 // ============================================================

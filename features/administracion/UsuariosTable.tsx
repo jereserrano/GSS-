@@ -10,22 +10,31 @@ import { formatDateShort } from "@/lib/utils";
 import { UsuarioFormDialog } from "./UsuarioFormDialog";
 import { deleteUser, exportUsuariosCSV } from "@/actions/user.actions";
 import { toast } from "sonner";
+import { getHierarchyLevel } from "@/lib/hierarchy";
 
 interface Usuario {
   id: string;
   nombre: string;
   email: string;
   rol: string;
+  rolNombre: string; // Nombre real del rol en BD
   ultimoAcceso: string;
   estado: "activo" | "inactivo" | "bloqueado";
+  hierarchyLevel: number;
 }
 
 interface UsuariosTableProps {
   initialUsers: any[];
   roles: any[];
+  /** Sesión del usuario en sesión (pasado desde el Server Component padre). */
+  currentUserSession: {
+    id: string;
+    role: string;
+    hierarchyLevel: number;
+  };
 }
 
-export function UsuariosTable({ initialUsers, roles }: UsuariosTableProps) {
+export function UsuariosTable({ initialUsers, roles, currentUserSession }: UsuariosTableProps) {
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -33,7 +42,6 @@ export function UsuariosTable({ initialUsers, roles }: UsuariosTableProps) {
   const [exporting, setExporting] = useState(false);
 
   const handleEdit = (user: any) => {
-    // Find the raw user object with rolId and other exact fields
     const rawUser = initialUsers.find(u => u.id === user.id);
     setSelectedUser(rawUser || user);
     setDialogOpen(true);
@@ -86,10 +94,30 @@ export function UsuariosTable({ initialUsers, roles }: UsuariosTableProps) {
     nombre: u.nombre,
     email: u.email,
     rol: u.rol?.nombre || "Sin Rol",
+    rolNombre: u.rol?.nombre || "",
     ultimoAcceso: u.ultimoAcceso ? new Date(u.ultimoAcceso).toISOString() : new Date().toISOString(),
-    estado: u.estado.toLowerCase() as any
+    estado: u.estado.toLowerCase() as any,
+    hierarchyLevel: getHierarchyLevel(u.rol?.nombre),
   }));
-  // Los usuarios se inyectan desde las props
+
+  /**
+   * Determina si el usuario en sesión puede administrar al usuario de la fila.
+   * Regla: hierarchy(current) < hierarchy(target) → puede administrar.
+   */
+  const canManage = (targetHierarchyLevel: number, targetId: string): boolean => {
+    // No puede administrarse a sí mismo (cambio de rol/estado/eliminar)
+    if (targetId === currentUserSession.id) return false;
+    // Debe tener menor nivel (mayor autoridad)
+    return currentUserSession.hierarchyLevel < targetHierarchyLevel;
+  };
+
+  const usuariosFiltrados = busqueda
+    ? usuarios.filter(u =>
+        u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+        u.email.toLowerCase().includes(busqueda.toLowerCase()) ||
+        u.rol.toLowerCase().includes(busqueda.toLowerCase())
+      )
+    : usuarios;
 
   const columnas: ColumnaDef<Usuario>[] = [
     {
@@ -137,16 +165,38 @@ export function UsuariosTable({ initialUsers, roles }: UsuariosTableProps) {
       key: "acciones",
       header: "",
       align: "right",
-      render: (u) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="sm" className="text-primary" onClick={() => handleEdit(u)}>
-            Editar
-          </Button>
-          <Button variant="ghost" size="sm" className="text-danger-600 hover:text-danger-700 hover:bg-danger-50" onClick={() => handleDelete(u.id)}>
-            Eliminar
-          </Button>
-        </div>
-      )
+      render: (u) => {
+        const puede = canManage(u.hierarchyLevel, u.id);
+        if (!puede) {
+          return (
+            <div className="flex justify-end">
+              <span className="text-xs text-slate-400 italic px-2">Sin permisos</span>
+            </div>
+          );
+        }
+        return (
+          <div className="flex justify-end gap-2">
+            <Button
+              id={`btn-editar-usuario-${u.id}`}
+              variant="ghost"
+              size="sm"
+              className="text-primary"
+              onClick={() => handleEdit(u)}
+            >
+              Editar
+            </Button>
+            <Button
+              id={`btn-eliminar-usuario-${u.id}`}
+              variant="ghost"
+              size="sm"
+              className="text-danger-600 hover:text-danger-700 hover:bg-danger-50"
+              onClick={() => handleDelete(u.id)}
+            >
+              Eliminar
+            </Button>
+          </div>
+        );
+      }
     }
   ];
 
@@ -157,6 +207,7 @@ export function UsuariosTable({ initialUsers, roles }: UsuariosTableProps) {
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
             <Input 
+              id="input-buscar-usuario"
               placeholder="Buscar usuario..." 
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
@@ -166,20 +217,24 @@ export function UsuariosTable({ initialUsers, roles }: UsuariosTableProps) {
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
+          <Button id="btn-exportar-usuarios" variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
             <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
           </Button>
-          <Button onClick={handleNew}>
-            <Plus size={16} className="mr-2" /> Nuevo Usuario
-          </Button>
+          {/* Solo mostrar "Nuevo Usuario" si el rol actual puede crear usuarios */}
+          {currentUserSession.hierarchyLevel < 4 && (
+            <Button id="btn-nuevo-usuario" onClick={handleNew}>
+              <Plus size={16} className="mr-2" /> Nuevo Usuario
+            </Button>
+          )}
         </div>
       </div>
-      <DataTable data={usuarios} columnas={columnas} isLoading={loading} />
+      <DataTable data={usuariosFiltrados} columnas={columnas} isLoading={loading} />
       
       {dialogOpen && (
         <UsuarioFormDialog 
           user={selectedUser} 
-          roles={roles} 
+          roles={roles}
+          currentUserSession={currentUserSession}
           onClose={() => setDialogOpen(false)} 
         />
       )}

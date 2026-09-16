@@ -5,17 +5,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createUser, updateUser } from "@/actions/user.actions";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { X, ShieldAlert } from "lucide-react";
+import { getHierarchyLevel } from "@/lib/hierarchy";
 
 interface UsuarioFormDialogProps {
   user?: any;
   roles: any[];
+  /** Sesión del usuario en sesión, para filtrar roles asignables. */
+  currentUserSession: {
+    id: string;
+    role: string;
+    hierarchyLevel: number;
+  };
   onClose: () => void;
 }
 
-export function UsuarioFormDialog({ user, roles, onClose }: UsuarioFormDialogProps) {
+export function UsuarioFormDialog({ user, roles, currentUserSession, onClose }: UsuarioFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!user;
+
+  /**
+   * Filtra los roles que el usuario en sesión puede asignar.
+   * Solo se muestran roles con jerarquía ESTRICTAMENTE INFERIOR a la del solicitante.
+   */
+  const assignableRoles = roles.filter((rol) => {
+    const rolLevel = getHierarchyLevel(rol.nombre);
+    return rolLevel > currentUserSession.hierarchyLevel && rolLevel !== 99;
+  });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,42 +77,51 @@ export function UsuarioFormDialog({ user, roles, onClose }: UsuarioFormDialogPro
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Nombre completo</label>
-            <Input name="nombre" defaultValue={user?.nombre} required />
+            <Input id="input-nombre-usuario" name="nombre" defaultValue={user?.nombre} required />
           </div>
           
           <div className="space-y-2">
             <label className="text-sm font-medium">Correo electrónico</label>
-            <Input type="email" name="email" defaultValue={user?.email} required />
+            <Input id="input-email-usuario" type="email" name="email" defaultValue={user?.email} required />
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Rol</label>
-            <select 
-              name="rolId" 
-              defaultValue={user?.rolId} 
-              required
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <option value="">Seleccione un rol</option>
-              {roles.map((rol) => (
-                <option key={rol.id} value={rol.id}>
-                  {rol.nombre}
-                </option>
-              ))}
-            </select>
+            {assignableRoles.length === 0 ? (
+              <div className="flex items-center gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-700">
+                <ShieldAlert size={16} />
+                <span>No tiene permisos para asignar roles desde este nivel.</span>
+              </div>
+            ) : (
+              <select 
+                id="select-rol-usuario"
+                name="rolId" 
+                defaultValue={user?.rolId} 
+                required
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="">Seleccione un rol</option>
+                {assignableRoles.map((rol) => (
+                  <option key={rol.id} value={rol.id}>
+                    {rol.nombre}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium">
               Contraseña {isEditing && <span className="text-gray-400 font-normal">(Dejar en blanco para mantener actual)</span>}
             </label>
-            <Input type="password" name="password" required={!isEditing} />
+            <Input id="input-password-usuario" type="password" name="password" required={!isEditing} />
           </div>
 
           {isEditing && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Estado</label>
               <select 
+                id="select-estado-usuario"
                 name="estado" 
                 defaultValue={user?.estado}
                 className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -108,8 +133,12 @@ export function UsuarioFormDialog({ user, roles, onClose }: UsuarioFormDialogPro
           )}
 
           <div className="pt-4 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button type="submit" disabled={loading}>
+            <Button id="btn-cancelar-usuario" type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button
+              id="btn-guardar-usuario"
+              type="submit"
+              disabled={loading || assignableRoles.length === 0}
+            >
               {loading ? "Guardando..." : "Guardar Usuario"}
             </Button>
           </div>

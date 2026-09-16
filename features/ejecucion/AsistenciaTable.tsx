@@ -151,7 +151,7 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
             a.estado === 'PROGRAMADA' ? 'bg-warning-50 text-warning-700' :
             'bg-slate-100 text-slate-700'}`}
         >
-          {a.estado.replace("_", " ").toLowerCase()}
+          {a.estado ? a.estado.replace("_", " ").toLowerCase() : "pendiente"}
         </span>
       )
     },

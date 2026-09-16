@@ -1,10 +1,22 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { canAccessRoute } from "./lib/permissions";
 
-// Protege todas las rutas del grupo (dashboard)
+// Protege y autoriza todas las rutas del dashboard mediante RBAC
 export default withAuth(
   function middleware(req) {
-    // Si está autenticado, continúa normalmente
+    const token = req.nextauth?.token;
+    const pathname = req.nextUrl.pathname;
+    const role = (token?.role as string) || "INSTRUCTOR";
+
+    // Validar autorización de rol para la ruta solicitada
+    if (!canAccessRoute(role, pathname)) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/dashboard";
+      url.searchParams.set("denied", "true");
+      return NextResponse.redirect(url);
+    }
+
     return NextResponse.next();
   },
   {
@@ -17,7 +29,7 @@ export default withAuth(
   }
 );
 
-// Aplicar middleware SOLO a las rutas del dashboard
+// Aplicar middleware SOLO a las rutas protegidas del sistema (sin /docentes)
 export const config = {
   matcher: [
     "/dashboard/:path*",
@@ -27,7 +39,6 @@ export const config = {
     "/fichas/:path*",
     "/aprendices/:path*",
     "/instructores/:path*",
-    "/docentes/:path*",
     "/competencias/:path*",
     "/resultados-aprendizaje/:path*",
     "/plan-formacion/:path*",

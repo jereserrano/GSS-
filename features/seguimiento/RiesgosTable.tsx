@@ -119,7 +119,7 @@ export function RiesgosTable({ initialData, aprendices }: RiesgosTableProps) {
             a.estado === 'EN_SEGUIMIENTO' ? 'bg-warning-50 text-warning-700' : 
             'bg-success-50 text-success-700'}`}
         >
-          {a.estado.replace("_", " ").toLowerCase()}
+          {a.estado ? a.estado.replace("_", " ").toLowerCase() : "detectado"}
         </span>
       )
     },

@@ -27,7 +27,6 @@ export type RolSistema =
   | "coordinador_sena"
   | "instructor"
   | "institucion_educativa"
-  | "docente"
   | "aprendiz";
 
 /* ── Sexo biológico (para registros institucionales) ── */

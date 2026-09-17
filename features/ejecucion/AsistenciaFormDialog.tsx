@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createAsistencia, updateAsistencia } from "@/actions/asistencia.actions";
+import { updateAsistencia } from "@/actions/asistencia.actions";
 import { toast } from "sonner";
 import { X, CalendarCheck } from "lucide-react";
 
@@ -47,10 +47,6 @@ export function AsistenciaFormDialog({ asistencia, fichas, instructores, onClose
         const res = await updateAsistencia(asistencia.id, data);
         if (res.error) throw new Error(res.error);
         toast.success("Sesión actualizada correctamente");
-      } else {
-        const res = await createAsistencia(data);
-        if (res.error) throw new Error(res.error);
-        toast.success("Sesión de asistencia programada correctamente");
       }
       
       if (onSuccess) await onSuccess();

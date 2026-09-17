@@ -28,8 +28,10 @@ model Institucion {
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 
-  sedes  Sede[]
-  fichas Ficha[]
+  sedes    Sede[]
+  fichas   Ficha[]
+  docentes Docente[]
+  usuarios User[]
 
   @@map("instituciones")
 }
@@ -120,6 +122,7 @@ model Aprendiz {
   entregas    Entrega[]
   evaluaciones EvaluacionAprendiz[]
   alertas     AlertaRiesgo[]
+  detallesAsistencia DetalleAsistencia[]
 
   @@map("aprendices")
 }
@@ -218,6 +221,12 @@ model Entrega {
   @@map("entregas")
 }
 
+enum EstadoAsistenciaAprendiz {
+  PRESENTE
+  FALLA
+  EXCUSA
+}
+
 model Asistencia {
   id           String      @id @default(cuid())
   fichaId      String
@@ -233,9 +242,24 @@ model Asistencia {
 
   ficha      Ficha      @relation(fields: [fichaId], references: [id])
   instructor Instructor @relation(fields: [instructorId], references: [id])
+  detalles   DetalleAsistencia[]
 
   @@unique([fichaId, fecha])
   @@map("asistencias")
+}
+
+model DetalleAsistencia {
+  id           String @id @default(cuid())
+  asistenciaId String
+  aprendizId   String
+  estado       EstadoAsistenciaAprendiz @default(PRESENTE)
+  observaciones String?
+
+  asistencia Asistencia @relation(fields: [asistenciaId], references: [id], onDelete: Cascade)
+  aprendiz   Aprendiz   @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
+
+  @@unique([asistenciaId, aprendizId])
+  @@map("detalles_asistencia")
 }
 
 model EvaluacionAprendiz {
@@ -299,13 +323,16 @@ model User {
   email         String    @unique
   passwordHash  String
   rolId         String
+  institucionId String?   // <-- Nuevo campo para multi-tenancy y prevención de IDOR
   estado        Estado    @default(ACTIVO)
   ultimoAcceso  DateTime?
   creadoEn      DateTime  @default(now())
   actualizadoEn DateTime  @updatedAt
 
-  rol      Rol       @relation(fields: [rolId], references: [id])
-  auditLog AuditLog[]
+  rol            Rol            @relation(fields: [rolId], references: [id])
+  institucion    Institucion?   @relation(fields: [institucionId], references: [id])
+  auditLog       AuditLog[]
+  notificaciones Notificacion[]
 
   @@map("users")
 }
@@ -431,3 +458,60 @@ model Documento {
 
   @@map("documentos")
 }
+
+// ============================================================
+// NUEVOS ACTORES Y SISTEMA
+// ============================================================
+
+model Docente {
+  id              String        @id @default(cuid())
+  tipoDocumento   TipoDocumento @default(CC)
+  numeroDocumento String        @unique
+  nombres         String
+  apellidos       String
+  email           String        @unique
+  telefono        String?
+  profesion       String?
+  institucionId   String
+  estado          Estado        @default(ACTIVO)
+  creadoEn        DateTime      @default(now())
+  actualizadoEn   DateTime      @updatedAt
+
+  institucion Institucion @relation(fields: [institucionId], references: [id], onDelete: Cascade)
+
+  @@map("docentes")
+}
+
+model Notificacion {
+  id          String   @id @default(cuid())
+  userId      String
+  titulo      String
+  mensaje     String   @db.Text
+  leida       Boolean  @default(false)
+  tipo        String   @default("INFO")
+  enlace      String?
+  creadoEn    DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notificaciones")
+}
+
+model Configuracion {
+  id                  String   @id @default("global")
+  anioLectivo         Int      @default(2026)
+  trimestre           Int      @default(3)
+  regional            String   @default("SENA Regional Magdalena")
+  ciudad              String   @default("Santa Marta")
+  faltasRiesgoAlto    Int      @default(3)
+  asistenciaMinima    Int      @default(75)
+  promedioMinimo      Float    @default(3.0)
+  diasEntrega         Int      @default(7)
+  duracionSesionHoras Int      @default(8)
+  intentosLogin       Int      @default(5)
+  actualizadoEn       DateTime @updatedAt
+
+  @@map("configuracion")
+}
+
+

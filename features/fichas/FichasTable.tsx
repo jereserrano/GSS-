@@ -28,8 +28,13 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
   const [selectedFicha, setSelectedFicha] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
-  const [filtros, setFiltros] = useState({ pagina: 1, tamano: 10, busqueda: "" });
+  const [filtros, setFiltros] = useState<any>({ pagina: 1, tamano: 10, busqueda: "" });
+
+  const handleFilterSelect = (key: string, value: any) => {
+    setFiltros((prev: any) => ({ ...prev, [key]: value || undefined, pagina: 1 }));
+  };
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -178,7 +183,7 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
                 className="bg-surface pl-9"
               />
             </div>
-            <Button variant="outline" className="shrink-0 bg-surface">
+            <Button variant={showFilters ? "default" : "outline"} className={`shrink-0 ${!showFilters && 'bg-surface'}`} onClick={() => setShowFilters(!showFilters)}>
               <Filter size={16} className="mr-2" /> Filtros
             </Button>
           </div>
@@ -191,6 +196,51 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
             </Button>
           </div>
         </div>
+
+        {showFilters && (
+          <div className="flex flex-wrap gap-4 p-4 bg-surface border border-border rounded-lg animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[200px]">
+              <label className="text-xs font-medium text-text-secondary">Estado</label>
+              <select 
+                className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                value={filtros.estado || ""}
+                onChange={(e) => handleFilterSelect("estado", e.target.value)}
+              >
+                <option value="">Todos los estados</option>
+                <option value="ACTIVO">Activo</option>
+                <option value="INACTIVO">Inactivo</option>
+              </select>
+            </div>
+            
+            <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[200px]">
+              <label className="text-xs font-medium text-text-secondary">Programa</label>
+              <select 
+                className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                value={filtros.programaId || ""}
+                onChange={(e) => handleFilterSelect("programaId", e.target.value)}
+              >
+                <option value="">Todos los programas</option>
+                {programas.map(p => (
+                  <option key={p.id} value={p.id}>{p.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[200px]">
+              <label className="text-xs font-medium text-text-secondary">Institución</label>
+              <select 
+                className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                value={filtros.institucionId || ""}
+                onChange={(e) => handleFilterSelect("institucionId", e.target.value)}
+              >
+                <option value="">Todas las instituciones</option>
+                {instituciones.map(i => (
+                  <option key={i.id} value={i.id}>{i.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         <DataTable data={data?.data || []} columnas={columnas} isLoading={loading} />
 

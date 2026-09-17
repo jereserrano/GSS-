@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Download, Pencil, Trash2 } from "lucide-react";
 import type { ColumnaDef } from "@/types/common.types";
 import { deleteResultadoAprendizaje, exportResultadosAprendizajeCSV } from "@/actions/resultados_aprendizaje.actions";
+import { importResultadosMasivo } from "@/actions/import.actions";
 import { ResultadoAprendizajeFormDialog } from "./ResultadoAprendizajeFormDialog";
+import { UploadExcelDialog } from "@/components/ui/UploadExcelDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -142,6 +144,18 @@ export function ResultadosAprendizajeTable({ initialData, competencias }: Result
         </div>
         
         <div className="flex gap-2">
+          <UploadExcelDialog
+            title="Importar Resultados de Aprendizaje"
+            description="Sube un archivo Excel con los datos. Usa la plantilla de ejemplo."
+            templateUrl="/plantilla_resultados.xlsx"
+            onUpload={async (json) => {
+              const result = await importResultadosMasivo(json);
+              if (result.success) {
+                router.refresh();
+              }
+              return result;
+            }}
+          />
           <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
             <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
           </Button>

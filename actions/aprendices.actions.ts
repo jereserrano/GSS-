@@ -1,6 +1,26 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { AprendizRepository } from "@/repositories/aprendiz.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { aprendizSchema } from "@/schemas";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { NivelRiesgo } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -21,11 +41,12 @@ export async function getAprendicesAction(filtros: FiltrosAprendiz = {}) {
         ]
       } : {}),
       ...(filtros.nivelRiesgo ? { nivelRiesgo: filtros.nivelRiesgo.toUpperCase() as NivelRiesgo } : {}),
+      ...(filtros.estado ? { estado: filtros.estado.toUpperCase() as any } : {}),
       ...(filtros.fichaId ? { fichaId: filtros.fichaId } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.aprendiz.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      AprendizRepository.findMany({
         where,
         skip,
         take,
@@ -40,7 +61,7 @@ export async function getAprendicesAction(filtros: FiltrosAprendiz = {}) {
         },
         orderBy: [{ nivelRiesgo: "desc" }, { apellidos: "asc" }],
       }),
-      prisma.aprendiz.count({ where }),
+      AprendizRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -50,16 +71,20 @@ export async function getAprendicesAction(filtros: FiltrosAprendiz = {}) {
   }
 }
 
-export async function createAprendiz(data: any) {
+export async function createAprendiz(data: z.infer<typeof aprendizSchema>) {
   try {
-    const existing = await prisma.aprendiz.findUnique({
+    const parsed = aprendizSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const existing = await AprendizRepository.findUnique({
       where: { numeroDocumento: data.numeroDocumento },
     });
     if (existing) {
       return { error: "Ya existe un aprendiz con ese número de documento" };
     }
 
-    const aprendiz = await prisma.aprendiz.create({
+    const aprendiz = await AprendizRepository.create({
       data: {
         tipoDocumento: data.tipoDocumento,
         numeroDocumento: data.numeroDocumento,
@@ -77,6 +102,13 @@ export async function createAprendiz(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Aprendices",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/aprendices");
     return { success: true, aprendiz };
   } catch (error: any) {
@@ -85,8 +117,12 @@ export async function createAprendiz(data: any) {
   }
 }
 
-export async function updateAprendiz(id: string, data: any) {
+export async function updateAprendiz(id: string, data: z.infer<typeof aprendizSchema>) {
   try {
+    const parsed = aprendizSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     const updateData: any = {
       tipoDocumento: data.tipoDocumento,
       numeroDocumento: data.numeroDocumento,
@@ -108,11 +144,18 @@ export async function updateAprendiz(id: string, data: any) {
       updateData.fichaId = data.fichaId;
     }
 
-    const aprendiz = await prisma.aprendiz.update({
+    const aprendiz = await AprendizRepository.update({
       where: { id },
       data: updateData,
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Aprendices",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/aprendices");
     return { success: true, aprendiz };
   } catch (error: any) {
@@ -123,7 +166,16 @@ export async function updateAprendiz(id: string, data: any) {
 
 export async function deleteAprendiz(id: string) {
   try {
-    await prisma.aprendiz.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await AprendizRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Aprendices",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/aprendices");
     return { success: true };
   } catch (error: any) {
@@ -134,7 +186,7 @@ export async function deleteAprendiz(id: string) {
 
 export async function exportAprendicesCSV() {
   try {
-    const aprendices = await prisma.aprendiz.findMany({
+    const aprendices = await AprendizRepository.findMany({
       orderBy: [{ apellidos: "asc" }, { nombres: "asc" }],
       include: {
         ficha: {

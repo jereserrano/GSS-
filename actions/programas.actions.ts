@@ -1,6 +1,26 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { ProgramaRepository } from "@/repositories/programa.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { programaSchema } from "@/schemas";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -23,8 +43,8 @@ export async function getProgramasAction(filtros: {
         }
       : {};
 
-    const [data, total] = await prisma.$transaction([
-      prisma.programa.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      ProgramaRepository.findMany({
         where,
         skip,
         take,
@@ -33,7 +53,7 @@ export async function getProgramasAction(filtros: {
         },
         orderBy: { nombre: "asc" },
       }),
-      prisma.programa.count({ where }),
+      ProgramaRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -43,14 +63,18 @@ export async function getProgramasAction(filtros: {
   }
 }
 
-export async function createPrograma(data: any) {
+export async function createPrograma(data: z.infer<typeof programaSchema>) {
   try {
-    const existing = await prisma.programa.findUnique({ where: { codigo: data.codigo } });
+    const parsed = programaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const existing = await ProgramaRepository.findUnique({ where: { codigo: data.codigo } });
     if (existing) {
       return { error: "Ya existe un programa con ese código SENA" };
     }
 
-    const programa = await prisma.programa.create({
+    const programa = await ProgramaRepository.create({
       data: {
         codigo: data.codigo,
         nombre: data.nombre,
@@ -59,6 +83,13 @@ export async function createPrograma(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Programas",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/programas");
     return { success: true, programa };
   } catch (error: any) {
@@ -67,9 +98,13 @@ export async function createPrograma(data: any) {
   }
 }
 
-export async function updatePrograma(id: string, data: any) {
+export async function updatePrograma(id: string, data: z.infer<typeof programaSchema>) {
   try {
-    const programa = await prisma.programa.update({
+    const parsed = programaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const programa = await ProgramaRepository.update({
       where: { id },
       data: {
         codigo: data.codigo,
@@ -79,6 +114,13 @@ export async function updatePrograma(id: string, data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Programas",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/programas");
     return { success: true, programa };
   } catch (error: any) {
@@ -89,7 +131,16 @@ export async function updatePrograma(id: string, data: any) {
 
 export async function deletePrograma(id: string) {
   try {
-    await prisma.programa.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await ProgramaRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Programas",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/programas");
     return { success: true };
   } catch (error: any) {
@@ -100,7 +151,7 @@ export async function deletePrograma(id: string) {
 
 export async function exportProgramasCSV() {
   try {
-    const programas = await prisma.programa.findMany({
+    const programas = await ProgramaRepository.findMany({
       orderBy: { nombre: "asc" },
       include: {
         _count: { select: { fichas: true, competencias: true } },
@@ -130,7 +181,7 @@ export async function exportProgramasCSV() {
 
 export async function getProgramaCompleto(programaId: string) {
   try {
-    const programa = await prisma.programa.findUnique({
+    const programa = await ProgramaRepository.findUnique({
       where: { id: programaId },
       include: {
         competencias: {

@@ -191,8 +191,8 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
           <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
             <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Reporte"}
           </Button>
-          <Button onClick={handleCreate}>
-            <Plus size={16} className="mr-2" /> Nueva Sesión
+          <Button onClick={() => router.push("/asistencia/tomar")}>
+            <Plus size={16} className="mr-2" /> Tomar Asistencia (Lista)
           </Button>
         </div>
       </div>

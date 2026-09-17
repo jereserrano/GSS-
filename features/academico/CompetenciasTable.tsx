@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Download, Pencil, Trash2 } from "lucide-react";
 import type { ColumnaDef } from "@/types/common.types";
 import { deleteCompetencia, exportCompetenciasCSV } from "@/actions/competencias.actions";
+import { importCompetenciasMasivo } from "@/actions/import.actions";
 import { CompetenciaFormDialog } from "./CompetenciaFormDialog";
+import { UploadExcelDialog } from "@/components/ui/UploadExcelDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -153,8 +155,19 @@ export function CompetenciasTable({ initialData, programas }: CompetenciasTableP
             />
           </div>
         </div>
-        
         <div className="flex gap-2">
+          <UploadExcelDialog
+            title="Importar Competencias"
+            description="Sube un archivo Excel con los datos de las competencias. Usa la plantilla de ejemplo."
+            templateUrl="/plantilla_competencias.xlsx"
+            onUpload={async (json) => {
+              const result = await importCompetenciasMasivo(json);
+              if (result.success) {
+                router.refresh();
+              }
+              return result;
+            }}
+          />
           <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
             <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
           </Button>

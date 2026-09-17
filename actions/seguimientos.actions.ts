@@ -1,6 +1,27 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { VisitaSeguimientoRepository } from "@/repositories/visitaSeguimiento.repository";
+import { InstitucionRepository } from "@/repositories/institucion.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { visitaSchema } from "@/schemas";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -19,14 +40,14 @@ export async function getSeguimientosAction(filtros: any = {}) {
       } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.visitaSeguimiento.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      VisitaSeguimientoRepository.findMany({
         where,
         skip,
         take,
         orderBy: { fecha: "desc" },
       }),
-      prisma.visitaSeguimiento.count({ where }),
+      VisitaSeguimientoRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -36,10 +57,14 @@ export async function getSeguimientosAction(filtros: any = {}) {
   }
 }
 
-export async function createSeguimiento(data: any) {
+export async function createSeguimiento(data: z.infer<typeof visitaSchema>) {
   try {
-    const institucion = await prisma.institucion.findUnique({ where: { id: data.institucionId } });
-    const seguimiento = await prisma.visitaSeguimiento.create({
+    const parsed = visitaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const institucion = await InstitucionRepository.findUnique({ where: { id: data.institucionId } });
+    const seguimiento = await VisitaSeguimientoRepository.create({
       data: {
         institucionNombre: institucion ? institucion.nombre : data.institucionId,
         fecha: new Date(data.fecha),
@@ -50,6 +75,13 @@ export async function createSeguimiento(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Seguimientos",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/seguimiento");
     return { success: true, seguimiento };
   } catch (error: any) {
@@ -58,9 +90,13 @@ export async function createSeguimiento(data: any) {
   }
 }
 
-export async function updateSeguimiento(id: string, data: any) {
+export async function updateSeguimiento(id: string, data: z.infer<typeof visitaSchema>) {
   try {
-    const institucion = data.institucionId ? await prisma.institucion.findUnique({ where: { id: data.institucionId } }) : null;
+    const parsed = visitaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const institucion = data.institucionId ? await InstitucionRepository.findUnique({ where: { id: data.institucionId } }) : null;
     const dataToUpdate: any = {
         fecha: new Date(data.fecha),
         responsable: data.responsable,
@@ -70,11 +106,18 @@ export async function updateSeguimiento(id: string, data: any) {
     if (institucion) dataToUpdate.institucionNombre = institucion.nombre;
     if (data.novedades !== undefined) dataToUpdate.novedades = parseInt(data.novedades) || 0;
 
-    const seguimiento = await prisma.visitaSeguimiento.update({
+    const seguimiento = await VisitaSeguimientoRepository.update({
       where: { id },
       data: dataToUpdate,
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Seguimientos",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/seguimiento");
     return { success: true, seguimiento };
   } catch (error: any) {
@@ -85,7 +128,16 @@ export async function updateSeguimiento(id: string, data: any) {
 
 export async function deleteSeguimiento(id: string) {
   try {
-    await prisma.visitaSeguimiento.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await VisitaSeguimientoRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Seguimientos",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/seguimiento");
     return { success: true };
   } catch (error: any) {
@@ -96,7 +148,7 @@ export async function deleteSeguimiento(id: string) {
 
 export async function exportSeguimientosCSV() {
   try {
-    const seguimientos = await prisma.visitaSeguimiento.findMany({
+    const seguimientos = await VisitaSeguimientoRepository.findMany({
       orderBy: { fecha: "desc" },
     });
 

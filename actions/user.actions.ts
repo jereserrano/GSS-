@@ -1,4 +1,7 @@
 "use server";
+import { RolRepository } from "@/repositories/rol.repository";
+import { UserRepository } from "@/repositories/user.repository";
+import { AuditLogRepository } from "@/repositories/auditLog.repository";
 
 /**
  * =============================================================================
@@ -13,7 +16,7 @@
  * estado en el servidor en cada transacción.
  */
 
-import { prisma } from "@/lib/prisma";
+
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
@@ -36,7 +39,7 @@ async function logAudit({
   detalle: object;
 }): Promise<void> {
   try {
-    await prisma.auditLog.create({
+    await AuditLogRepository.create({
       data: {
         userId: userId ?? null,
         modulo,
@@ -73,7 +76,7 @@ async function getCurrentUserCtx(): Promise<CurrentUserCtx | null> {
 
 export async function getUsers() {
   try {
-    const users = await prisma.user.findMany({
+    const users = await UserRepository.findMany({
       include: {
         rol: true,
       },
@@ -94,7 +97,7 @@ export async function getUsers() {
 
 export async function getRoles() {
   try {
-    return await prisma.rol.findMany();
+    return await RolRepository.findMany();
   } catch (error) {
     console.error("Error fetching roles:", error);
     return [];
@@ -110,7 +113,7 @@ export async function getAssignableRolesBySession() {
     const currentUser = await getCurrentUserCtx();
     if (!currentUser) return { error: "No autenticado", roles: [] };
 
-    const allRoles = await prisma.rol.findMany();
+    const allRoles = await RolRepository.findMany();
     const assignable = getAssignableRoles(currentUser.role, allRoles);
     return { roles: assignable };
   } catch (error) {
@@ -134,7 +137,7 @@ export async function createUser(data: any) {
     const { nombre, email, password, rolId } = data;
 
     // ── 2. Cargar el rol que se va a asignar ────────────────────────────────
-    const rolToAssign = await prisma.rol.findUnique({ where: { id: rolId } });
+    const rolToAssign = await RolRepository.findUnique({ where: { id: rolId } });
     if (!rolToAssign) {
       return { error: "El rol seleccionado no existe." };
     }
@@ -163,14 +166,14 @@ export async function createUser(data: any) {
     }
 
     // ── 4. Verificar email único ─────────────────────────────────────────────
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await UserRepository.findUnique({ where: { email } });
     if (existingUser) {
       return { error: "El correo ya está registrado en el sistema." };
     }
 
     // ── 5. Crear usuario ─────────────────────────────────────────────────────
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
+    const user = await UserRepository.create({
       data: { nombre, email, passwordHash, rolId },
     });
 
@@ -206,7 +209,7 @@ export async function updateUser(id: string, data: any) {
 
   try {
     // ── 2. Cargar usuario objetivo DESDE LA BD ───────────────────────────────
-    const targetUser = await prisma.user.findUnique({
+    const targetUser = await UserRepository.findUnique({
       where: { id },
       include: { rol: true },
     });
@@ -226,7 +229,7 @@ export async function updateUser(id: string, data: any) {
     let newRolNombre: string | undefined;
 
     if (data.rolId && data.rolId !== targetUser.rolId) {
-      const newRol = await prisma.rol.findUnique({ where: { id: data.rolId } });
+      const newRol = await RolRepository.findUnique({ where: { id: data.rolId } });
       if (!newRol) return { error: "El nuevo rol seleccionado no existe." };
       newRolNombre = newRol.nombre;
     }
@@ -268,7 +271,7 @@ export async function updateUser(id: string, data: any) {
     }
 
     // ── 5. Ejecutar actualización ────────────────────────────────────────────
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await UserRepository.update({
       where: { id },
       data: updateData,
     });
@@ -315,7 +318,7 @@ export async function deleteUser(id: string) {
 
   try {
     // ── 2. Cargar usuario objetivo DESDE LA BD ───────────────────────────────
-    const targetUser = await prisma.user.findUnique({
+    const targetUser = await UserRepository.findUnique({
       where: { id },
       include: { rol: true },
     });
@@ -364,7 +367,7 @@ export async function deleteUser(id: string) {
     });
 
     // ── 5. Eliminar usuario ──────────────────────────────────────────────────
-    await prisma.user.delete({ where: { id } });
+    await UserRepository.delete({ where: { id } });
 
     revalidatePath("/usuarios");
     return { success: true };
@@ -380,7 +383,7 @@ export async function deleteUser(id: string) {
 
 export async function exportUsuariosCSV() {
   try {
-    const users = await prisma.user.findMany({
+    const users = await UserRepository.findMany({
       include: { rol: true },
       orderBy: { creadoEn: "desc" },
     });

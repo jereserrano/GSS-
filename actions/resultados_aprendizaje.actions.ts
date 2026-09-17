@@ -1,6 +1,24 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { ResultadoAprendizajeRepository } from "@/repositories/resultadoAprendizaje.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -20,8 +38,8 @@ export async function getResultadosAprendizajeAction(filtros: any = {}) {
       ...(filtros.competenciaId ? { competenciaId: filtros.competenciaId } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.resultadoAprendizaje.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      ResultadoAprendizajeRepository.findMany({
         where,
         skip,
         take,
@@ -30,7 +48,7 @@ export async function getResultadosAprendizajeAction(filtros: any = {}) {
         },
         orderBy: { codigo: "asc" },
       }),
-      prisma.resultadoAprendizaje.count({ where }),
+      ResultadoAprendizajeRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -42,10 +60,12 @@ export async function getResultadosAprendizajeAction(filtros: any = {}) {
 
 export async function createResultadoAprendizaje(data: any) {
   try {
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     // Nota: A diferencia de las competencias, el código de los RAP puede repetirse entre competencias (ej. RAP1, RAP2)
     // por lo que no forzamos unicidad global a menos que sea necesario por regla de negocio.
 
-    const resultado = await prisma.resultadoAprendizaje.create({
+    const resultado = await ResultadoAprendizajeRepository.create({
       data: {
         codigo: data.codigo,
         nombre: data.nombre,
@@ -54,6 +74,13 @@ export async function createResultadoAprendizaje(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "resultados_aprendizaje",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/resultados-aprendizaje");
     return { success: true, resultado };
   } catch (error: any) {
@@ -64,7 +91,9 @@ export async function createResultadoAprendizaje(data: any) {
 
 export async function updateResultadoAprendizaje(id: string, data: any) {
   try {
-    const resultado = await prisma.resultadoAprendizaje.update({
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const resultado = await ResultadoAprendizajeRepository.update({
       where: { id },
       data: {
         codigo: data.codigo,
@@ -74,6 +103,13 @@ export async function updateResultadoAprendizaje(id: string, data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "resultados_aprendizaje",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/resultados-aprendizaje");
     return { success: true, resultado };
   } catch (error: any) {
@@ -84,7 +120,16 @@ export async function updateResultadoAprendizaje(id: string, data: any) {
 
 export async function deleteResultadoAprendizaje(id: string) {
   try {
-    await prisma.resultadoAprendizaje.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await ResultadoAprendizajeRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "resultados_aprendizaje",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/resultados-aprendizaje");
     return { success: true };
   } catch (error: any) {
@@ -95,7 +140,7 @@ export async function deleteResultadoAprendizaje(id: string) {
 
 export async function exportResultadosAprendizajeCSV() {
   try {
-    const resultados = await prisma.resultadoAprendizaje.findMany({
+    const resultados = await ResultadoAprendizajeRepository.findMany({
       orderBy: { codigo: "asc" },
       include: {
         competencia: { select: { nombre: true, codigo: true } },

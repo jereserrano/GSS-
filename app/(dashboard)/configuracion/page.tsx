@@ -1,7 +1,11 @@
 import React from "react";
 import { ConfiguracionForm } from "@/features/administracion/ConfiguracionForm";
+import { getConfiguracionAction } from "@/actions/configuracion.actions";
 
-export default function ConfiguracionPage() {
+export default async function ConfiguracionPage() {
+  const result = await getConfiguracionAction();
+  const configuracion = result.success ? result.data : null;
+
   return (
     <div className="page-container space-y-6 page-enter">
       <div>
@@ -10,7 +14,7 @@ export default function ConfiguracionPage() {
           Ajustes generales, variables académicas y reglas de negocio del sistema.
         </p>
       </div>
-      <ConfiguracionForm />
+      <ConfiguracionForm initialData={configuracion} />
     </div>
   );
 }

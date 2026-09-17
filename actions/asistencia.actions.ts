@@ -1,6 +1,26 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { AsistenciaRepository } from "@/repositories/asistencia.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { asistenciaSchema } from "@/schemas";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -22,8 +42,8 @@ export async function getAsistenciasAction(filtros: any = {}) {
       ...(filtros.instructorId ? { instructorId: filtros.instructorId } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.asistencia.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      AsistenciaRepository.findMany({
         where,
         skip,
         take,
@@ -39,7 +59,7 @@ export async function getAsistenciasAction(filtros: any = {}) {
         },
         orderBy: { fecha: "desc" },
       }),
-      prisma.asistencia.count({ where }),
+      AsistenciaRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -49,31 +69,76 @@ export async function getAsistenciasAction(filtros: any = {}) {
   }
 }
 
-export async function createAsistencia(data: any) {
+import { asistenciaMasivaSchema } from "@/schemas";
+import { DetalleAsistenciaRepository } from "@/repositories/detalleAsistencia.repository";
+
+export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMasivaSchema>) {
   try {
-    const asistencia = await prisma.asistencia.create({
-      data: {
-        fichaId: data.fichaId,
-        instructorId: data.instructorId,
-        fecha: new Date(data.fecha),
-        observaciones: data.tema || null, // Using observaciones as tema
-        estado: data.estado || "PENDIENTE",
-        totalPresentes: data.totalPresentes ? parseInt(data.totalPresentes) : 0,
-        totalFaltas: data.totalFaltas ? parseInt(data.totalFaltas) : 0,
-        totalExcusas: data.totalExcusas ? parseInt(data.totalExcusas) : 0,
-      },
+    const parsed = asistenciaMasivaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    
+    // Contar estados
+    let presentes = 0;
+    let faltas = 0;
+    let excusas = 0;
+    data.detalles.forEach(d => {
+      if (d.estado === "PRESENTE") presentes++;
+      else if (d.estado === "FALLA") faltas++;
+      else if (d.estado === "EXCUSA") excusas++;
     });
 
+    // Usar transacción para atomicidad
+    const asistencia = await TransactionRepository.$transaction(async (tx) => {
+      // 1. Crear el encabezado
+      const asist = await tx.asistencia.create({
+        data: {
+          fichaId: data.fichaId,
+          instructorId: data.instructorId,
+          fecha: new Date(data.fecha),
+          estado: "REGISTRADA",
+          totalPresentes: presentes,
+          totalFaltas: faltas,
+          totalExcusas: excusas,
+        },
+      });
+
+      // 2. Crear los detalles masivamente
+      if (data.detalles.length > 0) {
+        await tx.detalleAsistencia.createMany({
+          data: data.detalles.map(d => ({
+            asistenciaId: asist.id,
+            aprendizId: d.aprendizId,
+            estado: d.estado,
+            observaciones: d.observaciones || null,
+          })),
+        });
+      }
+
+      return asist;
+    });
+
+    await logAudit({
+      userId: user.id,
+      modulo: "Asistencia",
+      accion: "CREAR_MASIVA",
+      detalle: `Se registraron ${data.detalles.length} aprendices en la asistencia de la ficha.`,
+    });
     revalidatePath("/asistencia");
     return { success: true, asistencia };
   } catch (error: any) {
-    console.error("Error creating asistencia:", error);
-    return { error: error.message || "Error al crear sesión de asistencia" };
+    console.error("Error creating asistencia masiva:", error);
+    return { error: error.message || "Error al registrar la asistencia" };
   }
 }
 
-export async function updateAsistencia(id: string, data: any) {
+export async function updateAsistencia(id: string, data: z.infer<typeof asistenciaSchema>) {
   try {
+    const parsed = asistenciaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     const dataToUpdate: any = {
       fichaId: data.fichaId,
       instructorId: data.instructorId,
@@ -85,11 +150,18 @@ export async function updateAsistencia(id: string, data: any) {
     if (data.totalFaltas !== undefined) dataToUpdate.totalFaltas = parseInt(data.totalFaltas);
     if (data.totalExcusas !== undefined) dataToUpdate.totalExcusas = parseInt(data.totalExcusas);
 
-    const asistencia = await prisma.asistencia.update({
+    const asistencia = await AsistenciaRepository.update({
       where: { id },
       data: dataToUpdate,
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Asistencia",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/asistencia");
     return { success: true, asistencia };
   } catch (error: any) {
@@ -100,7 +172,16 @@ export async function updateAsistencia(id: string, data: any) {
 
 export async function deleteAsistencia(id: string) {
   try {
-    await prisma.asistencia.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await AsistenciaRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Asistencia",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/asistencia");
     return { success: true };
   } catch (error: any) {
@@ -111,7 +192,7 @@ export async function deleteAsistencia(id: string) {
 
 export async function exportAsistenciasCSV() {
   try {
-    const asistencias = await prisma.asistencia.findMany({
+    const asistencias = await AsistenciaRepository.findMany({
       orderBy: { fecha: "desc" },
       include: {
         ficha: { 

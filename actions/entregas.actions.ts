@@ -1,6 +1,26 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { EntregaRepository } from "@/repositories/entrega.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { entregaSchema } from "@/schemas";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -23,8 +43,8 @@ export async function getEntregasAction(filtros: any = {}) {
       ...(filtros.aprendizId ? { aprendizId: filtros.aprendizId } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.entrega.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      EntregaRepository.findMany({
         where,
         skip,
         take,
@@ -34,7 +54,7 @@ export async function getEntregasAction(filtros: any = {}) {
         },
         orderBy: { fechaEntrega: "desc" },
       }),
-      prisma.entrega.count({ where }),
+      EntregaRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -44,9 +64,13 @@ export async function getEntregasAction(filtros: any = {}) {
   }
 }
 
-export async function createEntrega(data: any) {
+export async function createEntrega(data: z.infer<typeof entregaSchema>) {
   try {
-    const existing = await prisma.entrega.findUnique({
+    const parsed = entregaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const existing = await EntregaRepository.findUnique({
       where: {
         actividadId_aprendizId: {
           actividadId: data.actividadId,
@@ -58,7 +82,7 @@ export async function createEntrega(data: any) {
       return { error: "El aprendiz ya tiene una entrega registrada para esta actividad" };
     }
 
-    const entrega = await prisma.entrega.create({
+    const entrega = await EntregaRepository.create({
       data: {
         actividadId: data.actividadId,
         aprendizId: data.aprendizId,
@@ -69,6 +93,13 @@ export async function createEntrega(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Entregas",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/entregas");
     return { success: true, entrega };
   } catch (error: any) {
@@ -77,8 +108,12 @@ export async function createEntrega(data: any) {
   }
 }
 
-export async function updateEntrega(id: string, data: any) {
+export async function updateEntrega(id: string, data: z.infer<typeof entregaSchema>) {
   try {
+    const parsed = entregaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     const dataToUpdate: any = {
       estado: data.estado,
       calificacion: data.calificacion || null,
@@ -86,11 +121,18 @@ export async function updateEntrega(id: string, data: any) {
     };
     if (data.fechaEntrega) dataToUpdate.fechaEntrega = new Date(data.fechaEntrega);
 
-    const entrega = await prisma.entrega.update({
+    const entrega = await EntregaRepository.update({
       where: { id },
       data: dataToUpdate,
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Entregas",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/entregas");
     return { success: true, entrega };
   } catch (error: any) {
@@ -101,7 +143,16 @@ export async function updateEntrega(id: string, data: any) {
 
 export async function deleteEntrega(id: string) {
   try {
-    await prisma.entrega.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await EntregaRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Entregas",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/entregas");
     return { success: true };
   } catch (error: any) {
@@ -112,7 +163,7 @@ export async function deleteEntrega(id: string) {
 
 export async function exportEntregasCSV() {
   try {
-    const entregas = await prisma.entrega.findMany({
+    const entregas = await EntregaRepository.findMany({
       orderBy: { fechaEntrega: "desc" },
       include: {
         aprendiz: { select: { nombres: true, apellidos: true, numeroDocumento: true } },

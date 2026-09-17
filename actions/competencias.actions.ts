@@ -1,6 +1,26 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { CompetenciaRepository } from "@/repositories/competencia.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { competenciaSchema } from "@/schemas";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -20,8 +40,8 @@ export async function getCompetenciasAction(filtros: any = {}) {
       ...(filtros.programaId ? { programaId: filtros.programaId } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.competencia.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      CompetenciaRepository.findMany({
         where,
         skip,
         take,
@@ -33,7 +53,7 @@ export async function getCompetenciasAction(filtros: any = {}) {
         },
         orderBy: { codigo: "asc" },
       }),
-      prisma.competencia.count({ where }),
+      CompetenciaRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -43,16 +63,20 @@ export async function getCompetenciasAction(filtros: any = {}) {
   }
 }
 
-export async function createCompetencia(data: any) {
+export async function createCompetencia(data: z.infer<typeof competenciaSchema>) {
   try {
-    const existing = await prisma.competencia.findUnique({
+    const parsed = competenciaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const existing = await CompetenciaRepository.findUnique({
       where: { codigo: data.codigo },
     });
     if (existing) {
       return { error: "Ya existe una competencia con ese código" };
     }
 
-    const competencia = await prisma.competencia.create({
+    const competencia = await CompetenciaRepository.create({
       data: {
         codigo: data.codigo,
         nombre: data.nombre,
@@ -63,6 +87,13 @@ export async function createCompetencia(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Competencias",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/competencias");
     return { success: true, competencia };
   } catch (error: any) {
@@ -71,9 +102,13 @@ export async function createCompetencia(data: any) {
   }
 }
 
-export async function updateCompetencia(id: string, data: any) {
+export async function updateCompetencia(id: string, data: z.infer<typeof competenciaSchema>) {
   try {
-    const competencia = await prisma.competencia.update({
+    const parsed = competenciaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const competencia = await CompetenciaRepository.update({
       where: { id },
       data: {
         codigo: data.codigo,
@@ -85,6 +120,13 @@ export async function updateCompetencia(id: string, data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Competencias",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/competencias");
     return { success: true, competencia };
   } catch (error: any) {
@@ -95,7 +137,16 @@ export async function updateCompetencia(id: string, data: any) {
 
 export async function deleteCompetencia(id: string) {
   try {
-    await prisma.competencia.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await CompetenciaRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Competencias",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/competencias");
     return { success: true };
   } catch (error: any) {
@@ -106,7 +157,7 @@ export async function deleteCompetencia(id: string) {
 
 export async function exportCompetenciasCSV() {
   try {
-    const competencias = await prisma.competencia.findMany({
+    const competencias = await CompetenciaRepository.findMany({
       orderBy: { codigo: "asc" },
       include: {
         programa: { select: { nombre: true, codigo: true } },

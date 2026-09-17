@@ -11,7 +11,9 @@ import { useRouter } from "next/navigation";
 import type { Aprendiz, FiltrosAprendiz } from "@/types/aprendiz.types";
 import type { ColumnaDef, PaginatedResponse } from "@/types/common.types";
 import { getAprendicesAction, deleteAprendiz, exportAprendicesCSV } from "@/actions/aprendices.actions";
+import { importAprendicesMasivo } from "@/actions/import.actions";
 import { AprendizFormDialog } from "./AprendizFormDialog";
+import { UploadExcelDialog } from "@/components/ui/UploadExcelDialog";
 import { toast } from "sonner";
 
 interface Ficha {
@@ -35,11 +37,15 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
   const [selectedAprendiz, setSelectedAprendiz] = useState<Aprendiz | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const [filtros, setFiltros] = useState<FiltrosAprendiz>({
     pagina: 1,
     tamano: 10,
-    busqueda: ""
+    busqueda: "",
+    estado: undefined,
+    nivelRiesgo: undefined,
+    fichaId: undefined
   });
 
   const cargarDatos = async () => {
@@ -62,6 +68,10 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFiltros(prev => ({ ...prev, busqueda: e.target.value, pagina: 1 }));
+  };
+
+  const handleFilterSelect = (key: keyof FiltrosAprendiz, value: any) => {
+    setFiltros(prev => ({ ...prev, [key]: value || undefined, pagina: 1 }));
   };
 
   const handleOpenCreate = () => {
@@ -207,12 +217,22 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
                 className="bg-surface pl-9"
               />
             </div>
-            <Button variant="outline" className="shrink-0 bg-surface">
+            <Button variant={showFilters ? "default" : "outline"} className={`shrink-0 ${!showFilters && 'bg-surface'}`} onClick={() => setShowFilters(!showFilters)}>
               <Filter size={16} className="mr-2" /> Filtros
             </Button>
           </div>
 
           <div className="flex gap-2">
+            <UploadExcelDialog
+              title="Importar Aprendices"
+              description="Sube un archivo Excel con los datos de los aprendices. Usa la plantilla de ejemplo."
+              templateUrl="/plantilla_aprendices.xlsx"
+              onUpload={async (json) => {
+                const result = await importAprendicesMasivo(json);
+                if (result.success) cargarDatos();
+                return result;
+              }}
+            />
             <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
               <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
             </Button>
@@ -221,6 +241,54 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
             </Button>
           </div>
         </div>
+
+        {showFilters && (
+          <div className="flex flex-wrap gap-4 p-4 bg-surface border border-border rounded-lg animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[200px]">
+              <label className="text-xs font-medium text-text-secondary">Estado</label>
+              <select 
+                className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                value={filtros.estado || ""}
+                onChange={(e) => handleFilterSelect("estado", e.target.value)}
+              >
+                <option value="">Todos los estados</option>
+                <option value="EN_FORMACION">En Formación</option>
+                <option value="APLAZADO">Aplazado</option>
+                <option value="RETIRADO">Retirado</option>
+                <option value="EGRESADO">Egresado</option>
+                <option value="SUSPENDIDO">Suspendido</option>
+              </select>
+            </div>
+            
+            <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[200px]">
+              <label className="text-xs font-medium text-text-secondary">Nivel de Riesgo</label>
+              <select 
+                className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                value={filtros.nivelRiesgo || ""}
+                onChange={(e) => handleFilterSelect("nivelRiesgo", e.target.value)}
+              >
+                <option value="">Todos los riesgos</option>
+                <option value="BAJO">Bajo</option>
+                <option value="MEDIO">Medio</option>
+                <option value="ALTO">Alto</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[200px]">
+              <label className="text-xs font-medium text-text-secondary">Ficha</label>
+              <select 
+                className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                value={filtros.fichaId || ""}
+                onChange={(e) => handleFilterSelect("fichaId", e.target.value)}
+              >
+                <option value="">Todas las fichas</option>
+                {fichas.map(f => (
+                  <option key={f.id} value={f.id}>{f.codigo}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Tabla */}
         <DataTable

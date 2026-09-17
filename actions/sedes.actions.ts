@@ -1,6 +1,26 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { SedeRepository } from "@/repositories/sede.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { sedeSchema } from "@/schemas";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -28,8 +48,8 @@ export async function getSedesAction(filtros: {
       ...(filtros.institucionId ? { institucionId: filtros.institucionId } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.sede.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      SedeRepository.findMany({
         where,
         skip,
         take,
@@ -38,7 +58,7 @@ export async function getSedesAction(filtros: {
         },
         orderBy: { nombre: "asc" },
       }),
-      prisma.sede.count({ where }),
+      SedeRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -48,9 +68,13 @@ export async function getSedesAction(filtros: {
   }
 }
 
-export async function createSede(data: any) {
+export async function createSede(data: z.infer<typeof sedeSchema>) {
   try {
-    const sede = await prisma.sede.create({
+    const parsed = sedeSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const sede = await SedeRepository.create({
       data: {
         nombre: data.nombre,
         institucionId: data.institucionId,
@@ -63,6 +87,13 @@ export async function createSede(data: any) {
         estado: data.estado || "ACTIVO",
       },
     });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Sedes",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/sedes");
     return { success: true, sede };
   } catch (error: any) {
@@ -71,9 +102,13 @@ export async function createSede(data: any) {
   }
 }
 
-export async function updateSede(id: string, data: any) {
+export async function updateSede(id: string, data: z.infer<typeof sedeSchema>) {
   try {
-    const sede = await prisma.sede.update({
+    const parsed = sedeSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const sede = await SedeRepository.update({
       where: { id },
       data: {
         nombre: data.nombre,
@@ -87,6 +122,13 @@ export async function updateSede(id: string, data: any) {
         estado: data.estado,
       },
     });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Sedes",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/sedes");
     return { success: true, sede };
   } catch (error: any) {
@@ -97,7 +139,16 @@ export async function updateSede(id: string, data: any) {
 
 export async function deleteSede(id: string) {
   try {
-    await prisma.sede.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await SedeRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Sedes",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/sedes");
     return { success: true };
   } catch (error: any) {
@@ -108,7 +159,7 @@ export async function deleteSede(id: string) {
 
 export async function exportSedesCSV() {
   try {
-    const sedes = await prisma.sede.findMany({
+    const sedes = await SedeRepository.findMany({
       orderBy: { nombre: "asc" },
       include: {
         institucion: { select: { nombre: true, nit: true } },

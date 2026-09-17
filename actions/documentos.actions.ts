@@ -25,8 +25,12 @@ export async function getDocumentosAction(filtros: any = {}) {
   }
 }
 
-export async function createDocumento(data: any) {
+export async function createDocumento(data: z.infer<typeof documentoSchema>) {
   try {
+    const parsed = documentoSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     const newDoc = {
       id: "mock-" + Date.now(),
       ...data,
@@ -40,8 +44,12 @@ export async function createDocumento(data: any) {
   }
 }
 
-export async function updateDocumento(id: string, data: any) {
+export async function updateDocumento(id: string, data: z.infer<typeof documentoSchema>) {
   try {
+    const parsed = documentoSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     const idx = mockDocumentos.findIndex(d => d.id === id);
     if (idx >= 0) {
       mockDocumentos[idx] = { ...mockDocumentos[idx], ...data };
@@ -55,6 +63,8 @@ export async function updateDocumento(id: string, data: any) {
 
 export async function deleteDocumento(id: string) {
   try {
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     mockDocumentos = mockDocumentos.filter(d => d.id !== id);
     return { success: true };
   } catch (error: any) {

@@ -1,19 +1,24 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { InstitucionRepository } from "@/repositories/institucion.repository";
+
+import { institucionSchema } from "@/schemas";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "./reportes.actions";
 import { requireRole } from "@/lib/auth-helpers";
 
 export async function createInstitucion(data: any) {
   try {
+    const parsed = institucionSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR");
-    const existing = await prisma.institucion.findUnique({ where: { nit: data.nit } });
+    const existing = await InstitucionRepository.findUnique({ where: { nit: data.nit } });
     if (existing) {
       return { error: "Ya existe una institución con este NIT" };
     }
 
-    const inst = await prisma.institucion.create({
+    const inst = await InstitucionRepository.create({
       data: {
         nit: data.nit,
         nombre: data.nombre,
@@ -27,6 +32,13 @@ export async function createInstitucion(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId,
+      modulo: "Institución",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/instituciones");
     await logAudit({ accion: "CREAR", modulo: "INSTITUCIONES", descripcion: `Institución creada: ${inst.nombre} (NIT: ${inst.nit})`, usuarioId: user.id });
     return { success: true, institucion: inst };
@@ -38,8 +50,11 @@ export async function createInstitucion(data: any) {
 
 export async function updateInstitucion(id: string, data: any) {
   try {
+    const parsed = institucionSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR");
-    const inst = await prisma.institucion.update({
+    const inst = await InstitucionRepository.update({
       where: { id },
       data: {
         nit: data.nit,
@@ -54,7 +69,21 @@ export async function updateInstitucion(id: string, data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId,
+      modulo: "Institución",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/instituciones");
+    
+    await logAudit({
+      userId,
+      modulo: "Institución",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath(`/instituciones/${id}`);
     await logAudit({ accion: "EDITAR", modulo: "INSTITUCIONES", descripcion: `Institución actualizada: ${inst.nombre}`, usuarioId: user.id });
     return { success: true, institucion: inst };
@@ -66,11 +95,19 @@ export async function updateInstitucion(id: string, data: any) {
 
 export async function deleteInstitucion(id: string) {
   try {
+    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR"); // Solo admins borran
-    const inst = await prisma.institucion.delete({
+    const inst = await InstitucionRepository.delete({
       where: { id },
     });
 
+    
+    await logAudit({
+      userId,
+      modulo: "Institución",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/instituciones");
     await logAudit({ accion: "ELIMINAR", modulo: "INSTITUCIONES", descripcion: `Institución eliminada: ${inst.nombre}`, usuarioId: user.id });
     return { success: true };
@@ -82,7 +119,7 @@ export async function deleteInstitucion(id: string) {
 
 export async function exportInstitucionesCSV() {
   try {
-    const instituciones = await prisma.institucion.findMany({
+    const instituciones = await InstitucionRepository.findMany({
       orderBy: { nombre: "asc" },
       include: {
         sedes: { select: { id: true } }

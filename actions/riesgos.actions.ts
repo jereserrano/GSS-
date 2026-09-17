@@ -1,6 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { AlertaRiesgoRepository } from "@/repositories/alertaRiesgo.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { alertaSchema } from "@/schemas";
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "./reportes.actions";
@@ -24,8 +27,8 @@ export async function getRiesgosAction(filtros: any = {}) {
       ...(filtros.nivel ? { nivel: filtros.nivel } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.alertaRiesgo.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      AlertaRiesgoRepository.findMany({
         where,
         skip,
         take,
@@ -41,7 +44,7 @@ export async function getRiesgosAction(filtros: any = {}) {
         },
         orderBy: { fechaDeteccion: "desc" },
       }),
-      prisma.alertaRiesgo.count({ where }),
+      AlertaRiesgoRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -53,8 +56,11 @@ export async function getRiesgosAction(filtros: any = {}) {
 
 export async function createRiesgo(data: any) {
   try {
+    const parsed = alertaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR");
-    const riesgo = await prisma.alertaRiesgo.create({
+    const riesgo = await AlertaRiesgoRepository.create({
       data: {
         aprendizId: data.aprendizId,
         motivo: data.descripcion || data.motivo,
@@ -65,6 +71,13 @@ export async function createRiesgo(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId,
+      modulo: "Riesgos",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/riesgos");
     await logAudit({ accion: "CREAR", modulo: "RIESGOS", descripcion: `Alerta registrada para aprendiz ID: ${data.aprendizId}`, usuarioId: user.id });
     return { success: true, riesgo };
@@ -76,6 +89,9 @@ export async function createRiesgo(data: any) {
 
 export async function updateRiesgo(id: string, data: any) {
   try {
+    const parsed = alertaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR");
     const dataToUpdate: any = {
         motivo: data.descripcion || data.motivo,
@@ -85,11 +101,18 @@ export async function updateRiesgo(id: string, data: any) {
     };
     if (data.fechaDeteccion) dataToUpdate.fechaDeteccion = new Date(data.fechaDeteccion);
 
-    const riesgo = await prisma.alertaRiesgo.update({
+    const riesgo = await AlertaRiesgoRepository.update({
       where: { id },
       data: dataToUpdate,
     });
 
+    
+    await logAudit({
+      userId,
+      modulo: "Riesgos",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/riesgos");
     await logAudit({ accion: "EDITAR", modulo: "RIESGOS", descripcion: `Alerta actualizada ID: ${id}`, usuarioId: user.id });
     return { success: true, riesgo };
@@ -101,8 +124,16 @@ export async function updateRiesgo(id: string, data: any) {
 
 export async function deleteRiesgo(id: string) {
   try {
+    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR"); // Solo admins/coordinadores borran alertas
-    await prisma.alertaRiesgo.delete({ where: { id } });
+    await AlertaRiesgoRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId,
+      modulo: "Riesgos",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/riesgos");
     await logAudit({ accion: "ELIMINAR", modulo: "RIESGOS", descripcion: `Alerta eliminada ID: ${id}`, usuarioId: user.id });
     return { success: true };
@@ -114,7 +145,7 @@ export async function deleteRiesgo(id: string) {
 
 export async function exportRiesgosCSV() {
   try {
-    const riesgos = await prisma.alertaRiesgo.findMany({
+    const riesgos = await AlertaRiesgoRepository.findMany({
       orderBy: { fechaDeteccion: "desc" },
       include: {
         aprendiz: { 

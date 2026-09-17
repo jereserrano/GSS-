@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Download, Pencil, Trash2 } from "lucide-react";
 import type { ColumnaDef } from "@/types/common.types";
 import { deleteInstructor, exportInstructoresCSV } from "@/actions/instructores.actions";
+import { importInstructoresMasivo } from "@/actions/import.actions";
 import { InstructorFormDialog } from "./InstructorFormDialog";
+import { UploadExcelDialog } from "@/components/ui/UploadExcelDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -151,6 +153,16 @@ export function InstructoresTable({ initialData }: InstructoresTableProps) {
         </div>
         
         <div className="flex gap-2">
+          <UploadExcelDialog
+            title="Importar Instructores"
+            description="Sube un archivo Excel con los datos de los instructores."
+            templateUrl="/plantilla_instructores.xlsx"
+            onUpload={async (json) => {
+              const result = await importInstructoresMasivo(json);
+              if (result.success) window.location.reload(); // temporal reload to refresh data
+              return result;
+            }}
+          />
           <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
             <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
           </Button>

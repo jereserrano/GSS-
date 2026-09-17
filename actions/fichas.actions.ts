@@ -1,6 +1,26 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { FichaRepository } from "@/repositories/ficha.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { fichaSchema } from "@/schemas";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -8,6 +28,7 @@ export async function getFichasAction(filtros: {
   busqueda?: string;
   institucionId?: string;
   programaId?: string;
+  estado?: string;
   pagina?: number;
   tamano?: number;
 } = {}) {
@@ -28,10 +49,11 @@ export async function getFichasAction(filtros: {
         : {}),
       ...(filtros.institucionId ? { institucionId: filtros.institucionId } : {}),
       ...(filtros.programaId ? { programaId: filtros.programaId } : {}),
+      ...(filtros.estado ? { estado: filtros.estado.toUpperCase() } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.ficha.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      FichaRepository.findMany({
         where,
         skip,
         take,
@@ -43,7 +65,7 @@ export async function getFichasAction(filtros: {
         },
         orderBy: { codigo: "desc" },
       }),
-      prisma.ficha.count({ where }),
+      FichaRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -53,14 +75,18 @@ export async function getFichasAction(filtros: {
   }
 }
 
-export async function createFicha(data: any) {
+export async function createFicha(data: z.infer<typeof fichaSchema>) {
   try {
-    const existing = await prisma.ficha.findUnique({ where: { codigo: data.codigo } });
+    const parsed = fichaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const existing = await FichaRepository.findUnique({ where: { codigo: data.codigo } });
     if (existing) {
       return { error: "Ya existe una ficha con ese código" };
     }
 
-    const ficha = await prisma.ficha.create({
+    const ficha = await FichaRepository.create({
       data: {
         codigo: data.codigo,
         programaId: data.programaId,
@@ -73,6 +99,13 @@ export async function createFicha(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Fichas",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/fichas");
     return { success: true, ficha };
   } catch (error: any) {
@@ -81,9 +114,13 @@ export async function createFicha(data: any) {
   }
 }
 
-export async function updateFicha(id: string, data: any) {
+export async function updateFicha(id: string, data: z.infer<typeof fichaSchema>) {
   try {
-    const ficha = await prisma.ficha.update({
+    const parsed = fichaSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const ficha = await FichaRepository.update({
       where: { id },
       data: {
         codigo: data.codigo,
@@ -97,6 +134,13 @@ export async function updateFicha(id: string, data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Fichas",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/fichas");
     return { success: true, ficha };
   } catch (error: any) {
@@ -107,7 +151,16 @@ export async function updateFicha(id: string, data: any) {
 
 export async function deleteFicha(id: string) {
   try {
-    await prisma.ficha.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await FichaRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Fichas",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/fichas");
     return { success: true };
   } catch (error: any) {
@@ -118,7 +171,7 @@ export async function deleteFicha(id: string) {
 
 export async function exportFichasCSV() {
   try {
-    const fichas = await prisma.ficha.findMany({
+    const fichas = await FichaRepository.findMany({
       orderBy: { codigo: "desc" },
       include: {
         programa: { select: { nombre: true, codigo: true } },

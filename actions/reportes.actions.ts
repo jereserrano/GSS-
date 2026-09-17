@@ -1,6 +1,12 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { AuditLogRepository } from "@/repositories/auditLog.repository";
+import { AprendizRepository } from "@/repositories/aprendiz.repository";
+import { AlertaRiesgoRepository } from "@/repositories/alertaRiesgo.repository";
+import { AsistenciaRepository } from "@/repositories/asistencia.repository";
+import { EvaluacionAprendizRepository } from "@/repositories/evaluacionAprendiz.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
 import { revalidatePath } from "next/cache";
 
 /**
@@ -15,7 +21,7 @@ export async function logAudit(data: {
   usuarioId?: string;
 }) {
   try {
-    await prisma.auditLog.create({
+    await AuditLogRepository.create({
       data: {
         accion: data.accion,
         modulo: data.modulo,
@@ -36,8 +42,8 @@ export async function getAuditLogsAction(filtros: any = {}) {
 
     const where = filtros.modulo ? { modulo: filtros.modulo } : {};
 
-    const [data, total] = await prisma.$transaction([
-      prisma.auditLog.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      AuditLogRepository.findMany({
         where,
         skip,
         take: tamano,
@@ -46,7 +52,7 @@ export async function getAuditLogsAction(filtros: any = {}) {
         },
         orderBy: { fecha: "desc" },
       }),
-      prisma.auditLog.count({ where }),
+      AuditLogRepository.count({ where }),
     ]);
 
     return {
@@ -68,7 +74,7 @@ export async function getAuditLogsAction(filtros: any = {}) {
 /** Genera datos para un reporte y lo devuelve como CSV string */
 export async function generarReporteAprendicesCSV() {
   try {
-    const aprendices = await prisma.aprendiz.findMany({
+    const aprendices = await AprendizRepository.findMany({
       select: {
         numeroDocumento: true,
         nombres: true,
@@ -112,7 +118,7 @@ export async function generarReporteAprendicesCSV() {
 
 export async function generarReporteRiesgosCSV() {
   try {
-    const alertas = await prisma.alertaRiesgo.findMany({
+    const alertas = await AlertaRiesgoRepository.findMany({
       include: {
         aprendiz: {
           select: {
@@ -151,7 +157,7 @@ export async function generarReporteRiesgosCSV() {
 
 export async function generarReporteAsistenciaCSV() {
   try {
-    const registros = await prisma.asistencia.findMany({
+    const registros = await AsistenciaRepository.findMany({
       include: {
         ficha: {
           select: {
@@ -191,11 +197,11 @@ export async function generarReporteAsistenciaCSV() {
 export async function getResumenReportes() {
   try {
     const [totalAprendices, alertasActivas, totalAsistencias, totalEvaluaciones] =
-      await prisma.$transaction([
-        prisma.aprendiz.count(),
-        prisma.alertaRiesgo.count({ where: { gestionada: false } }),
-        prisma.asistencia.count(),
-        prisma.evaluacionAprendiz.count(),
+      await TransactionRepository.$transaction([
+        AprendizRepository.count(),
+        AlertaRiesgoRepository.count({ where: { gestionada: false } }),
+        AsistenciaRepository.count(),
+        EvaluacionAprendizRepository.count(),
       ]);
 
     revalidatePath("/reportes");
@@ -210,7 +216,7 @@ export async function getResumenReportes() {
 
 export async function exportAuditoriaCSV() {
   try {
-    const logs = await prisma.auditLog.findMany({
+    const logs = await AuditLogRepository.findMany({
       orderBy: { fecha: "desc" },
       include: {
         user: { select: { nombre: true, email: true } },

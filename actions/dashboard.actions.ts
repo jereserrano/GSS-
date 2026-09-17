@@ -1,6 +1,25 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { AprendizRepository } from "@/repositories/aprendiz.repository";
+import { InstitucionRepository } from "@/repositories/institucion.repository";
+import { FichaRepository } from "@/repositories/ficha.repository";
+
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import type { Aprendiz } from "@/types/aprendiz.types";
 
 export async function getDashboardKpis() {
@@ -14,19 +33,19 @@ export async function getDashboardKpis() {
       riesgoMedio,
     ] = await Promise.all([
       // Aprendices activos en formación
-      prisma.aprendiz.count({
+      AprendizRepository.count({
         where: { estado: "EN_FORMACION" },
       }),
       // Instituciones activas
-      prisma.institucion.count({
+      InstitucionRepository.count({
         where: { estado: "ACTIVO" },
       }),
       // Fichas activas
-      prisma.ficha.count({
+      FichaRepository.count({
         where: { estado: "ACTIVO" },
       }),
       // Asistencia promedio global de aprendices en formación
-      prisma.aprendiz.aggregate({
+      AprendizRepository.aggregate({
         _avg: {
           porcentajeAsistencia: true,
         },
@@ -35,7 +54,7 @@ export async function getDashboardKpis() {
         },
       }),
       // Top 5 aprendices riesgo alto (para la tabla)
-      prisma.aprendiz.findMany({
+      AprendizRepository.findMany({
         where: { nivelRiesgo: "ALTO", estado: "EN_FORMACION" },
         take: 5,
         include: {
@@ -49,7 +68,7 @@ export async function getDashboardKpis() {
         orderBy: { porcentajeAsistencia: "asc" }
       }),
       // Top 5 aprendices riesgo medio (para la tabla)
-      prisma.aprendiz.findMany({
+      AprendizRepository.findMany({
         where: { nivelRiesgo: "MEDIO", estado: "EN_FORMACION" },
         take: 5,
         include: {

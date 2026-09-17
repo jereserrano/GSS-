@@ -1,6 +1,26 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { UserRepository } from "@/repositories/user.repository";
+import { InstructorRepository } from "@/repositories/instructor.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { instructorSchema } from "@/schemas";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -21,8 +41,8 @@ export async function getInstructoresAction(filtros: any = {}) {
       } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.instructor.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      InstructorRepository.findMany({
         where,
         skip,
         take,
@@ -31,7 +51,7 @@ export async function getInstructoresAction(filtros: any = {}) {
         },
         orderBy: { apellidos: "asc" },
       }),
-      prisma.instructor.count({ where }),
+      InstructorRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -41,9 +61,13 @@ export async function getInstructoresAction(filtros: any = {}) {
   }
 }
 
-export async function createInstructor(data: any) {
+export async function createInstructor(data: z.infer<typeof instructorSchema>) {
   try {
-    const existing = await prisma.instructor.findFirst({
+    const parsed = instructorSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const existing = await InstructorRepository.findFirst({
       where: { 
         OR: [
           { numeroDocumento: data.numeroDocumento },
@@ -55,7 +79,7 @@ export async function createInstructor(data: any) {
       return { error: "Ya existe un instructor con ese documento o email" };
     }
 
-    const instructor = await prisma.instructor.create({
+    const instructor = await InstructorRepository.create({
       data: {
         tipoDocumento: data.tipoDocumento || "CC",
         numeroDocumento: data.numeroDocumento,
@@ -68,6 +92,13 @@ export async function createInstructor(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Instructores",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/instructores");
     return { success: true, instructor };
   } catch (error: any) {
@@ -76,9 +107,13 @@ export async function createInstructor(data: any) {
   }
 }
 
-export async function updateInstructor(id: string, data: any) {
+export async function updateInstructor(id: string, data: z.infer<typeof instructorSchema>) {
   try {
-    const instructor = await prisma.instructor.update({
+    const parsed = instructorSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const instructor = await InstructorRepository.update({
       where: { id },
       data: {
         tipoDocumento: data.tipoDocumento,
@@ -92,6 +127,13 @@ export async function updateInstructor(id: string, data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Instructores",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/instructores");
     return { success: true, instructor };
   } catch (error: any) {
@@ -102,7 +144,16 @@ export async function updateInstructor(id: string, data: any) {
 
 export async function deleteInstructor(id: string) {
   try {
-    await prisma.instructor.delete({ where: { id } });
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    await InstructorRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "Instructores",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/instructores");
     return { success: true };
   } catch (error: any) {
@@ -113,7 +164,7 @@ export async function deleteInstructor(id: string) {
 
 export async function exportInstructoresCSV() {
   try {
-    const instructores = await prisma.instructor.findMany({
+    const instructores = await InstructorRepository.findMany({
       orderBy: { apellidos: "asc" },
       include: {
         _count: { select: { asistencias: true } }

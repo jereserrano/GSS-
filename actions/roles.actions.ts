@@ -1,6 +1,22 @@
 "use server";
+import { RolRepository } from "@/repositories/rol.repository";
+import { UserRepository } from "@/repositories/user.repository";
 
-import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit.service";
+import { getServerSession } from "next-auth/next";
+import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+
+async function getSessionUserId() {
+  try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+      return user?.id || null;
+    }
+  } catch (e) {}
+  return null;
+}
+
 import { revalidatePath } from "next/cache";
 
 export interface RolConConteo {
@@ -12,7 +28,7 @@ export interface RolConConteo {
 
 export async function getRolesWithStats(): Promise<RolConConteo[]> {
   try {
-    const roles = await prisma.rol.findMany({
+    const roles = await RolRepository.findMany({
       include: {
         _count: {
           select: { users: true },
@@ -65,7 +81,7 @@ export async function createRol(data: { nombre: string; descripcion?: string }) 
 
     const trimmedNombre = nombre.trim();
 
-    const existing = await prisma.rol.findUnique({
+    const existing = await RolRepository.findUnique({
       where: { nombre: trimmedNombre },
     });
 
@@ -73,13 +89,20 @@ export async function createRol(data: { nombre: string; descripcion?: string }) 
       return { error: `Ya existe un rol con el nombre "${trimmedNombre}".` };
     }
 
-    const nuevoRol = await prisma.rol.create({
+    const nuevoRol = await RolRepository.create({
       data: {
         nombre: trimmedNombre,
         descripcion: descripcion?.trim() || null,
       },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "roles",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/roles");
     return { success: true, rol: nuevoRol };
   } catch (error: any) {
@@ -90,7 +113,9 @@ export async function createRol(data: { nombre: string; descripcion?: string }) 
 
 export async function deleteRol(id: string) {
   try {
-    const usersCount = await prisma.user.count({
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const usersCount = await UserRepository.count({
       where: { rolId: id },
     });
 
@@ -100,10 +125,17 @@ export async function deleteRol(id: string) {
       };
     }
 
-    await prisma.rol.delete({
+    await RolRepository.delete({
       where: { id },
     });
 
+    
+    await logAudit({
+      userId: user.id,
+      modulo: "roles",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/roles");
     return { success: true };
   } catch (error: any) {

@@ -1,6 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { EvaluacionAprendizRepository } from "@/repositories/evaluacionAprendiz.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+
+import { evaluacionSchema } from "@/schemas";
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "./reportes.actions";
@@ -24,8 +27,8 @@ export async function getEvaluacionesAction(filtros: any = {}) {
       } : {}),
     };
 
-    const [data, total] = await prisma.$transaction([
-      prisma.evaluacionAprendiz.findMany({
+    const [data, total] = await TransactionRepository.$transaction([
+      EvaluacionAprendizRepository.findMany({
         where,
         skip,
         take,
@@ -42,7 +45,7 @@ export async function getEvaluacionesAction(filtros: any = {}) {
         },
         orderBy: { actualizadoEn: "desc" },
       }),
-      prisma.evaluacionAprendiz.count({ where }),
+      EvaluacionAprendizRepository.count({ where }),
     ]);
 
     return { success: true, data: paginatedResponse(data, total, pagina, tamano) };
@@ -54,8 +57,11 @@ export async function getEvaluacionesAction(filtros: any = {}) {
 
 export async function createEvaluacion(data: any) {
   try {
+    const parsed = evaluacionSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR");
-    const existing = await prisma.evaluacionAprendiz.findFirst({
+    const existing = await EvaluacionAprendizRepository.findFirst({
       where: {
         resultadoAprendizajeId: data.resultadoAprendizajeId,
         aprendizId: data.aprendizId
@@ -66,7 +72,7 @@ export async function createEvaluacion(data: any) {
       return { error: "El aprendiz ya tiene una evaluación para este RAP. Por favor actualícela en su lugar." };
     }
 
-    const evaluacion = await prisma.evaluacionAprendiz.create({
+    const evaluacion = await EvaluacionAprendizRepository.create({
       data: {
         resultadoAprendizajeId: data.resultadoAprendizajeId,
         aprendizId: data.aprendizId,
@@ -76,6 +82,13 @@ export async function createEvaluacion(data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId,
+      modulo: "Evaluaciones",
+      accion: "CREAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/evaluaciones");
     await logAudit({ accion: "CREAR", modulo: "EVALUACIONES", descripcion: `Evaluación registrada para aprendiz ID: ${data.aprendizId}`, usuarioId: user.id });
     return { success: true, evaluacion };
@@ -87,8 +100,11 @@ export async function createEvaluacion(data: any) {
 
 export async function updateEvaluacion(id: string, data: any) {
   try {
+    const parsed = evaluacionSchema.safeParse(data);
+    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR");
-    const evaluacion = await prisma.evaluacionAprendiz.update({
+    const evaluacion = await EvaluacionAprendizRepository.update({
       where: { id },
       data: {
         juicio: data.juicio,
@@ -97,6 +113,13 @@ export async function updateEvaluacion(id: string, data: any) {
       },
     });
 
+    
+    await logAudit({
+      userId,
+      modulo: "Evaluaciones",
+      accion: "ACTUALIZAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/evaluaciones");
     await logAudit({ accion: "EDITAR", modulo: "EVALUACIONES", descripcion: `Evaluación actualizada ID: ${id}`, usuarioId: user.id });
     return { success: true, evaluacion };
@@ -108,8 +131,16 @@ export async function updateEvaluacion(id: string, data: any) {
 
 export async function deleteEvaluacion(id: string) {
   try {
+    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR"); // Instructores no pueden borrar
-    await prisma.evaluacionAprendiz.delete({ where: { id } });
+    await EvaluacionAprendizRepository.delete({ where: { id } });
+    
+    await logAudit({
+      userId,
+      modulo: "Evaluaciones",
+      accion: "ELIMINAR",
+      detalle: "Acción completada exitosamente.",
+    });
     revalidatePath("/evaluaciones");
     await logAudit({ accion: "ELIMINAR", modulo: "EVALUACIONES", descripcion: `Evaluación eliminada ID: ${id}`, usuarioId: user.id });
     return { success: true };
@@ -121,7 +152,7 @@ export async function deleteEvaluacion(id: string) {
 
 export async function exportEvaluacionesCSV() {
   try {
-    const evaluaciones = await prisma.evaluacionAprendiz.findMany({
+    const evaluaciones = await EvaluacionAprendizRepository.findMany({
       orderBy: { actualizadoEn: "desc" },
       include: {
         aprendiz: { 

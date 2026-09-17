@@ -126,7 +126,7 @@ export function PlanFormacionTimeline({ programas }: Props) {
       {/* Modal Selector de Programa */}
       {selectorOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-surface rounded-xl shadow-lg w-full max-w-md max-h-[80vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[80vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-bold">Seleccionar Programa</h2>
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setSelectorOpen(false)}>
@@ -156,7 +156,7 @@ export function PlanFormacionTimeline({ programas }: Props) {
       {/* Modal Detalles */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-surface rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-bold">
                 {selectedItem.tipo === "competencia" ? "Detalle de la Competencia" : "Detalle del RAP"}

@@ -73,7 +73,7 @@ export async function createSede(data: z.infer<typeof sedeSchema>) {
     const parsed = sedeSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     const sede = await SedeRepository.create({
       data: {
         nombre: data.nombre,
@@ -107,7 +107,7 @@ export async function updateSede(id: string, data: z.infer<typeof sedeSchema>) {
     const parsed = sedeSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     const sede = await SedeRepository.update({
       where: { id },
       data: {
@@ -139,8 +139,7 @@ export async function updateSede(id: string, data: z.infer<typeof sedeSchema>) {
 
 export async function deleteSede(id: string) {
   try {
-    
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     await SedeRepository.delete({ where: { id } });
     
     await logAudit({

@@ -11,18 +11,13 @@ export async function getCurrentUser() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
 
-  const user = session.user as {
-    id?: string;
-    name?: string | null;
-    email?: string | null;
-    role?: string;
-  };
-
   return {
-    id: user.id ?? null,
-    nombre: user.name ?? "Usuario",
-    email: user.email ?? "",
-    role: user.role ?? "INSTRUCTOR",
+    id: session.user.id ?? null,
+    nombre: session.user.name ?? "Usuario",
+    email: session.user.email ?? "",
+    role: session.user.role ?? "",
+    rolName: session.user.rolName ?? "",
+    hierarchyLevel: session.user.hierarchyLevel ?? 99,
   };
 }
 

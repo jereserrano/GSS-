@@ -8,6 +8,8 @@ import { fichaSchema } from "@/schemas";
 import { z } from "zod";
 import { logAudit } from "@/lib/audit.service";
 import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
 import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
 
 async function getSessionUserId() {
@@ -37,6 +39,19 @@ export async function getFichasAction(filtros: {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
+    const session = await getServerSession(authOptions);
+    let instructorIdFilter = null;
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: { rol: true, instructor: true }
+      });
+      const roleUpper = userRecord?.rol?.nombre?.toUpperCase() || "";
+      if (roleUpper.includes("INSTRUCT") && userRecord?.instructor?.id) {
+        instructorIdFilter = userRecord.instructor.id;
+      }
+    }
+
     const where: any = {
       ...(filtros.busqueda
         ? {
@@ -50,6 +65,7 @@ export async function getFichasAction(filtros: {
       ...(filtros.institucionId ? { institucionId: filtros.institucionId } : {}),
       ...(filtros.programaId ? { programaId: filtros.programaId } : {}),
       ...(filtros.estado ? { estado: filtros.estado.toUpperCase() } : {}),
+      ...(instructorIdFilter ? { instructores: { some: { instructorId: instructorIdFilter } } } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([
@@ -80,7 +96,7 @@ export async function createFicha(data: z.infer<typeof fichaSchema>) {
     const parsed = fichaSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     const existing = await FichaRepository.findUnique({ where: { codigo: data.codigo } });
     if (existing) {
       return { error: "Ya existe una ficha con ese código" };
@@ -99,12 +115,11 @@ export async function createFicha(data: z.infer<typeof fichaSchema>) {
       },
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Fichas",
       accion: "CREAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Ficha creada: ${data.codigo}`,
     });
     revalidatePath("/fichas");
     return { success: true, ficha };
@@ -119,7 +134,7 @@ export async function updateFicha(id: string, data: z.infer<typeof fichaSchema>)
     const parsed = fichaSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     const ficha = await FichaRepository.update({
       where: { id },
       data: {
@@ -130,16 +145,15 @@ export async function updateFicha(id: string, data: z.infer<typeof fichaSchema>)
         fechaInicio: new Date(data.fechaInicio),
         fechaFin: new Date(data.fechaFin),
         jornada: data.jornada || null,
-        estado: data.estado,
+        estado: data.estado || "ACTIVO",
       },
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Fichas",
       accion: "ACTUALIZAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Ficha actualizada: ${data.codigo}`,
     });
     revalidatePath("/fichas");
     return { success: true, ficha };
@@ -151,8 +165,7 @@ export async function updateFicha(id: string, data: z.infer<typeof fichaSchema>)
 
 export async function deleteFicha(id: string) {
   try {
-    
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     await FichaRepository.delete({ where: { id } });
     
     await logAudit({

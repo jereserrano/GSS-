@@ -152,16 +152,20 @@ export async function createEntrega(data: z.infer<typeof entregaSchema>) {
         }
       });
     } else {
+      const initialEstado = isAprendiz ? "PENDIENTE" : (data.estado || "PENDIENTE");
+      const initialCalificacion = isAprendiz ? null : (data.calificacion || null);
+      const initialRetro = isAprendiz ? null : (data.retroalimentacion || null);
+
       entrega = await EntregaRepository.create({
         data: {
           actividadId: data.actividadId,
           aprendizId: aprendizId,
           urlArchivo: data.urlArchivo || null,
           comentario: data.comentario || null,
-          estado: data.estado || "PENDIENTE",
+          estado: initialEstado,
           fechaEntrega: data.fechaEntrega ? new Date(data.fechaEntrega) : new Date(),
-          calificacion: data.calificacion || null,
-          retroalimentacion: data.retroalimentacion || null,
+          calificacion: initialCalificacion,
+          retroalimentacion: initialRetro,
         },
         include: {
           actividad: { include: { ficha: true, instructor: true } },

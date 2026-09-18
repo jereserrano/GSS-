@@ -46,8 +46,8 @@ export const fichaSchema = z.object({
   sedeId: z.string().min(1, "La sede es obligatoria"),
   fechaInicio: z.string().or(z.date()),
   fechaFin: z.string().or(z.date()),
-  jornada: z.string().optional(),
-  estado: estadoEnum.optional(),
+  jornada: z.string().optional().nullable(),
+  estado: estadoEnum.optional().nullable(),
 });
 
 // Aprendiz
@@ -132,7 +132,7 @@ export const asistenciaSchema = z.object({
   registros: z.array(
     z.object({
       aprendizId: z.string(),
-      estado: z.enum(["PRESENTE", "ASISTIO", "FALLA", "EXCUSA"])
+      estado: z.enum(["PRESENTE", "FALLA", "EXCUSA"])
     })
   ).optional(),
 });
@@ -141,9 +141,9 @@ export const asistenciaSchema = z.object({
 export const evaluacionSchema = z.object({
   aprendizId: z.string().min(1, "Aprendiz obligatorio"),
   resultadoAprendizajeId: z.string().min(1, "RAP obligatorio"),
-  juicio: z.enum(["APROBADO", "DEFICIENTE", "PENDIENTE", "POR_EVALUAR", "NO_APROBADO"]).optional(),
+  juicio: z.enum(["APROBADO", "DEFICIENTE", "PENDIENTE"]).optional(),
   fechaEvaluacion: z.string().or(z.date()).optional(),
-  observaciones: z.string().optional(),
+  observaciones: z.string().optional().nullable(),
 });
 
 // Alerta / Riesgo
@@ -157,12 +157,13 @@ export const alertaSchema = z.object({
 
 // Visita
 export const visitaSchema = z.object({
-  institucionNombre: z.string().min(1, "Institución obligatoria"),
+  institucionId: z.string().optional(),
+  institucionNombre: z.string().optional(),
   fecha: z.string().or(z.date()),
   responsable: z.string().min(1, "Responsable obligatorio"),
-  novedades: z.number().optional().or(z.string().transform(v => Number(v))),
-  observaciones: z.string().optional(),
-  estado: z.enum(["PROGRAMADA", "REALIZADA", "APLAZADA"]).optional(),
+  novedades: z.number().optional().or(z.string().transform(v => Number(v) || 0)),
+  observaciones: z.string().optional().nullable(),
+  estado: z.enum(["PROGRAMADA", "REALIZADA", "APLAZADA", "CANCELADA"]).optional(),
 });
 
 // Documento

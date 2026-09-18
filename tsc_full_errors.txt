@@ -1,0 +1,106 @@
+﻿.next/types/app/api/auth/[...nextauth]/route.ts(12,13): error TS2344: Type 'OmitWithTag<typeof import("C:/Users/Janai/Desktop/GSS/GSS/app/api/auth/[...nextauth]/route"), "config" | "generateStaticParams" | "revalidate" | "dynamic" | "dynamicParams" | "fetchCache" | ... 9 more ... | "PATCH", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+actions/actividades.actions.ts(11,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/actividades.actions.ts(13,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/actividades.actions.ts(126,36): error TS2769: No overload matches this call.
+actions/actividades.actions.ts(146,46): error TS2769: No overload matches this call.
+actions/actividades.actions.ts(179,7): error TS2375: Type '{ nombre: string; descripcion: string | null; instrucciones: string | null; tipo: "TALLER" | "PROYECTO" | "FORO" | "QUIZ" | undefined; fichaId: string; resultadoAprendizajeId: string | null; fechaVencimiento: Date; estado: "ACTIVA" | ... 3 more ... | undefined; }' is not assignable to type '(Without<ActividadUpdateInput, ActividadUncheckedUpdateInput> & ActividadUncheckedUpdateInput) | (Without<...> & ActividadUpdateInput)' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+actions/actividades.actions.ts(186,36): error TS2769: No overload matches this call.
+actions/aprendices.actions.ts(11,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/aprendices.actions.ts(13,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/aprendices.actions.ts(88,7): error TS2375: Type '{ tipoDocumento: "CC" | "TI" | "CE" | "PP" | undefined; numeroDocumento: string; nombres: string; apellidos: string; emailPersonal: string | null; emailSena: string | null; telefono: string | null; ... 5 more ...; nivelRiesgo: "BAJO" | ... 1 more ... | "ALTO"; }' is not assignable to type '(Without<AprendizCreateInput, AprendizUncheckedCreateInput> & AprendizUncheckedCreateInput) | (Without<...> & AprendizCreateInput)' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+actions/competencias.actions.ts(11,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/competencias.actions.ts(13,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/competencias.actions.ts(113,7): error TS2375: Type '{ codigo: string; nombre: string; programaId: string; tipo: "TECNICA" | "TRANSVERSAL" | "BASICA" | undefined; duracionHoras: number; estado: "ACTIVO" | "INACTIVO" | undefined; }' is not assignable to type '(Without<CompetenciaUpdateInput, CompetenciaUncheckedUpdateInput> & CompetenciaUncheckedUpdateInput) | (Without<...> & CompetenciaUpdateInput)' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+actions/dashboard.actions.ts(8,1): error TS6133: 'logAudit' is declared but its value is never read.
+actions/dashboard.actions.ts(10,1): error TS6192: All imports in import declaration are unused.
+actions/dashboard.actions.ts(12,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/dashboard.actions.ts(46,45): error TS6133: 'actividadesPendientes' is declared but its value is never read.
+actions/dashboard.actions.ts(118,20): error TS2322: Type '{ in: string[] | undefined; }' is not assignable to type 'string | StringFilter<"Aprendiz"> | undefined'.
+actions/dashboard.actions.ts(123,20): error TS2322: Type '{ in: string[] | undefined; }' is not assignable to type 'string | StringFilter<"Aprendiz"> | undefined'.
+actions/dashboard.actions.ts(127,13): error TS2322: Type '{ in: string[] | undefined; }' is not assignable to type 'string | StringFilter<"Aprendiz"> | undefined'.
+actions/dashboard.actions.ts(139,13): error TS2322: Type '{ in: string[] | undefined; }' is not assignable to type 'string | StringFilter<"Actividad"> | undefined'.
+actions/dashboard.actions.ts(150,28): error TS2551: Property 'ficha' does not exist on type '{ direccion: string | null; telefono: string | null; estado: EstadoAprendiz; tipoDocumento: TipoDocumento; numeroDocumento: string; nombres: string; ... 12 more ...; userId: string | null; }'. Did you mean 'fichaId'?
+actions/dashboard.actions.ts(151,34): error TS2551: Property 'ficha' does not exist on type '{ direccion: string | null; telefono: string | null; estado: EstadoAprendiz; tipoDocumento: TipoDocumento; numeroDocumento: string; nombres: string; ... 12 more ...; userId: string | null; }'. Did you mean 'fichaId'?
+actions/dashboard.actions.ts(162,41): error TS18048: 'asistenciaStats._avg' is possibly 'undefined'.
+actions/dashboard.actions.ts(174,31): error TS2551: Property 'ficha' does not exist on type '{ nombre: string; estado: EstadoActividad; fichaId: string; tipo: TipoActividad; descripcion: string | null; fechaVencimiento: Date; instructorId: string | null; ... 4 more ...; actualizadoEn: Date; }'. Did you mean 'fichaId'?
+actions/docentes.actions.ts(10,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/docentes.actions.ts(12,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/docentes.actions.ts(47,7): error TS2375: Type '{ email: string; estado: "ACTIVO" | "INACTIVO"; institucionId: string; tipoDocumento: "CC" | "TI" | "CE" | "PP"; numeroDocumento: string; nombres: string; apellidos: string; telefono?: string | null | undefined; profesion?: string | ... 1 more ... | undefined; }' is not assignable to type '(Without<DocenteCreateInput, DocenteUncheckedCreateInput> & DocenteUncheckedCreateInput) | (Without<...> & DocenteCreateInput)' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+actions/docentes.actions.ts(79,7): error TS2375: Type '{ email: string; estado: "ACTIVO" | "INACTIVO"; institucionId: string; tipoDocumento: "CC" | "TI" | "CE" | "PP"; numeroDocumento: string; nombres: string; apellidos: string; telefono?: string | null | undefined; profesion?: string | ... 1 more ... | undefined; }' is not assignable to type '(Without<DocenteUpdateInput, DocenteUncheckedUpdateInput> & DocenteUncheckedUpdateInput) | (Without<...> & DocenteUpdateInput)' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+actions/entregas.actions.ts(11,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/entregas.actions.ts(13,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/entregas.actions.ts(166,30): error TS2339: Property 'fechaEntrega' does not exist on type '{ actividadId: string; aprendizId: string; estado?: "PENDIENTE" | "CALIFICADA" | "TARDIA" | "APROBADA" | "NO_APROBADA" | undefined; urlArchivo?: string | undefined; comentario?: string | undefined; calificacion?: string | undefined; retroalimentacion?: string | undefined; }'.
+actions/entregas.actions.ts(166,59): error TS2339: Property 'fechaEntrega' does not exist on type '{ actividadId: string; aprendizId: string; estado?: "PENDIENTE" | "CALIFICADA" | "TARDIA" | "APROBADA" | "NO_APROBADA" | undefined; urlArchivo?: string | undefined; comentario?: string | undefined; calificacion?: string | undefined; retroalimentacion?: string | undefined; }'.
+actions/entregas.actions.ts(334,14): error TS2339: Property 'fechaEntrega' does not exist on type '{ actividadId: string; aprendizId: string; estado?: "PENDIENTE" | "CALIFICADA" | "TARDIA" | "APROBADA" | "NO_APROBADA" | undefined; urlArchivo?: string | undefined; comentario?: string | undefined; calificacion?: string | undefined; retroalimentacion?: string | undefined; }'.
+actions/entregas.actions.ts(334,70): error TS2339: Property 'fechaEntrega' does not exist on type '{ actividadId: string; aprendizId: string; estado?: "PENDIENTE" | "CALIFICADA" | "TARDIA" | "APROBADA" | "NO_APROBADA" | undefined; urlArchivo?: string | undefined; comentario?: string | undefined; calificacion?: string | undefined; retroalimentacion?: string | undefined; }'.
+actions/fichas.actions.ts(11,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/fichas.actions.ts(13,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/fichas.actions.ts(40,44): error TS2304: Cannot find name 'authOptions'.
+actions/fichas.actions.ts(43,32): error TS2304: Cannot find name 'prisma'.
+actions/import.actions.ts(3,1): error TS6133: 'UserRepository' is declared but its value is never read.
+actions/import.actions.ts(4,1): error TS6133: 'AprendizRepository' is declared but its value is never read.
+actions/import.actions.ts(5,1): error TS6133: 'InstructorRepository' is declared but its value is never read.
+actions/import.actions.ts(9,1): error TS6133: 'getServerSession' is declared but its value is never read.
+actions/import.actions.ts(57,7): error TS2322: Type '"IMPORTAR"' is not assignable to type '"CREAR" | "ACTUALIZAR" | "ELIMINAR" | "LOGIN" | "OTRO"'.
+actions/import.actions.ts(105,7): error TS2322: Type '"IMPORTAR"' is not assignable to type '"CREAR" | "ACTUALIZAR" | "ELIMINAR" | "LOGIN" | "OTRO"'.
+actions/import.actions.ts(157,29): error TS2554: Expected 1 arguments, but got 4.
+actions/import.actions.ts(205,29): error TS2554: Expected 1 arguments, but got 4.
+actions/institucion.actions.ts(14,26): error TS2304: Cannot find name 'getSessionUserId'.
+actions/institucion.actions.ts(37,7): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type '{ accion: string; modulo: string; descripcion?: string; entidadId?: string; usuarioId?: string; }'.
+actions/institucion.actions.ts(43,134): error TS2322: Type 'string | null' is not assignable to type 'string'.
+actions/institucion.actions.ts(55,26): error TS2304: Cannot find name 'getSessionUserId'.
+actions/institucion.actions.ts(74,7): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type '{ accion: string; modulo: string; descripcion?: string; entidadId?: string; usuarioId?: string; }'.
+actions/institucion.actions.ts(82,7): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type '{ accion: string; modulo: string; descripcion?: string; entidadId?: string; usuarioId?: string; }'.
+actions/institucion.actions.ts(88,121): error TS2322: Type 'string | null' is not assignable to type 'string'.
+actions/institucion.actions.ts(98,26): error TS2304: Cannot find name 'getSessionUserId'.
+actions/institucion.actions.ts(106,7): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type '{ accion: string; modulo: string; descripcion?: string; entidadId?: string; usuarioId?: string; }'.
+actions/institucion.actions.ts(112,121): error TS2322: Type 'string | null' is not assignable to type 'string'.
+actions/instructores.actions.ts(11,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/instructores.actions.ts(13,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/instructores.actions.ts(118,7): error TS2375: Type '{ tipoDocumento: "CC" | "TI" | "CE" | "PP" | undefined; numeroDocumento: string; nombres: string; apellidos: string; email: string; telefono: string | null; profesion: string | null; estado: "ACTIVO" | ... 1 more ... | undefined; }' is not assignable to type '(Without<InstructorUpdateInput, InstructorUncheckedUpdateInput> & InstructorUncheckedUpdateInput) | (Without<...> & InstructorUpdateInput)' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+actions/notificaciones.actions.ts(8,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/notificaciones.actions.ts(9,1): error TS6133: 'logAudit' is declared but its value is never read.
+actions/notificaciones.actions.ts(11,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/programas.actions.ts(11,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/programas.actions.ts(13,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/programas.actions.ts(108,7): error TS2375: Type '{ codigo: string; nombre: string; nivelFormacion: "TECNICO" | "TECNOLOGO" | "OPERARIO" | undefined; estado: "ACTIVO" | "INACTIVO" | undefined; }' is not assignable to type '(Without<ProgramaUpdateInput, ProgramaUncheckedUpdateInput> & ProgramaUncheckedUpdateInput) | (Without<...> & ProgramaUpdateInput)' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+actions/reportes.actions.ts(201,44): error TS2345: Argument of type '[{ providers: CredentialsConfig<{ email: { label: string; type: string; }; password: { label: string; type: string; }; }>[]; callbacks: { jwt({ token, user, trigger, session }: { token: any; user: any; trigger: any; session: any; }): Promise<...>; session({ session, token }: { ...; }): Promise<...>; }; pages: { ...;...' is not assignable to parameter of type 'GetServerSessionParams<GetServerSessionOptions>'.
+actions/resultados_aprendizaje.actions.ts(9,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/resultados_aprendizaje.actions.ts(11,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/riesgos.actions.ts(61,26): error TS2304: Cannot find name 'getSessionUserId'.
+actions/riesgos.actions.ts(76,7): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type '{ accion: string; modulo: string; descripcion?: string; entidadId?: string; usuarioId?: string; }'.
+actions/riesgos.actions.ts(82,129): error TS2322: Type 'string | null' is not assignable to type 'string'.
+actions/riesgos.actions.ts(94,26): error TS2304: Cannot find name 'getSessionUserId'.
+actions/riesgos.actions.ts(111,7): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type '{ accion: string; modulo: string; descripcion?: string; entidadId?: string; usuarioId?: string; }'.
+actions/riesgos.actions.ts(117,104): error TS2322: Type 'string | null' is not assignable to type 'string'.
+actions/riesgos.actions.ts(127,26): error TS2304: Cannot find name 'getSessionUserId'.
+actions/riesgos.actions.ts(132,7): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type '{ accion: string; modulo: string; descripcion?: string; entidadId?: string; usuarioId?: string; }'.
+actions/riesgos.actions.ts(138,104): error TS2322: Type 'string | null' is not assignable to type 'string'.
+actions/roles.actions.ts(7,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/roles.actions.ts(9,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/sedes.actions.ts(11,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/sedes.actions.ts(13,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+actions/sedes.actions.ts(84,22): error TS2367: This comparison appears to be unintentional because the types 'boolean | undefined' and 'string' have no overlap.
+actions/sedes.actions.ts(113,7): error TS2375: Type '{ nombre: string; institucionId: string; direccion: string | null; barrio: string | null; municipio: string | null; esPrincipal: boolean; coordinador: string | null; telefono: string | null; estado: "ACTIVO" | ... 1 more ... | undefined; }' is not assignable to type '(Without<SedeUpdateInput, SedeUncheckedUpdateInput> & SedeUncheckedUpdateInput) | (Without<...> & SedeUpdateInput)' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+actions/sedes.actions.ts(119,22): error TS2367: This comparison appears to be unintentional because the types 'boolean | undefined' and 'string' have no overlap.
+actions/seguimientos.actions.ts(12,23): error TS6133: 'requireInstitutionAccess' is declared but its value is never read.
+actions/seguimientos.actions.ts(14,16): error TS6133: 'getSessionUserId' is declared but its value is never read.
+app/api/auth/[...nextauth]/route.ts(66,17): error TS7031: Binding element 'token' implicitly has an 'any' type.
+app/api/auth/[...nextauth]/route.ts(66,24): error TS7031: Binding element 'user' implicitly has an 'any' type.
+app/api/auth/[...nextauth]/route.ts(66,30): error TS7031: Binding element 'trigger' implicitly has an 'any' type.
+app/api/auth/[...nextauth]/route.ts(66,39): error TS7031: Binding element 'session' implicitly has an 'any' type.
+app/api/auth/[...nextauth]/route.ts(82,21): error TS7031: Binding element 'session' implicitly has an 'any' type.
+app/api/auth/[...nextauth]/route.ts(82,30): error TS7031: Binding element 'token' implicitly has an 'any' type.
+app/api/auth/[...nextauth]/route.ts(109,26): error TS2345: Argument of type '{ providers: CredentialsConfig<{ email: { label: string; type: string; }; password: { label: string; type: string; }; }>[]; callbacks: { jwt({ token, user, trigger, session }: { token: any; user: any; trigger: any; session: any; }): Promise<...>; session({ session, token }: { ...; }): Promise<...>; }; pages: { ...; ...' is not assignable to parameter of type 'AuthOptions'.
+lib/auth-helpers.ts(11,42): error TS2345: Argument of type '[{ providers: CredentialsConfig<{ email: { label: string; type: string; }; password: { label: string; type: string; }; }>[]; callbacks: { jwt({ token, user, trigger, session }: { token: any; user: any; trigger: any; session: any; }): Promise<...>; session({ session, token }: { ...; }): Promise<...>; }; pages: { ...;...' is not assignable to parameter of type 'GetServerSessionParams<GetServerSessionOptions>'.
+lib/rbac.ts(13,42): error TS2345: Argument of type '[{ providers: CredentialsConfig<{ email: { label: string; type: string; }; password: { label: string; type: string; }; }>[]; callbacks: { jwt({ token, user, trigger, session }: { token: any; user: any; trigger: any; session: any; }): Promise<...>; session({ session, token }: { ...; }): Promise<...>; }; pages: { ...;...' is not assignable to parameter of type 'GetServerSessionParams<GetServerSessionOptions>'.
+prisma/seed.ts(1,140): error TS6133: 'JuicioValorativo' is declared but its value is never read.
+prisma/seed.ts(18,9): error TS6133: 'rolCoord' is declared but its value is never read.
+prisma/seed.ts(24,9): error TS6133: 'rolInstructor' is declared but its value is never read.
+prisma/seed.ts(107,9): error TS6133: 'sede2' is declared but its value is never read.
+prisma/seed.ts(158,9): error TS6133: 'rap1' is declared but its value is never read.
+prisma/seed.ts(192,9): error TS6133: 'aprendiz1' is declared but its value is never read.
+prisma/seed.ts(254,9): error TS6133: 'instructor' is declared but its value is never read.
+services/fichas.service.ts(2,15): error TS2305: Module '"@/types/institucion.types"' has no exported member 'Ficha'.
+services/fichas.service.ts(2,22): error TS2305: Module '"@/types/institucion.types"' has no exported member 'FiltrosFicha'.
+tailwind.config.ts(4,3): error TS2322: Type '["class"]' is not assignable to type 'DarkModeStrategy'.

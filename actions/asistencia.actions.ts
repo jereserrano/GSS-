@@ -1,25 +1,15 @@
 "use server";
 
-import { UserRepository } from "@/repositories/user.repository";
 import { AsistenciaRepository } from "@/repositories/asistencia.repository";
 import { TransactionRepository } from "@/repositories/transaction.repository";
+import { prisma } from "@/lib/prisma";
 
 import { asistenciaSchema } from "@/schemas";
 import { z } from "zod";
 import { logAudit } from "@/lib/audit.service";
-import { getServerSession } from "next-auth/next";
-import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+import { requireRole } from "@/lib/rbac";
+import * as XLSX from "xlsx";
 
-async function getSessionUserId() {
-  try {
-    const session = await getServerSession();
-    if (session?.user?.email) {
-      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
-      return user?.id || null;
-    }
-  } catch (e) {}
-  return null;
-}
 
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
@@ -70,7 +60,7 @@ export async function getAsistenciasAction(filtros: any = {}) {
 }
 
 import { asistenciaMasivaSchema } from "@/schemas";
-import { DetalleAsistenciaRepository } from "@/repositories/detalleAsistencia.repository";
+
 
 export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMasivaSchema>) {
   try {
@@ -78,6 +68,16 @@ export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMas
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+
+    // Los Instructores solo pueden registrar asistencia en fichas que tienen asignadas
+    if ((user as any).rol?.nombre?.toUpperCase() === "INSTRUCTOR") {
+      const asignacion = await prisma.instructorFicha.findFirst({
+        where: { instructorId: user.id, fichaId: data.fichaId },
+      });
+      if (!asignacion) {
+        return { success: false, error: "No tienes permiso para registrar asistencia en esta ficha." };
+      }
+    }
     
     // Contar estados
     let presentes = 0;
@@ -122,7 +122,7 @@ export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMas
     await logAudit({
       userId: user.id,
       modulo: "Asistencia",
-      accion: "CREAR_MASIVA",
+      accion: "CREAR",
       detalle: `Se registraron ${data.detalles.length} aprendices en la asistencia de la ficha.`,
     });
     revalidatePath("/asistencia");
@@ -139,16 +139,17 @@ export async function updateAsistencia(id: string, data: z.infer<typeof asistenc
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const dataRaw = data as any;
     const dataToUpdate: any = {
       fichaId: data.fichaId,
       instructorId: data.instructorId,
-      fecha: new Date(data.fecha),
+      fecha: new Date(data.fecha as string),
       observaciones: data.tema || null,
-      estado: data.estado,
+      estado: dataRaw.estado,
     };
-    if (data.totalPresentes !== undefined) dataToUpdate.totalPresentes = parseInt(data.totalPresentes);
-    if (data.totalFaltas !== undefined) dataToUpdate.totalFaltas = parseInt(data.totalFaltas);
-    if (data.totalExcusas !== undefined) dataToUpdate.totalExcusas = parseInt(data.totalExcusas);
+    if (dataRaw.totalPresentes !== undefined) dataToUpdate.totalPresentes = parseInt(dataRaw.totalPresentes);
+    if (dataRaw.totalFaltas !== undefined) dataToUpdate.totalFaltas = parseInt(dataRaw.totalFaltas);
+    if (dataRaw.totalExcusas !== undefined) dataToUpdate.totalExcusas = parseInt(dataRaw.totalExcusas);
 
     const asistencia = await AsistenciaRepository.update({
       where: { id },
@@ -190,43 +191,46 @@ export async function deleteAsistencia(id: string) {
   }
 }
 
-export async function exportAsistenciasCSV() {
+export async function exportAsistenciasXLSX() {
   try {
+    await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+
     const asistencias = await AsistenciaRepository.findMany({
       orderBy: { fecha: "desc" },
       include: {
-        ficha: { 
-          select: { 
-            codigo: true, 
+        ficha: {
+          select: {
+            codigo: true,
             programa: { select: { nombre: true } },
-            _count: { select: { aprendices: true } }
-          } 
+            _count: { select: { aprendices: true } },
+          },
         },
         instructor: { select: { nombres: true, apellidos: true } },
       },
     });
 
-    const header = "Fecha,Ficha,Programa,Instructor,Tema,Total Aprendices,Presentes,Faltas,Excusas,Estado";
-    const rows = asistencias.map((a) =>
-      [
-        a.fecha ? new Date(a.fecha).toLocaleDateString("es-CO") : "",
-        a.ficha?.codigo ?? "",
-        a.ficha?.programa?.nombre ?? "",
-        `${a.instructor?.nombres ?? ""} ${a.instructor?.apellidos ?? ""}`,
-        a.observaciones ?? "",
-        a.ficha?._count?.aprendices ?? 0,
-        a.totalPresentes,
-        a.totalFaltas,
-        a.totalExcusas,
-        a.estado,
-      ]
-        .map((v) => `"${String(v || "").replace(/"/g, '""')}"`)
-        .join(",")
-    );
+    const rows = asistencias.map((a) => ({
+      "Fecha": a.fecha ? new Date(a.fecha).toLocaleDateString("es-CO") : "",
+      "Ficha": a.ficha?.codigo ?? "",
+      "Programa": a.ficha?.programa?.nombre ?? "",
+      "Instructor": `${a.instructor?.nombres ?? ""} ${a.instructor?.apellidos ?? ""}`.trim(),
+      "Tema / Observaciones": a.observaciones ?? "",
+      "Total Aprendices": a.ficha?._count?.aprendices ?? 0,
+      "Presentes": a.totalPresentes ?? 0,
+      "Faltas": a.totalFaltas ?? 0,
+      "Excusas": a.totalExcusas ?? 0,
+      "Estado": a.estado ?? "",
+    }));
 
-    return { success: true, csv: [header, ...rows].join("\n") };
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Asistencias");
+
+    // Retornar como base64 para que el cliente lo descargue
+    const base64 = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
+    return { success: true, base64 };
   } catch (error: any) {
-    console.error("Error exporting asistencias:", error);
+    console.error("Error exporting asistencias XLSX:", error);
     return { success: false, error: "Error al generar reporte de asistencias" };
   }
 }

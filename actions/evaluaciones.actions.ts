@@ -76,7 +76,7 @@ export async function createEvaluacion(data: any) {
       data: {
         resultadoAprendizajeId: data.resultadoAprendizajeId,
         aprendizId: data.aprendizId,
-        juicio: data.juicio || "POR_EVALUAR",
+        juicio: data.juicio || "PENDIENTE",
         fecha: data.fechaEvaluacion ? new Date(data.fechaEvaluacion) : null,
         observaciones: data.observaciones || null,
       },

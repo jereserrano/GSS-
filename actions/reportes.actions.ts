@@ -6,8 +6,10 @@ import { AlertaRiesgoRepository } from "@/repositories/alertaRiesgo.repository";
 import { AsistenciaRepository } from "@/repositories/asistencia.repository";
 import { EvaluacionAprendizRepository } from "@/repositories/evaluacionAprendiz.repository";
 import { TransactionRepository } from "@/repositories/transaction.repository";
-
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Registra un evento de auditoría en la base de datos.
@@ -196,12 +198,41 @@ export async function generarReporteAsistenciaCSV() {
 
 export async function getResumenReportes() {
   try {
+    const session = await getServerSession(authOptions);
+    let userRecord = null;
+    if (session?.user?.email) {
+      userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: { rol: true, instructor: true }
+      });
+    }
+
+    const roleUpper = userRecord?.rol?.nombre?.toUpperCase() || "";
+    const isInstructor = roleUpper.includes("INSTRUCT") && userRecord?.instructor?.id;
+    
+    let aprendizWhere: any = {};
+    let alertaWhere: any = { gestionada: false };
+    let asistenciaWhere: any = {};
+    let evaluacionWhere: any = {};
+
+    if (isInstructor) {
+      const fichaIds = (await prisma.instructorFicha.findMany({
+        where: { instructorId: userRecord!.instructor!.id },
+        select: { fichaId: true }
+      })).map(f => f.fichaId);
+
+      aprendizWhere = { fichaId: { in: fichaIds } };
+      alertaWhere = { gestionada: false, aprendiz: { fichaId: { in: fichaIds } } };
+      asistenciaWhere = { fichaId: { in: fichaIds } };
+      evaluacionWhere = { aprendiz: { fichaId: { in: fichaIds } } };
+    }
+
     const [totalAprendices, alertasActivas, totalAsistencias, totalEvaluaciones] =
       await TransactionRepository.$transaction([
-        AprendizRepository.count(),
-        AlertaRiesgoRepository.count({ where: { gestionada: false } }),
-        AsistenciaRepository.count(),
-        EvaluacionAprendizRepository.count(),
+        AprendizRepository.count({ where: aprendizWhere }),
+        AlertaRiesgoRepository.count({ where: alertaWhere }),
+        AsistenciaRepository.count({ where: asistenciaWhere }),
+        EvaluacionAprendizRepository.count({ where: evaluacionWhere }),
       ]);
 
     revalidatePath("/reportes");
@@ -210,7 +241,7 @@ export async function getResumenReportes() {
       data: { totalAprendices, alertasActivas, totalAsistencias, totalEvaluaciones },
     };
   } catch (error: any) {
-    return { success: false, error: "Error al obtener resumen" };
+    return { success: false, error: "Error al obtener resumen: " + error.message };
   }
 }
 

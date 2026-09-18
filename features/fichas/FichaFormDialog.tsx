@@ -43,8 +43,8 @@ export function FichaFormDialog({ ficha, programas, instituciones, sedes, onClos
       sedeId:        formData.get("sedeId") as string,
       fechaInicio:   formData.get("fechaInicio") as string,
       fechaFin:      formData.get("fechaFin") as string,
-      jornada:       formData.get("jornada") as string,
-      estado:        formData.get("estado") as string,
+      jornada:       (formData.get("jornada") as string) || undefined,
+      estado:        (formData.get("estado") as string) || "ACTIVO",
     };
 
     try {

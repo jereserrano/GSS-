@@ -1,12 +1,10 @@
 "use server";
 
 import { ConfiguracionRepository } from "@/repositories/configuracion.repository";
-import { UserRepository } from "@/repositories/user.repository";
 
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit.service";
-import { getServerSession } from "next-auth/next";
-import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+import { requireRole } from "@/lib/rbac";
 
 export async function getConfiguracionAction() {
   try {
@@ -28,12 +26,7 @@ export async function getConfiguracionAction() {
 
 export async function updateConfiguracionAction(data: any) {
   try {
-    const session = await getServerSession();
-    let userId = null;
-    if (session?.user?.email) {
-      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
-      userId = user?.id || null;
-    }
+    const user = await requireRole(["ADMINISTRADOR"]);
 
     // Convert values
     const updateData = {

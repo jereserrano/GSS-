@@ -1,27 +1,59 @@
 "use server";
 
+import { z } from "zod";
+import { documentoSchema } from "@/schemas";
+import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/rbac";
+import { logAudit } from "@/lib/audit.service";
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
-
-// Documento model not yet in database. Mocking data for UI purposes.
-let mockDocumentos: any[] = [];
+import { revalidatePath } from "next/cache";
 
 export async function getDocumentosAction(filtros: any = {}) {
   try {
     const pagina = filtros.pagina || 1;
     const tamano = filtros.tamano || 10;
-    
-    let filtered = [...mockDocumentos];
+    const { skip, take } = getPaginacion(pagina, tamano);
+
+    const where: any = {};
     if (filtros.busqueda) {
-      const q = filtros.busqueda.toLowerCase();
-      filtered = filtered.filter(d => d.nombre.toLowerCase().includes(q));
+      where.OR = [
+        { nombre: { contains: filtros.busqueda } },
+        { tipo: { contains: filtros.busqueda } },
+      ];
+    }
+    if (filtros.institucionId) {
+      where.institucionId = filtros.institucionId;
     }
 
-    const { skip, take } = getPaginacion(pagina, tamano);
-    const paginated = filtered.slice(skip, skip + take);
+    const [documentos, total] = await prisma.$transaction([
+      prisma.documento.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { creadoEn: "desc" },
+      }),
+      prisma.documento.count({ where }),
+    ]);
 
-    return { success: true, data: paginatedResponse(paginated, filtered.length, pagina, tamano) };
+    // Opcionalmente resolver el nombre de la institución para la vista
+    const institucionIds = Array.from(new Set(documentos.map(d => d.institucionId).filter(Boolean))) as string[];
+    const instituciones = institucionIds.length > 0 
+      ? await prisma.institucion.findMany({
+          where: { id: { in: institucionIds } },
+          select: { id: true, nombre: true }
+        })
+      : [];
+    const instMap = new Map(instituciones.map(i => [i.id, i.nombre]));
+
+    const dataConInstitucion = documentos.map(d => ({
+      ...d,
+      institucion: d.institucionId ? { id: d.institucionId, nombre: instMap.get(d.institucionId) || "Institución" } : null,
+    }));
+
+    return { success: true, data: paginatedResponse(dataConInstitucion, total, pagina, tamano) };
   } catch (error: any) {
-    return { success: false, error: "Error al obtener documentos" };
+    console.error("Error al obtener documentos:", error);
+    return { success: false, error: "Error al obtener documentos: " + (error.message || "") };
   }
 }
 
@@ -29,18 +61,30 @@ export async function createDocumento(data: z.infer<typeof documentoSchema>) {
   try {
     const parsed = documentoSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
-    
+
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
-    const newDoc = {
-      id: "mock-" + Date.now(),
-      ...data,
-      institucion: data.institucionId ? { nombre: "Institución " + data.institucionId } : null,
-      creadoEn: new Date().toISOString()
-    };
-    mockDocumentos.push(newDoc);
-    return { success: true, documento: newDoc };
+    
+    const documento = await prisma.documento.create({
+      data: {
+        nombre: data.nombre.trim(),
+        tipo: data.tipo || "OTRO",
+        institucionId: data.institucionId || null,
+        url: data.url.trim(),
+      },
+    });
+
+    await logAudit({
+      userId: user.id,
+      modulo: "Documentos",
+      accion: "CREAR",
+      detalle: `Documento registrado: "${documento.nombre}"`,
+    });
+
+    revalidatePath("/documentos");
+    return { success: true, documento };
   } catch (error: any) {
-    return { error: "Error al registrar documento" };
+    console.error("Error al registrar documento:", error);
+    return { error: error.message || "Error al registrar documento" };
   }
 }
 
@@ -48,38 +92,77 @@ export async function updateDocumento(id: string, data: z.infer<typeof documento
   try {
     const parsed = documentoSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
-    
+
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
-    const idx = mockDocumentos.findIndex(d => d.id === id);
-    if (idx >= 0) {
-      mockDocumentos[idx] = { ...mockDocumentos[idx], ...data };
-      return { success: true, documento: mockDocumentos[idx] };
-    }
-    return { error: "Documento no encontrado" };
+
+    const documento = await prisma.documento.update({
+      where: { id },
+      data: {
+        nombre: data.nombre.trim(),
+        tipo: data.tipo || "OTRO",
+        institucionId: data.institucionId || null,
+        url: data.url.trim(),
+      },
+    });
+
+    await logAudit({
+      userId: user.id,
+      modulo: "Documentos",
+      accion: "ACTUALIZAR",
+      detalle: `Documento actualizado: "${documento.nombre}"`,
+    });
+
+    revalidatePath("/documentos");
+    return { success: true, documento };
   } catch (error: any) {
-    return { error: "Error al actualizar documento" };
+    console.error("Error al actualizar documento:", error);
+    return { error: error.message || "Error al actualizar documento" };
   }
 }
 
 export async function deleteDocumento(id: string) {
   try {
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
-    mockDocumentos = mockDocumentos.filter(d => d.id !== id);
+    await prisma.documento.delete({ where: { id } });
+
+    await logAudit({
+      userId: user.id,
+      modulo: "Documentos",
+      accion: "ELIMINAR",
+      detalle: `Documento eliminado ID: ${id}`,
+    });
+
+    revalidatePath("/documentos");
     return { success: true };
   } catch (error: any) {
-    return { error: "Error al eliminar documento" };
+    console.error("Error al eliminar documento:", error);
+    return { error: error.message || "Error al eliminar documento" };
   }
 }
 
 export async function exportDocumentosCSV() {
   try {
-    const header = "Nombre,Tipo,Institución,Fecha de Registro";
-    const rows = mockDocumentos.map((d) =>
+    const documentos = await prisma.documento.findMany({
+      orderBy: { creadoEn: "desc" },
+    });
+
+    const institucionIds = Array.from(new Set(documentos.map(d => d.institucionId).filter(Boolean))) as string[];
+    const instituciones = institucionIds.length > 0 
+      ? await prisma.institucion.findMany({
+          where: { id: { in: institucionIds } },
+          select: { id: true, nombre: true }
+        })
+      : [];
+    const instMap = new Map(instituciones.map(i => [i.id, i.nombre]));
+
+    const header = "Nombre,Tipo,Institución,URL,Fecha de Registro";
+    const rows = documentos.map((d) =>
       [
         d.nombre ?? "",
         d.tipo ?? "",
-        d.institucion?.nombre ?? "General",
+        d.institucionId ? (instMap.get(d.institucionId) || d.institucionId) : "General",
+        d.url ?? "",
         d.creadoEn ? new Date(d.creadoEn).toLocaleDateString("es-CO") : "",
       ]
         .map((v: any) => `"${String(v || "").replace(/"/g, '""')}"`)
@@ -88,6 +171,7 @@ export async function exportDocumentosCSV() {
 
     return { success: true, csv: [header, ...rows].join("\n") };
   } catch (error: any) {
+    console.error("Error exporting documentos:", error);
     return { success: false, error: "Error al generar reporte de documentos" };
   }
 }

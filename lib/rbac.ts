@@ -1,18 +1,25 @@
 import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@/lib/permissions";
 
 /**
  * Verifica la sesión actual y asegura que el usuario tenga un rol permitido.
- * @param allowedRoles Array de roles permitidos para la operación.
+ * @param allowedRoles Array o lista de roles permitidos para la operación.
  * @returns El usuario de la base de datos si tiene permiso.
  * @throws Error si no está autenticado o no tiene permiso.
  */
-export async function requireRole(allowedRoles?: UserRole[]) {
-  const session = await getServerSession();
+export async function requireRole(allowedRoles?: UserRole[] | UserRole, ...extraRoles: UserRole[]) {
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     throw new Error("No autenticado");
   }
+
+  const rolesList: UserRole[] = Array.isArray(allowedRoles)
+    ? allowedRoles
+    : allowedRoles
+    ? [allowedRoles, ...extraRoles]
+    : [];
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
@@ -24,7 +31,7 @@ export async function requireRole(allowedRoles?: UserRole[]) {
   }
 
   // Si no se especifican roles, cualquier usuario autenticado pasa.
-  if (!allowedRoles || allowedRoles.length === 0) {
+  if (rolesList.length === 0) {
     return user;
   }
 
@@ -36,7 +43,7 @@ export async function requireRole(allowedRoles?: UserRole[]) {
   }
 
   // Verificar si el rol del usuario está en la lista de permitidos
-  const hasPermission = allowedRoles.some(role => userRole === role.toUpperCase() || userRole.includes(role.toUpperCase()));
+  const hasPermission = rolesList.some(role => userRole === role.toUpperCase() || userRole.includes(role.toUpperCase()));
 
   if (!hasPermission) {
     throw new Error("Acceso denegado: Rol insuficiente");

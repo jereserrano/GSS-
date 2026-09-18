@@ -68,7 +68,7 @@ export async function createPrograma(data: z.infer<typeof programaSchema>) {
     const parsed = programaSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     const existing = await ProgramaRepository.findUnique({ where: { codigo: data.codigo } });
     if (existing) {
       return { error: "Ya existe un programa con ese código SENA" };
@@ -83,7 +83,6 @@ export async function createPrograma(data: z.infer<typeof programaSchema>) {
       },
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Programas",
@@ -103,7 +102,7 @@ export async function updatePrograma(id: string, data: z.infer<typeof programaSc
     const parsed = programaSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     const programa = await ProgramaRepository.update({
       where: { id },
       data: {
@@ -114,7 +113,6 @@ export async function updatePrograma(id: string, data: z.infer<typeof programaSc
       },
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Programas",
@@ -131,8 +129,7 @@ export async function updatePrograma(id: string, data: z.infer<typeof programaSc
 
 export async function deletePrograma(id: string) {
   try {
-    
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     await ProgramaRepository.delete({ where: { id } });
     
     await logAudit({

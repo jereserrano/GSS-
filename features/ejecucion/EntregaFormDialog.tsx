@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createEntrega, updateEntrega, evaluarEntregaAction } from "@/actions/entregas.actions";
@@ -27,6 +28,10 @@ const ESTADOS = [
 ];
 
 export function EntregaFormDialog({ entrega, actividades, aprendices, onClose, onSuccess }: EntregaFormDialogProps) {
+  const { data: session } = useSession();
+  const userRole = ((session?.user as any)?.role || "").toUpperCase();
+  const isAprendiz = userRole.includes("APRENDIZ");
+
   const [loading, setLoading] = useState(false);
   const isEditing = !!entrega;
 
@@ -125,29 +130,33 @@ export function EntregaFormDialog({ entrega, actividades, aprendices, onClose, o
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-text-primary">Estado</label>
-              <select name="estado" defaultValue={entrega?.estado || "PENDIENTE"} className={selectClass}>
-                {ESTADOS.map(e => (
-                  <option key={e.value} value={e.value}>{e.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
+            {!isAprendiz && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-text-primary">Estado</label>
+                <select name="estado" defaultValue={entrega?.estado || "PENDIENTE"} className={selectClass}>
+                  {ESTADOS.map(e => (
+                    <option key={e.value} value={e.value}>{e.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className={`space-y-1.5 ${isAprendiz ? 'col-span-2' : ''}`}>
               <label className="text-sm font-medium text-text-primary">Fecha de Entrega</label>
               <Input
                 name="fechaEntrega"
                 type="datetime-local"
                 defaultValue={formatDateForInput(entrega?.fechaEntrega)}
+                disabled={isAprendiz}
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">URL / Enlace de la Evidencia</label>
+            <label className="text-sm font-medium text-text-primary">URL / Enlace de la Evidencia *</label>
             <Input
               name="urlArchivo"
               type="url"
+              required
               defaultValue={entrega?.urlArchivo || ""}
               placeholder="https://drive.google.com/... o enlace de repositorio"
             />
@@ -162,31 +171,35 @@ export function EntregaFormDialog({ entrega, actividades, aprendices, onClose, o
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-text-primary">Calificación (0 - 5.0)</label>
-              <Input
-                name="calificacion"
-                type="number"
-                step="0.1"
-                min="0"
-                max="5"
-                defaultValue={entrega?.calificacion}
-                placeholder="Ej: 4.5"
-              />
-            </div>
-          </div>
+          {!isAprendiz && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary">Calificación (0 - 5.0)</label>
+                  <Input
+                    name="calificacion"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                    defaultValue={entrega?.calificacion}
+                    placeholder="Ej: 4.5"
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">Retroalimentación</label>
-            <textarea
-              name="retroalimentacion"
-              defaultValue={entrega?.retroalimentacion}
-              rows={3}
-              placeholder="Comentarios sobre la entrega..."
-              className={selectClass + " h-auto resize-none"}
-            />
-          </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-text-primary">Retroalimentación</label>
+                <textarea
+                  name="retroalimentacion"
+                  defaultValue={entrega?.retroalimentacion}
+                  rows={3}
+                  placeholder="Comentarios sobre la entrega..."
+                  className={selectClass + " h-auto resize-none"}
+                />
+              </div>
+            </>
+          )}
 
           {/* Footer */}
           <div className="pt-2 flex justify-end gap-3 border-t mt-6 pt-4">

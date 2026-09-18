@@ -10,6 +10,87 @@ import { useRouter } from "next/navigation";
 import { exportAuditoriaCSV } from "@/actions/reportes.actions";
 import { toast } from "sonner";
 
+/**
+ * Convierte el campo `detalle` de un log de auditoría (puede ser JSON o texto plano)
+ * en una cadena legible en español para mostrar en la UI.
+ */
+function formatDetalle(detalle: string | null | undefined): string {
+  if (!detalle) return "—";
+
+  // Intentar parsear como JSON
+  let parsed: Record<string, any> | null = null;
+  try {
+    parsed = JSON.parse(detalle);
+  } catch {
+    // No es JSON → devolver el texto tal cual
+    return detalle;
+  }
+
+  if (!parsed || typeof parsed !== "object") return detalle;
+
+  // --- Mapas de traducción de campos comunes ---
+  const campoLabels: Record<string, string> = {
+    nombre:          "Nombre",
+    nombres:         "Nombres",
+    apellidos:       "Apellidos",
+    email:           "Correo",
+    rol:             "Rol",
+    role:            "Rol",
+    rolName:         "Rol",
+    estado:          "Estado",
+    codigo:          "Código",
+    programa:        "Programa",
+    ficha:           "Ficha",
+    fichaId:         "Ficha",
+    aprendiz:        "Aprendiz",
+    aprendizId:      "Aprendiz",
+    instructor:      "Instructor",
+    instructorId:    "Instructor",
+    descripcion:     "Descripción",
+    titulo:          "Título",
+    fecha:           "Fecha",
+    tipo:            "Tipo",
+    modulo:          "Módulo",
+    accion:          "Acción",
+    id:              "ID",
+    userId:          "Usuario ID",
+    mensaje:         "Mensaje",
+    observaciones:   "Observaciones",
+    total:           "Total",
+    totalPresentes:  "Presentes",
+    totalFaltas:     "Faltas",
+    totalExcusas:    "Excusas",
+  };
+
+  // Campos que no aportan valor visual
+  const ignorados = new Set(["password", "passwordHash", "hash", "token", "createdAt", "updatedAt"]);
+
+  const partes: string[] = [];
+  for (const [key, val] of Object.entries(parsed)) {
+    if (ignorados.has(key)) continue;
+    if (val === null || val === undefined || val === "") continue;
+
+    const label = campoLabels[key] ?? key;
+    let valor = String(val);
+
+    // Traducir estados y enums a español
+    const estadoMap: Record<string, string> = {
+      ACTIVO: "Activo", INACTIVO: "Inactivo",
+      ADMINISTRADOR: "Administrador", COORDINADOR: "Coordinador",
+      INSTRUCTOR: "Instructor", APRENDIZ: "Aprendiz",
+      PRESENTE: "Presente", FALLA: "Falla", EXCUSA: "Excusa",
+      REGISTRADA: "Registrada", PENDIENTE: "Pendiente",
+      APROBADO: "Aprobado", DEFICIENTE: "Deficiente",
+      true: "Sí", false: "No",
+    };
+    valor = estadoMap[valor] ?? valor;
+
+    partes.push(`${label}: ${valor}`);
+  }
+
+  return partes.length > 0 ? partes.join(" · ") : detalle;
+}
+
 interface AuditoriaTableProps {
   initialData: any;
 }
@@ -83,7 +164,12 @@ export function AuditoriaTable({ initialData }: AuditoriaTableProps) {
       key: "detalle",
       header: "Detalle",
       render: (log) => (
-        <span className="text-sm text-text-secondary truncate max-w-xs block">{log.detalle}</span>
+        <span
+          className="text-sm text-text-secondary truncate max-w-xs block"
+          title={log.detalle ?? ""}
+        >
+          {formatDetalle(log.detalle)}
+        </span>
       ),
     },
     {

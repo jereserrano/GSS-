@@ -1,11 +1,11 @@
-import NextAuth from "next-auth";
+import NextAuth, { type AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { UserLoginSchema } from "@/lib/validations";
 import { getHierarchyLevel } from "@/lib/hierarchy";
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credenciales SENA",
@@ -64,30 +64,32 @@ export const authOptions = {
 
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-      // Agregar rol y persistir datos en el JWT en el primer login
+      // Primer login: poblar el JWT con datos del usuario autenticado desde BD
       if (user) {
-        token.role = (user as any).role;
-        token.rolName = (user as any).rolName;
-        token.hierarchyLevel = (user as any).hierarchyLevel;
+        token.role = user.role;
+        token.rolName = user.rolName;
+        token.hierarchyLevel = user.hierarchyLevel;
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
       }
-      // Permitir actualización de sesión desde el cliente
+      // Actualización de sesión desde el cliente: SOLO campos seguros, NUNCA role/hierarchyLevel
       if (trigger === "update" && session) {
-        token = { ...token, ...session };
+        if (typeof session.name === "string" && session.name) {
+          token.name = session.name;
+        }
       }
       return token;
     },
     async session({ session, token }) {
-      // Exponer rol, id, nombre y email en la sesión del cliente
+      // Copiar datos del JWT (origen confiable del servidor) hacia session.user del cliente
       if (session.user) {
-        (session.user as any).role = token.role;
-        (session.user as any).rolName = token.rolName;
-        (session.user as any).hierarchyLevel = token.hierarchyLevel;
-        (session.user as any).id = token.id;
-        (session.user as any).name = token.name;
-        (session.user as any).email = token.email;
+        session.user.role = token.role;
+        session.user.rolName = token.rolName;
+        session.user.hierarchyLevel = token.hierarchyLevel;
+        session.user.id = token.id;
+        if (token.name) session.user.name = token.name;
+        if (token.email) session.user.email = token.email;
       }
       return session;
     },

@@ -63,24 +63,25 @@ export async function createSeguimiento(data: z.infer<typeof visitaSchema>) {
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
-    const institucion = await InstitucionRepository.findUnique({ where: { id: data.institucionId } });
+    const institucion = data.institucionId ? await InstitucionRepository.findUnique({ where: { id: data.institucionId } }) : null;
+    const nombreInstitucion = institucion ? institucion.nombre : (data.institucionNombre || "Institución");
+
     const seguimiento = await VisitaSeguimientoRepository.create({
       data: {
-        institucionNombre: institucion ? institucion.nombre : data.institucionId,
+        institucionNombre: nombreInstitucion,
         fecha: new Date(data.fecha),
         responsable: data.responsable,
-        novedades: data.novedades ? parseInt(data.novedades) : 0,
-        estado: data.estado || "PROGRAMADA",
+        novedades: typeof data.novedades === "number" ? data.novedades : data.novedades ? parseInt(String(data.novedades)) || 0 : 0,
+        estado: (data.estado as any) || "PROGRAMADA",
         observaciones: data.observaciones || null,
       },
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Seguimientos",
       accion: "CREAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Visita programada a: ${nombreInstitucion}`,
     });
     revalidatePath("/seguimiento");
     return { success: true, seguimiento };
@@ -100,23 +101,29 @@ export async function updateSeguimiento(id: string, data: z.infer<typeof visitaS
     const dataToUpdate: any = {
         fecha: new Date(data.fecha),
         responsable: data.responsable,
-        estado: data.estado,
+        estado: data.estado as any,
         observaciones: data.observaciones || null,
     };
-    if (institucion) dataToUpdate.institucionNombre = institucion.nombre;
-    if (data.novedades !== undefined) dataToUpdate.novedades = parseInt(data.novedades) || 0;
+    if (institucion) {
+      dataToUpdate.institucionNombre = institucion.nombre;
+    } else if (data.institucionNombre) {
+      dataToUpdate.institucionNombre = data.institucionNombre;
+    }
+
+    if (data.novedades !== undefined) {
+      dataToUpdate.novedades = typeof data.novedades === "number" ? data.novedades : parseInt(String(data.novedades)) || 0;
+    }
 
     const seguimiento = await VisitaSeguimientoRepository.update({
       where: { id },
       data: dataToUpdate,
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Seguimientos",
       accion: "ACTUALIZAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Visita actualizada ID: ${id}`,
     });
     revalidatePath("/seguimiento");
     return { success: true, seguimiento };

@@ -73,6 +73,7 @@ export async function getRolesWithStats(): Promise<RolConConteo[]> {
 
 export async function createRol(data: { nombre: string; descripcion?: string }) {
   try {
+    const user = await requireRole(["ADMINISTRADOR"]);
     const { nombre, descripcion } = data;
 
     if (!nombre || nombre.trim().length < 2) {
@@ -113,8 +114,7 @@ export async function createRol(data: { nombre: string; descripcion?: string }) 
 
 export async function deleteRol(id: string) {
   try {
-    
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR"]);
     const usersCount = await UserRepository.count({
       where: { rolId: id },
     });

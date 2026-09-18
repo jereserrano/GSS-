@@ -2,6 +2,8 @@ import React from "react";
 import { ReportesPageClient } from "@/features/reportes/ReportesPageClient";
 import { getResumenReportes } from "@/actions/reportes.actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function ReportesPage() {
   const result = await getResumenReportes();
   const resumen = result.success ? result.data! : null;

@@ -20,7 +20,7 @@ const selectClass =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
 
 const JUICIOS = [
-  { value: "POR_EVALUAR", label: "Por Evaluar" },
+  { value: "PENDIENTE", label: "Pendiente (Por Evaluar)" },
   { value: "APROBADO", label: "A (Aprobado)" },
   { value: "DEFICIENTE", label: "D (Deficiente)" },
 ];
@@ -35,8 +35,8 @@ export function EvaluacionFormDialog({ evaluacion, raps, aprendices, onClose, on
 
     const formData = new FormData(e.currentTarget);
     const data = {
-      resultadoAprendizajeId: formData.get("resultadoAprendizajeId") as string,
-      aprendizId: formData.get("aprendizId") as string,
+      resultadoAprendizajeId: (formData.get("resultadoAprendizajeId") as string) || evaluacion?.resultadoAprendizajeId,
+      aprendizId: (formData.get("aprendizId") as string) || evaluacion?.aprendizId,
       juicio: formData.get("juicio") as string,
       fechaEvaluacion: formData.get("fechaEvaluacion") as string,
       observaciones: formData.get("observaciones") as string,
@@ -119,7 +119,7 @@ export function EvaluacionFormDialog({ evaluacion, raps, aprendices, onClose, on
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-text-primary">Juicio Valorativo</label>
-              <select name="juicio" defaultValue={evaluacion?.juicio || "POR_EVALUAR"} className={selectClass}>
+              <select name="juicio" defaultValue={evaluacion?.juicio || "PENDIENTE"} className={selectClass}>
                 {JUICIOS.map(j => (
                   <option key={j.value} value={j.value}>{j.label}</option>
                 ))}

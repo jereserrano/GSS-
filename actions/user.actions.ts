@@ -76,6 +76,11 @@ async function getCurrentUserCtx(): Promise<CurrentUserCtx | null> {
 
 export async function getUsers() {
   try {
+    const currentUser = await getCurrentUserCtx();
+    if (!currentUser || (currentUser.role !== "ADMINISTRADOR" && !currentUser.role.includes("ADMIN") && !currentUser.role.includes("COORD"))) {
+      return [];
+    }
+
     const users = await UserRepository.findMany({
       include: {
         rol: true,

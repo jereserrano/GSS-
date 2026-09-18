@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useSession } from "next-auth/react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,10 @@ interface FichasTableProps {
 }
 
 export function FichasTable({ initialData, programas, instituciones, sedes }: FichasTableProps) {
+  const { data: session } = useSession();
+  const userRole = ((session?.user as any)?.role || "").toUpperCase();
+  const canManage = userRole === "ADMINISTRADOR" || userRole.includes("ADMIN") || userRole.includes("COORD");
+
   const [data, setData] = useState<PaginatedResponse<any> | null>(initialData);
   const [loading, setLoading] = useState(!initialData);
   const isFirstRender = useRef(true);
@@ -143,11 +148,11 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
       header: "Estado",
       render: (f) => <StatusBadge estado={f.estado?.toLowerCase()} />
     },
-    {
+    ...(canManage ? [{
       key: "acciones",
       header: "",
-      align: "right",
-      render: (f) => (
+      align: "right" as const,
+      render: (f: any) => (
         <div className="flex items-center justify-end gap-1">
           <Button
             variant="ghost" size="icon"
@@ -166,7 +171,7 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
           </Button>
         </div>
       )
-    }
+    }] : [])
   ];
 
   return (
@@ -191,9 +196,11 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
             <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
               <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
             </Button>
-            <Button onClick={() => { setSelectedFicha(null); setDialogOpen(true); }}>
-              <Plus size={16} className="mr-2" /> Nueva Ficha
-            </Button>
+            {canManage && (
+              <Button onClick={() => { setSelectedFicha(null); setDialogOpen(true); }}>
+                <Plus size={16} className="mr-2" /> Nueva Ficha
+              </Button>
+            )}
           </div>
         </div>
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { 
   Bell, Search, LogOut, User, CheckCheck, 
   AlertTriangle, Calendar, Info, ArrowRight, X 
@@ -24,12 +25,14 @@ interface NotificacionItem {
 
 export function Header() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [notificaciones, setNotificaciones] = useState<NotificacionItem[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const userName = session?.user?.name ?? "Usuario";
-  const userRole = (session?.user as any)?.rolName ?? (session?.user as any)?.role ?? "Sin rol";
+  const userRole = session?.user?.rolName ?? session?.user?.role ?? "Sin rol";
 
   const cargarNotificaciones = async () => {
     try {
@@ -108,6 +111,13 @@ export function Header() {
             type="search" 
             placeholder="Buscar por aprendiz, ficha o actividad..." 
             className="pl-9 bg-slate-50 border-slate-200 text-xs h-8.5 rounded-lg placeholder:text-slate-400 focus:bg-white focus:border-[#39A900] focus:ring-[#39A900] transition-colors"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && searchQuery.trim()) {
+                router.push(`/dashboard?busqueda=${encodeURIComponent(searchQuery.trim())}`);
+              }
+            }}
           />
         </div>
       </div>
@@ -251,9 +261,12 @@ export function Header() {
             {status === "loading" ? <User size={16} /> : initials}
           </div>
 
-          {/* Botón Cerrar Sesión */}
+          {/* Botón Cerrar Sesión con purga de Router Cache */}
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={async () => {
+              await signOut({ redirect: false });
+              window.location.href = "/login";
+            }}
             title="Cerrar sesión"
             className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors rounded-xl cursor-pointer"
           >

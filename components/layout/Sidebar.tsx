@@ -92,7 +92,60 @@ const navInstructor: NavSection[] = [
   },
 ];
 
-// Menú para ADMINISTRADOR / COORDINADOR
+// Menú para COORDINADORES (Académico, Regional, Sede) — Sin acceso a administración global
+const navCoordinador: NavSection[] = [
+  {
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    ],
+  },
+  {
+    title: "Gestión Institucional",
+    items: [
+      { icon: Building2, label: "Instituciones", href: "/instituciones" },
+      { icon: MapPin, label: "Sedes", href: "/sedes" },
+      { icon: BookOpen, label: "Programas", href: "/programas" },
+      { icon: Users, label: "Fichas / Grupos", href: "/fichas" },
+    ],
+  },
+  {
+    title: "Actores",
+    items: [
+      { icon: GraduationCap, label: "Aprendices", href: "/aprendices" },
+      { icon: UserCheck, label: "Instructores", href: "/instructores" },
+    ],
+  },
+  {
+    title: "Académico",
+    items: [
+      { icon: Target, label: "Competencias", href: "/competencias" },
+      { icon: FileText, label: "Resultados de Aprendizaje", href: "/resultados-aprendizaje" },
+      { icon: ClipboardList, label: "Plan de Formación", href: "/plan-formacion" },
+    ],
+  },
+  {
+    title: "Ejecución",
+    items: [
+      { icon: BookCheck, label: "Actividades", href: "/actividades" },
+      { icon: FileSignature, label: "Entregas", href: "/entregas" },
+      { icon: CalendarCheck, label: "Asistencia", href: "/asistencia" },
+      { icon: FileCheck, label: "Evaluaciones", href: "/evaluaciones" },
+      { icon: TrendingUp, label: "Resultados", href: "/resultados" },
+    ],
+  },
+  {
+    title: "Seguimiento y Reportes",
+    items: [
+      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
+      { icon: AlertTriangle, label: "Riesgos", href: "/riesgos" },
+      { icon: PieChart, label: "Reportes", href: "/reportes" },
+      { icon: FolderOpen, label: "Documentos", href: "/documentos" },
+      { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
+    ],
+  },
+];
+
+// Menú EXCLUSIVO para ADMINISTRADOR DEL SISTEMA
 const navAdmin: NavSection[] = [
   {
     items: [
@@ -156,19 +209,32 @@ const navAdmin: NavSection[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const rawRole = ((session?.user as any)?.role ?? "INSTRUCTOR").toUpperCase();
+  const rawRole = (session?.user?.role ?? "").toUpperCase();
+
   const isAprendiz = rawRole === "APRENDIZ" || rawRole.includes("APRENDIZ");
   const isInstructor = rawRole === "INSTRUCTOR" || rawRole.includes("INSTRUCT");
+  const isAdmin = rawRole === "ADMINISTRADOR" || rawRole.includes("ADMIN");
+  const isCoordinador = !isAdmin && (rawRole.includes("COORD") || rawRole.includes("SEDE") || rawRole.includes("APOYO"));
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   const closeMobile = () => setMobileOpen(false);
 
-  // Seleccionar la lista base según rol
-  const baseSections = isAprendiz ? navAprendiz : isInstructor ? navInstructor : navAdmin;
+  // Seleccionar la lista base según rol estrictamente verificado
+  const baseSections = status === "loading"
+    ? []
+    : isAdmin
+    ? navAdmin
+    : isCoordinador
+    ? navCoordinador
+    : isInstructor
+    ? navInstructor
+    : isAprendiz
+    ? navAprendiz
+    : [];
 
   // Filtrar según permisos de ruta para no exponer opciones no autorizadas
   const visibleSections = baseSections
@@ -294,7 +360,7 @@ export function Sidebar() {
                 <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Rol Activo</span>
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#267000] bg-[#f0fdf4] px-1.5 py-0.5 rounded border border-[#bbf7d0]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#39A900]"></span>
-                  {rawRole}
+                  {rawRole || (status === "loading" ? "Cargando..." : "Invitado")}
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 truncate mt-0.5">

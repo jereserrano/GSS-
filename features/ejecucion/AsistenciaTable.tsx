@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Download, Pencil, Trash2 } from "lucide-react";
 import type { ColumnaDef } from "@/types/common.types";
 import { formatDateShort } from "@/lib/utils";
-import { deleteAsistencia, exportAsistenciasCSV } from "@/actions/asistencia.actions";
+import { deleteAsistencia, exportAsistenciasXLSX } from "@/actions/asistencia.actions";
 import { AsistenciaFormDialog } from "./AsistenciaFormDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -58,18 +58,22 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
   const handleExport = async () => {
     setExporting(true);
     try {
-      const result = await exportAsistenciasCSV();
-      if (!result.success || !result.csv) throw new Error(result.error || "Error exportando");
-      const blob = new Blob(["\uFEFF" + result.csv], { type: "text/csv;charset=utf-8;" });
+      const result = await exportAsistenciasXLSX();
+      if (!result.success || !result.base64) throw new Error(result.error || "Error exportando");
+      // Decodificar base64 → Uint8Array → Blob
+      const binary = atob(result.base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "asistencia_export.csv";
+      a.download = `asistencia_${new Date().toISOString().slice(0, 10)}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success("Listado exportado correctamente");
+      toast.success("Reporte XLSX exportado correctamente");
     } catch (error: any) {
       toast.error(error.message);
     } finally {

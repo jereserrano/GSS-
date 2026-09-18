@@ -293,3 +293,102 @@ El software alcanzó el 100% de cumplimiento estructural y de seguridad delinead
   - Continuar con el refinamiento de la creación de usuario con rol APRENDIZ y su vinculación automática/manual con el registro de aprendiz de ficha existente.
   - Validación cruzada de navegación por parte del usuario mediante recarga sin caché (`Ctrl + Shift + R`).
 
+---
+
+## V2.1.2 — Corrección Crítica: Sesión, Roles y Seguridad JWT
+**Fecha:** 18 de septiembre de 2026
+**Commit:** `5b20f82`
+**Tag:** `v2.1.2`
+**Rama:** `v2.0`
+
+### 1. Incidente Detectado
+Después de Fase 1, se detectó una **regresión crítica**: usuarios con credenciales válidas iniciaban sesión correctamente pero la aplicación mostraba:
+- Header: "Invitado" / "Sin rol"
+- Sidebar: 0 módulos de navegación
+- Comportamiento idéntico para ADMINISTRADOR, COORDINADOR, INSTRUCTOR y APRENDIZ.
+
+El sistema **autenticaba correctamente** las credenciales (login → redirect a dashboard) pero **no propagaba el rol hacia el cliente**.
+
+### 2. Investigación y Causas Raíz
+
+**Causa 1 — `SessionProvider` con `session={null}` explícito (CRÍTICA)**
+- Archivo: `components/providers.tsx`
+- El `<SessionProvider session={session ?? null}>` forzaba un re-fetch a `/api/auth/session` en cada carga.
+- En producción (`next start`), si `NEXTAUTH_URL` no coincidía exactamente con el host del navegador, el fetch fallaba silenciosamente.
+- Resultado: `useSession()` retornaba `{ data: null, status: "unauthenticated" }` → `rawRole = ""` → Sidebar vacío → "Invitado".
+
+**Causa 2 — Ausencia de `next-auth.d.ts` (CRÍTICA)**
+- No existía ningún archivo de augmentation de tipos para NextAuth.
+- El tipo estándar `Session.user` solo incluye `name`, `email`, `image`.
+- Los campos `role`, `rolName`, `id`, `hierarchyLevel` no existían en el tipo → requerian casts `as any` que son frágiles.
+
+**Causa 3 — `authOptions` sin tipo `AuthOptions` (ALTA)**
+- `authOptions` exportado sin tipo explícito causaba `TS2345` en `lib/rbac.ts` y `lib/auth-helpers.ts`.
+
+**Causa 4 — Imports faltantes en `fichas.actions.ts` (CRÍTICA)**
+- `getFichasAction` usaba `authOptions` (línea 40) y `prisma` (línea 43) sin importarlos.
+- Generaba `ReferenceError: authOptions is not defined` en runtime al acceder a `/fichas`.
+
+**Causa 5 — Fallback `"INSTRUCTOR"` hardcodeado en `auth-helpers.ts` (SEGURIDAD)**
+- `role: user.role ?? "INSTRUCTOR"` concedía privilegios de INSTRUCTOR a sesiones sin rol definido.
+- Brecha de seguridad: cualquier sesión sin rol accedía como INSTRUCTOR.
+
+### 3. Correcciones Implementadas
+
+| Archivo | Cambio |
+|---------|--------|
+| `types/next-auth.d.ts` | **[NUEVO]** Augmentation de `Session`, `JWT` y `User` con `role`, `rolName`, `id`, `hierarchyLevel` |
+| `app/api/auth/[...nextauth]/route.ts` | Tipo explícito `AuthOptions`, eliminados casts `as any` en callbacks |
+| `components/providers.tsx` | Eliminado `session={session ?? null}` del `<SessionProvider>` |
+| `components/layout/Sidebar.tsx` | `rawRole` lee `session?.user?.role` con tipo correcto |
+| `components/layout/Header.tsx` | `userRole` lee `session?.user?.rolName` con tipo correcto |
+| `lib/auth-helpers.ts` | Fallback `"INSTRUCTOR"` eliminado; retorna `rolName` y `hierarchyLevel` |
+| `actions/fichas.actions.ts` | Imports `authOptions` y `prisma` agregados |
+
+### 4. Seguridad Mantenida
+- **JWT**: Solo se acepta `name` en actualizaciones desde el cliente (`trigger = "update"`). Los campos `role`, `rolName` y `hierarchyLevel` solo se establecen en `authorize()` desde la BD.
+- **`requireRole()`**: Consulta la BD en cada Server Action — no confía en el token.
+- **`canManageUser()`**: Jerarquía estricta sin modificaciones.
+
+### 5. Build y Verificación
+- **Build:** `✓ Compiled successfully`, 33/33 páginas generadas, sin `ReferenceError` en `/fichas`.
+- **Servidor:** `✓ Ready in 1692ms` en `localhost:3000` y `0.0.0.0:3000`.
+- **HTTP:** `GET /login` → 200 OK. `GET /api/auth/session` → 200 OK (vacío sin cookie, esperado).
+
+---
+
+## V2.1.3 — Documentación Completa de Jornada
+**Fecha:** 18 de septiembre de 2026
+**Tag:** `v2.1.3`
+**Rama:** `v2.0`
+
+### Documentos creados en esta versión
+
+| Documento | Ubicación | Descripción |
+|-----------|-----------|-------------|
+| `SESION_2026-09-18_CAMBIOS.md` | `docs/` | Bitácora completa de la jornada: fases, herramientas, incidentes y resultados |
+| `ERRORES_CORREGIDOS_V2.1.md` | `docs/` | Catálogo técnico de todos los errores resueltos con causa raíz, corrección y verificación |
+| `ERRORES_PENDIENTES.md` | `docs/` | Catálogo priorizado de errores pendientes con solución requerida, archivos y estimado de tiempo |
+
+### Estado del sistema al cierre de jornada
+
+**Módulos operativos:**
+- ✅ Autenticación NextAuth con JWT — todos los roles
+- ✅ RBAC multi-nivel — middleware + Server Actions
+- ✅ Dashboard contextual por rol
+- ✅ Gestión institucional (instituciones, sedes, programas, fichas)
+- ✅ Gestión de actores (aprendices, instructores)
+- ✅ Ciclo académico completo (actividades, entregas, evaluaciones)
+- ✅ Asistencia con exportación XLSX
+- ✅ Seguimiento y riesgos
+- ✅ Documentos
+- ✅ Notificaciones en tiempo real
+- ✅ Auditoría con detalle legible
+- ✅ Reportes con scope por instructor
+- ✅ Administración (usuarios, roles, configuración)
+
+**Pendientes para próxima jornada (ver `docs/ERRORES_PENDIENTES.md`):**
+- Búsqueda global funcional (PE-01) — CRÍTICO
+- Scope asistencia por instructor (PE-02) — CRÍTICO
+- Ownership en evaluación de entregas (PE-03) — CRÍTICO
+- Limpieza TypeScript (~106 errores en 25 archivos) — ALTA

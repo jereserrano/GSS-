@@ -4,11 +4,13 @@ import React, { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Download, Pencil, Trash2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Search, Plus, Download, Pencil, Trash2, UploadCloud, CheckCircle2, Clock, XCircle } from "lucide-react";
 import type { ColumnaDef } from "@/types/common.types";
 import { formatDateShort } from "@/lib/utils";
 import { deleteActividad, exportActividadesCSV } from "@/actions/actividades.actions";
 import { ActividadFormDialog } from "./ActividadFormDialog";
+import { EntregaFormDialog } from "./EntregaFormDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -19,11 +21,17 @@ interface ActividadesTableProps {
 
 export function ActividadesTable({ initialData, fichas }: ActividadesTableProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const userRole = ((session?.user as any)?.role ?? "").toUpperCase();
+  const isAprendiz = userRole.includes("APRENDIZ");
+
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedActividad, setSelectedActividad] = useState<any>(null);
+  const [entregaDialogOpen, setEntregaDialogOpen] = useState(false);
+  const [actividadParaEntregar, setActividadParaEntregar] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
 
   const actividades = initialData?.data || [];
@@ -36,6 +44,11 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
   const handleCreate = () => {
     setSelectedActividad(null);
     setDialogOpen(true);
+  };
+
+  const handleEntregar = (actividad: any) => {
+    setActividadParaEntregar(actividad);
+    setEntregaDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -81,7 +94,74 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
     return "ACTIVA";
   };
 
-  const columnas: ColumnaDef<any>[] = [
+  const columnas: ColumnaDef<any>[] = isAprendiz ? [
+    {
+      key: "nombre",
+      header: "Actividad",
+      render: (a) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-text-primary line-clamp-1" title={a.nombre}>{a.nombre}</span>
+          <span className="text-xs text-text-secondary capitalize">{a.tipo?.toLowerCase()}</span>
+        </div>
+      )
+    },
+    {
+      key: "ficha",
+      header: "Ficha",
+      render: (a) => (
+        <span className="text-sm font-medium">{a.ficha?.codigo}</span>
+      )
+    },
+    {
+      key: "fechaVencimiento",
+      header: "Vencimiento",
+      render: (a) => {
+        const vencida = new Date(a.fechaFin) < new Date();
+        return (
+          <span className={`text-sm ${vencida ? 'text-danger-600 font-medium' : ''}`}>
+            {formatDateShort(a.fechaFin)}
+          </span>
+        );
+      }
+    },
+    {
+      key: "miEntrega",
+      header: "Mi Entrega / Estado",
+      render: (a) => {
+        const entrega = a.entregas?.[0];
+        if (!entrega) {
+          return <span className="badge-sin-entregar">SIN ENTREGAR</span>;
+        }
+
+        const est = (entrega.estado || "").toUpperCase();
+        if (est === "APROBADO" || est === "APROBADA") {
+          return <span className="badge-aprobado">APROBADO</span>;
+        }
+        if (est === "NO_APROBADA" || est === "RECHAZADO") {
+          return <span className="badge-no-aprobado">NO APROBADO</span>;
+        }
+        return <span className="badge-pendiente-aprobacion">ENTREGADO — PENDIENTE POR APROBACIÓN</span>;
+      }
+    },
+    {
+      key: "acciones",
+      header: "Acciones",
+      align: "right",
+      render: (a) => {
+        const entrega = a.entregas?.[0];
+        const cerrada = new Date(a.fechaFin) < new Date();
+        return (
+          <div className="flex justify-end gap-2">
+            {!cerrada && (
+              <Button size="sm" variant="outline" onClick={() => handleEntregar(a)}>
+                <UploadCloud size={14} className="mr-1" /> {entrega ? "Actualizar" : "Entregar"}
+              </Button>
+            )}
+          </div>
+        );
+      }
+    }
+  ] : [
     {
       key: "nombre",
       header: "Actividad",
@@ -183,12 +263,16 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
-            <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
-          </Button>
-          <Button onClick={handleCreate}>
-            <Plus size={16} className="mr-2" /> Nueva Actividad
-          </Button>
+          {!isAprendiz && (
+            <>
+              <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
+                <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
+              </Button>
+              <Button onClick={handleCreate}>
+                <Plus size={16} className="mr-2" /> Nueva Actividad
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -198,11 +282,27 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
         isLoading={loading} 
       />
 
-      {dialogOpen && (
+      {/* Dialog de creación/edición para Instructor/Admin */}
+      {dialogOpen && !isAprendiz && (
         <ActividadFormDialog 
           actividad={selectedActividad}
           fichas={fichas}
           onClose={() => setDialogOpen(false)}
+          onSuccess={() => router.refresh()}
+        />
+      )}
+
+      {/* Dialog de entrega de evidencia para Aprendiz */}
+      {entregaDialogOpen && isAprendiz && actividadParaEntregar && (
+        <EntregaFormDialog
+          entrega={actividadParaEntregar.entregas?.[0] ? {
+            ...actividadParaEntregar.entregas[0],
+            actividadId: actividadParaEntregar.id,
+            actividad: { nombre: actividadParaEntregar.nombre }
+          } : null}
+          actividades={[{ id: actividadParaEntregar.id, nombre: actividadParaEntregar.nombre }]}
+          aprendices={[]}
+          onClose={() => setEntregaDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />
       )}

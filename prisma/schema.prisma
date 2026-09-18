@@ -87,9 +87,10 @@ model Ficha {
   programa    Programa    @relation(fields: [programaId], references: [id])
   institucion Institucion @relation(fields: [institucionId], references: [id])
   sede        Sede        @relation(fields: [sedeId], references: [id])
-  aprendices  Aprendiz[]
-  actividades Actividad[]
-  asistencias Asistencia[]
+  aprendices   Aprendiz[]
+  actividades  Actividad[]
+  asistencias  Asistencia[]
+  instructores InstructorFicha[]
 
   @@map("fichas")
 }
@@ -115,34 +116,54 @@ model Aprendiz {
   nivelRiesgo          NivelRiesgo    @default(BAJO)
   porcentajeAsistencia Float          @default(100.0)
   promedioAcumulado    Float          @default(0.0)
+  userId               String?        @unique
   creadoEn             DateTime       @default(now())
   actualizadoEn        DateTime       @updatedAt
 
-  ficha       Ficha         @relation(fields: [fichaId], references: [id])
-  entregas    Entrega[]
-  evaluaciones EvaluacionAprendiz[]
-  alertas     AlertaRiesgo[]
-  detallesAsistencia DetalleAsistencia[]
+  user                User?         @relation(fields: [userId], references: [id])
+  ficha               Ficha         @relation(fields: [fichaId], references: [id])
+  entregas            Entrega[]
+  evaluaciones        EvaluacionAprendiz[]
+  alertas             AlertaRiesgo[]
+  detallesAsistencia  DetalleAsistencia[]
 
   @@map("aprendices")
 }
 
 model Instructor {
-  id            String   @id @default(cuid())
-  tipoDocumento TipoDocumento @default(CC)
-  numeroDocumento String @unique
-  nombres       String
-  apellidos     String
-  email         String   @unique
-  telefono      String?
-  profesion     String?
-  estado        Estado   @default(ACTIVO)
-  creadoEn      DateTime @default(now())
-  actualizadoEn DateTime @updatedAt
+  id              String        @id @default(cuid())
+  tipoDocumento   TipoDocumento @default(CC)
+  numeroDocumento String        @unique
+  nombres         String
+  apellidos       String
+  email           String        @unique
+  telefono        String?
+  profesion       String?
+  userId          String?       @unique
+  estado          Estado        @default(ACTIVO)
+  creadoEn        DateTime      @default(now())
+  actualizadoEn   DateTime      @updatedAt
 
+  user        User?             @relation(fields: [userId], references: [id])
   asistencias Asistencia[]
+  actividades Actividad[]
+  entregas    Entrega[]
+  fichas      InstructorFicha[]
 
   @@map("instructores")
+}
+
+model InstructorFicha {
+  id           String     @id @default(cuid())
+  instructorId String
+  fichaId      String
+  asignadoEn   DateTime   @default(now())
+
+  instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  ficha      Ficha      @relation(fields: [fichaId], references: [id], onDelete: Cascade)
+
+  @@unique([instructorId, fichaId])
+  @@map("instructor_fichas")
 }
 
 // ============================================================
@@ -177,6 +198,7 @@ model ResultadoAprendizaje {
 
   competencia  Competencia          @relation(fields: [competenciaId], references: [id])
   evaluaciones EvaluacionAprendiz[]
+  actividades  Actividad[]
 
   @@map("resultados_aprendizaje")
 }
@@ -186,36 +208,45 @@ model ResultadoAprendizaje {
 // ============================================================
 
 model Actividad {
-  id              String        @id @default(cuid())
-  fichaId         String
-  nombre          String
-  descripcion     String?       @db.Text
-  tipo            TipoActividad @default(TALLER)
-  fechaVencimiento DateTime
-  estado          EstadoActividad @default(ACTIVA)
-  creadoEn        DateTime      @default(now())
-  actualizadoEn   DateTime      @updatedAt
+  id                     String                @id @default(cuid())
+  fichaId                String
+  nombre                 String
+  descripcion            String?               @db.Text
+  instrucciones          String?               @db.Text
+  tipo                   TipoActividad         @default(TALLER)
+  fechaVencimiento       DateTime
+  estado                 EstadoActividad       @default(ACTIVA)
+  instructorId           String?
+  resultadoAprendizajeId String?
+  creadoEn               DateTime              @default(now())
+  actualizadoEn          DateTime              @updatedAt
 
-  ficha    Ficha     @relation(fields: [fichaId], references: [id])
-  entregas Entrega[]
+  ficha                Ficha                 @relation(fields: [fichaId], references: [id])
+  instructor           Instructor?           @relation(fields: [instructorId], references: [id])
+  resultadoAprendizaje ResultadoAprendizaje? @relation(fields: [resultadoAprendizajeId], references: [id])
+  entregas             Entrega[]
 
   @@map("actividades")
 }
 
 model Entrega {
-  id           String        @id @default(cuid())
-  actividadId  String
-  aprendizId   String
-  fechaEntrega DateTime      @default(now())
-  urlArchivo   String?
-  comentario   String?       @db.Text
-  estado       EstadoEntrega @default(PENDIENTE)
-  calificacion String?
-  creadoEn     DateTime      @default(now())
-  actualizadoEn DateTime     @updatedAt
+  id                String        @id @default(cuid())
+  actividadId       String
+  aprendizId        String
+  fechaEntrega      DateTime      @default(now())
+  urlArchivo        String?
+  comentario        String?       @db.Text
+  estado            EstadoEntrega @default(PENDIENTE)
+  calificacion      String?
+  retroalimentacion String?       @db.Text
+  instructorId      String?
+  fechaEvaluacion   DateTime?
+  creadoEn          DateTime      @default(now())
+  actualizadoEn     DateTime      @updatedAt
 
-  actividad Actividad @relation(fields: [actividadId], references: [id])
-  aprendiz  Aprendiz  @relation(fields: [aprendizId], references: [id])
+  actividad  Actividad   @relation(fields: [actividadId], references: [id])
+  aprendiz   Aprendiz    @relation(fields: [aprendizId], references: [id])
+  instructor Instructor? @relation(fields: [instructorId], references: [id])
 
   @@unique([actividadId, aprendizId])
   @@map("entregas")
@@ -331,6 +362,8 @@ model User {
 
   rol            Rol            @relation(fields: [rolId], references: [id])
   institucion    Institucion?   @relation(fields: [institucionId], references: [id])
+  instructor     Instructor?
+  aprendiz       Aprendiz?
   auditLog       AuditLog[]
   notificaciones Notificacion[]
 
@@ -420,12 +453,15 @@ enum EstadoActividad {
   ACTIVA
   CERRADA
   BORRADOR
+  PUBLICADA
 }
 
 enum EstadoEntrega {
   PENDIENTE
   CALIFICADA
   TARDIA
+  APROBADA
+  NO_APROBADA
 }
 
 enum EstadoAsistencia {

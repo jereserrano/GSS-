@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Download, Pencil, Trash2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Search, Plus, Download, Pencil, Trash2, UploadCloud } from "lucide-react";
 import type { ColumnaDef } from "@/types/common.types";
 import { formatDateShort } from "@/lib/utils";
 import { deleteEntrega, exportEntregasCSV } from "@/actions/entregas.actions";
@@ -20,6 +21,9 @@ interface EntregasTableProps {
 
 export function EntregasTable({ initialData, actividades, aprendices }: EntregasTableProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const userRole = ((session?.user as any)?.role ?? "").toUpperCase();
+  const isAprendiz = userRole.includes("APRENDIZ");
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   
@@ -90,11 +94,24 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
     },
     {
       key: "actividad",
-      header: "Actividad",
+      header: "Actividad / Evidencia",
       render: (e) => (
         <div className="flex flex-col max-w-xs">
-          <span className="text-sm font-medium line-clamp-1" title={e.actividad.nombre}>{e.actividad.nombre}</span>
-          <span className="text-xs text-text-secondary">Vence: {formatDateShort(e.actividad.fechaFin)}</span>
+          <span className="text-sm font-medium line-clamp-1" title={e.actividad?.nombre}>{e.actividad?.nombre}</span>
+          <div className="flex items-center gap-2 mt-0.5">
+            {e.urlArchivo ? (
+              <a 
+                href={e.urlArchivo} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-xs text-[#003F8C] hover:underline font-medium"
+              >
+                Ver evidencia ↗
+              </a>
+            ) : (
+              <span className="text-xs text-slate-400">Sin archivo adjunto</span>
+            )}
+          </div>
         </div>
       )
     },
@@ -105,17 +122,33 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
     },
     {
       key: "estado",
-      header: "Estado",
-      render: (e) => (
-        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-          ${e.estado === 'CALIFICADO' ? 'bg-success-50 text-success-700' : 
-            e.estado === 'PENDIENTE' ? 'bg-warning-50 text-warning-700' : 
-            e.estado === 'ENTREGADO' ? 'bg-info-50 text-info-700' :
-            'bg-danger-50 text-danger-700'}`}
-        >
-          {e.estado.toLowerCase()}
-        </span>
-      )
+      header: "Estado / Juicio",
+      render: (e) => {
+        const est = (e.estado || "").toUpperCase();
+        let badgeClass = "badge-pendiente-aprobacion";
+        let labelText = "ENTREGADO — PENDIENTE";
+
+        if (est === "APROBADA" || est === "APROBADO" || est === "CALIFICADA") {
+          badgeClass = "badge-aprobado";
+          labelText = "APROBADO";
+        } else if (est === "NO_APROBADA" || est === "RECHAZADO") {
+          badgeClass = "badge-no-aprobado";
+          labelText = "NO APROBADO";
+        }
+
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className={badgeClass}>
+              {labelText}
+            </span>
+            {e.retroalimentacion && (
+              <span className="text-[11px] text-slate-500 line-clamp-1 italic" title={e.retroalimentacion}>
+                &quot;{e.retroalimentacion}&quot;
+              </span>
+            )}
+          </div>
+        );
+      }
     },
     {
       key: "calificacion",
@@ -138,16 +171,25 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
       key: "acciones",
       header: "Acciones",
       align: "right",
-      render: (e) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(e)}>
-            <Pencil size={16} className="text-text-secondary" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(e.id)}>
-            <Trash2 size={16} className="text-red-500" />
-          </Button>
-        </div>
-      ),
+      render: (e) =>
+        isAprendiz ? (
+          <div className="flex justify-end gap-2">
+            {e.estado !== "APROBADA" && (
+              <Button variant="outline" size="sm" onClick={() => handleEdit(e)}>
+                <UploadCloud size={14} className="mr-1" /> Actualizar
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="icon" onClick={() => handleEdit(e)}>
+              <Pencil size={16} className="text-text-secondary" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => handleDelete(e.id)}>
+              <Trash2 size={16} className="text-red-500" />
+            </Button>
+          </div>
+        ),
     }
   ];
 
@@ -167,12 +209,16 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
-            <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
-          </Button>
-          <Button onClick={handleCreate}>
-            <Plus size={16} className="mr-2" /> Registrar Entrega
-          </Button>
+          {!isAprendiz && (
+            <>
+              <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
+                <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
+              </Button>
+              <Button onClick={handleCreate}>
+                <Plus size={16} className="mr-2" /> Registrar Entrega
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

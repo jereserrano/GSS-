@@ -6,8 +6,8 @@ import { TransactionRepository } from "@/repositories/transaction.repository";
 import { evaluacionSchema } from "@/schemas";
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
-import { logAudit } from "./reportes.actions";
-import { requireRole } from "@/lib/auth-helpers";
+import { logAudit } from "@/lib/audit.service";
+import { requireRole } from "@/lib/rbac";
 
 export async function getEvaluacionesAction(filtros: any = {}) {
   try {
@@ -59,8 +59,8 @@ export async function createEvaluacion(data: any) {
   try {
     const parsed = evaluacionSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
-    const userId = await getSessionUserId();
-    const user = await requireRole("ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR");
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     const existing = await EvaluacionAprendizRepository.findFirst({
       where: {
         resultadoAprendizajeId: data.resultadoAprendizajeId,
@@ -82,15 +82,13 @@ export async function createEvaluacion(data: any) {
       },
     });
 
-    
     await logAudit({
-      userId,
+      userId: user.id,
       modulo: "Evaluaciones",
       accion: "CREAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Evaluación registrada para aprendiz ID: ${data.aprendizId}`,
     });
     revalidatePath("/evaluaciones");
-    await logAudit({ accion: "CREAR", modulo: "EVALUACIONES", descripcion: `Evaluación registrada para aprendiz ID: ${data.aprendizId}`, usuarioId: user.id });
     return { success: true, evaluacion };
   } catch (error: any) {
     console.error("Error creating evaluacion:", error);
@@ -102,8 +100,8 @@ export async function updateEvaluacion(id: string, data: any) {
   try {
     const parsed = evaluacionSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
-    const userId = await getSessionUserId();
-    const user = await requireRole("ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR");
+    
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     const evaluacion = await EvaluacionAprendizRepository.update({
       where: { id },
       data: {
@@ -113,15 +111,13 @@ export async function updateEvaluacion(id: string, data: any) {
       },
     });
 
-    
     await logAudit({
-      userId,
+      userId: user.id,
       modulo: "Evaluaciones",
       accion: "ACTUALIZAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Evaluación actualizada ID: ${id}`,
     });
     revalidatePath("/evaluaciones");
-    await logAudit({ accion: "EDITAR", modulo: "EVALUACIONES", descripcion: `Evaluación actualizada ID: ${id}`, usuarioId: user.id });
     return { success: true, evaluacion };
   } catch (error: any) {
     console.error("Error updating evaluacion:", error);
@@ -131,18 +127,16 @@ export async function updateEvaluacion(id: string, data: any) {
 
 export async function deleteEvaluacion(id: string) {
   try {
-    const userId = await getSessionUserId();
-    const user = await requireRole("ADMINISTRADOR", "COORDINADOR"); // Instructores no pueden borrar
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]); // Instructores no pueden borrar
     await EvaluacionAprendizRepository.delete({ where: { id } });
     
     await logAudit({
-      userId,
+      userId: user.id,
       modulo: "Evaluaciones",
       accion: "ELIMINAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Evaluación eliminada ID: ${id}`,
     });
     revalidatePath("/evaluaciones");
-    await logAudit({ accion: "ELIMINAR", modulo: "EVALUACIONES", descripcion: `Evaluación eliminada ID: ${id}`, usuarioId: user.id });
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting evaluacion:", error);

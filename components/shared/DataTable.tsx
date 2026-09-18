@@ -22,14 +22,14 @@ export function DataTable<T>({ data, columnas, onRowClick, isLoading }: DataTabl
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center border rounded-lg bg-surface">
-        <p className="text-muted-foreground">No se encontraron registros</p>
+      <div className="flex flex-col items-center justify-center p-12 text-center border border-slate-200 rounded-xl bg-white shadow-2xs">
+        <p className="text-xs font-medium text-slate-500">No se encontraron registros en el sistema</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border bg-surface">
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
       <Table>
         <TableHeader>
           <TableRow>

@@ -105,7 +105,10 @@ export const actividadSchema = z.object({
   fichaId: z.string().min(1, "Ficha obligatoria"),
   fechaVencimiento: z.string().or(z.date()).optional(),
   fechaFin: z.string().or(z.date()).optional(), // Compatibilidad con el frontend actual
-  estado: z.enum(["ACTIVA", "CERRADA", "BORRADOR"]).optional(),
+  estado: z.enum(["ACTIVA", "PUBLICADA", "CERRADA", "BORRADOR"]).optional(),
+  instructorId: z.string().optional(),
+  resultadoAprendizajeId: z.string().optional(),
+  instrucciones: z.string().optional(),
 });
 
 // Entrega
@@ -114,8 +117,9 @@ export const entregaSchema = z.object({
   aprendizId: z.string().min(1, "Aprendiz obligatorio"),
   urlArchivo: z.string().optional(),
   comentario: z.string().optional(),
-  estado: z.enum(["PENDIENTE", "CALIFICADA", "TARDIA"]).optional(),
+  estado: z.enum(["PENDIENTE", "CALIFICADA", "TARDIA", "APROBADA", "NO_APROBADA"]).optional(),
   calificacion: z.string().optional(),
+  retroalimentacion: z.string().optional(),
 });
 
 // Asistencia
@@ -128,7 +132,7 @@ export const asistenciaSchema = z.object({
   registros: z.array(
     z.object({
       aprendizId: z.string(),
-      estado: z.enum(["ASISTIO", "FALTA", "EXCUSA"])
+      estado: z.enum(["PRESENTE", "ASISTIO", "FALLA", "EXCUSA"])
     })
   ).optional(),
 });
@@ -137,7 +141,7 @@ export const asistenciaSchema = z.object({
 export const evaluacionSchema = z.object({
   aprendizId: z.string().min(1, "Aprendiz obligatorio"),
   resultadoAprendizajeId: z.string().min(1, "RAP obligatorio"),
-  juicio: z.enum(["APROBADO", "DEFICIENTE", "PENDIENTE"]).optional(),
+  juicio: z.enum(["APROBADO", "DEFICIENTE", "PENDIENTE", "POR_EVALUAR", "NO_APROBADO"]).optional(),
   fechaEvaluacion: z.string().or(z.date()).optional(),
   observaciones: z.string().optional(),
 });

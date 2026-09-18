@@ -23,6 +23,8 @@ async function getSessionUserId() {
 
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/prisma";
+import { crearNotificacionSistema } from "./notificaciones.actions";
 
 export async function getActividadesAction(filtros: any = {}) {
   try {
@@ -30,13 +32,34 @@ export async function getActividadesAction(filtros: any = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
-    const where = {
+    // Obtener sesión actual para filtro de ámbito
+    const session = await getServerSession();
+    let userContext: any = null;
+    if (session?.user?.email) {
+      userContext = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: { rol: true, instructor: true, aprendiz: true }
+      });
+    }
+
+    const rolNombre = userContext?.rol?.nombre?.toUpperCase() || "";
+    let fichaFiltro = filtros.fichaId;
+
+    // Si es Aprendiz, solo puede ver actividades de su ficha y publicadas
+    const isAprendiz = rolNombre.includes("APRENDIZ");
+    if (isAprendiz && userContext?.aprendiz?.fichaId) {
+      fichaFiltro = userContext.aprendiz.fichaId;
+    }
+
+    const where: any = {
       ...(filtros.busqueda ? {
         OR: [
           { nombre: { contains: filtros.busqueda } },
+          { descripcion: { contains: filtros.busqueda } },
         ]
       } : {}),
-      ...(filtros.fichaId ? { fichaId: filtros.fichaId } : {}),
+      ...(fichaFiltro ? { fichaId: fichaFiltro } : {}),
+      ...(isAprendiz ? { estado: { in: ["ACTIVA", "PUBLICADA"] } } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([
@@ -52,6 +75,16 @@ export async function getActividadesAction(filtros: any = {}) {
               _count: { select: { aprendices: true } }
             }
           },
+          instructor: {
+            select: { nombres: true, apellidos: true }
+          },
+          resultadoAprendizaje: {
+            select: { codigo: true, nombre: true }
+          },
+          entregas: isAprendiz && userContext?.aprendiz ? {
+            where: { aprendizId: userContext.aprendiz.id },
+            select: { id: true, estado: true, calificacion: true, fechaEntrega: true, retroalimentacion: true }
+          } : false,
           _count: { select: { entregas: true } }
         },
         orderBy: { fechaVencimiento: "desc" },
@@ -72,24 +105,62 @@ export async function createActividad(data: z.infer<typeof actividadSchema>) {
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    
+    // Obtener instructor vinculado si el usuario es un instructor
+    const instructorRecord = await prisma.instructor.findUnique({
+      where: { userId: user.id }
+    });
+
+    const instructorId = instructorRecord?.id || data.instructorId || null;
+    const estadoActividad = data.estado || "PUBLICADA";
+
     const actividad = await ActividadRepository.create({
       data: {
         nombre: data.nombre,
         descripcion: data.descripcion || null,
+        instrucciones: data.instrucciones || null,
         tipo: data.tipo || "TALLER",
         fichaId: data.fichaId,
+        instructorId,
+        resultadoAprendizajeId: data.resultadoAprendizajeId || null,
         fechaVencimiento: new Date(data.fechaFin || data.fechaVencimiento),
+        estado: estadoActividad,
       },
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Actividades",
       accion: "CREAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Actividad creada: "${data.nombre}" para ficha ${data.fichaId}`,
     });
+
+    // Notificar dinámicamente a todos los aprendices en formación de la ficha si está activa o publicada
+    if (estadoActividad === "PUBLICADA" || estadoActividad === "ACTIVA") {
+      try {
+        const aprendices = await prisma.aprendiz.findMany({
+          where: { fichaId: data.fichaId, estado: "EN_FORMACION", userId: { not: null } },
+          select: { userId: true }
+        });
+
+        const fechaVenceFormatted = new Date(data.fechaFin || data.fechaVencimiento).toLocaleDateString("es-CO");
+        for (const ap of aprendices) {
+          if (ap.userId) {
+            await crearNotificacionSistema(
+              ap.userId,
+              `Nueva actividad: ${data.nombre}`,
+              `Se ha publicado la actividad "${data.nombre}". Fecha límite de entrega: ${fechaVenceFormatted}.`,
+              "INFO"
+            );
+          }
+        }
+      } catch (notifErr) {
+        console.error("Error enviando notificaciones a aprendices:", notifErr);
+      }
+    }
+
     revalidatePath("/actividades");
+    revalidatePath("/dashboard");
     return { success: true, actividad };
   } catch (error: any) {
     console.error("Error creating actividad:", error);
@@ -108,21 +179,23 @@ export async function updateActividad(id: string, data: z.infer<typeof actividad
       data: {
         nombre: data.nombre,
         descripcion: data.descripcion || null,
+        instrucciones: data.instrucciones || null,
         tipo: data.tipo,
         fichaId: data.fichaId,
+        resultadoAprendizajeId: data.resultadoAprendizajeId || null,
         fechaVencimiento: new Date(data.fechaFin || data.fechaVencimiento),
         estado: data.estado,
       },
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Actividades",
       accion: "ACTUALIZAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Actividad actualizada ID: ${id}`,
     });
     revalidatePath("/actividades");
+    revalidatePath("/dashboard");
     return { success: true, actividad };
   } catch (error: any) {
     console.error("Error updating actividad:", error);

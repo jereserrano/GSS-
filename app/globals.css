@@ -16,17 +16,30 @@
  *  5. Componentes CSS personalizados
  */
 
-/* ── 1. Fuente institucional Inter desde Google Fonts ── */
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+/* ── 1. Fuente institucional Work Sans desde Google Fonts ── */
+@import url("https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,300..900;1,300..900&display=swap");
 
 /* ── 2. Tailwind CSS v4 ── */
 @import "tailwindcss";
 
-/* ── 3. Variables CSS — Sistema de diseño SENA ── */
+/* ── 3. Variables CSS — Sistema de diseño Institucional SENA 2024 ── */
 @layer base {
   :root {
-    /* ─── Colores primitivos — Azul SENA ─── */
-    --color-sena-50:  #e8f0fb;   /* Fondo hover activo */
+    /* ─── Colores primitivos — Verde SENA Oficial (#39A900) ─── */
+    --color-verde-50:  #f0fdf4;   /* Fondo tenue */
+    --color-verde-100: #dcfce7;   /* Hover activo */
+    --color-verde-200: #bbf7d0;   /* Bordes suaves */
+    --color-verde-300: #86efac;
+    --color-verde-400: #4ade80;
+    --color-verde-500: #39A900;   /* Verde SENA Oficial 2024 */
+    --color-verde-600: #319200;   /* Verde SENA hover */
+    --color-verde-700: #267000;   /* Verde SENA texto / contraste */
+    --color-verde-800: #1d5400;
+    --color-verde-900: #143b00;
+    --color-verde-950: #0a1f00;
+
+    /* ─── Colores primitivos — Azul SENA Secundario / Acento ─── */
+    --color-sena-50:  #e8f0fb;
     --color-sena-100: #c5d8f5;
     --color-sena-200: #9dbdee;
     --color-sena-300: #74a2e6;
@@ -34,23 +47,11 @@
     --color-sena-500: #377ddb;
     --color-sena-600: #2563c7;
     --color-sena-700: #1a4fa0;
-    --color-sena-800: #113b7a;   /* Azul principal institucional */
-    --color-sena-900: #003F8C;   /* Azul SENA oficial */
-    --color-sena-950: #002660;   /* Sidebar oscuro */
+    --color-sena-800: #113b7a;
+    --color-sena-900: #003F8C;   /* Azul SENA secundario */
+    --color-sena-950: #002660;
 
-    /* ─── Colores primitivos — Verde SENA ─── */
-    --color-verde-50:  #e6f7ee;
-    --color-verde-100: #c2ebd3;
-    --color-verde-200: #9adeb7;
-    --color-verde-300: #70d09a;
-    --color-verde-400: #4ec485;
-    --color-verde-500: #00A650;   /* Verde SENA oficial */
-    --color-verde-600: #009648;
-    --color-verde-700: #00823e;
-    --color-verde-800: #006e34;
-    --color-verde-900: #004f26;
-
-    /* ─── Grises neutros ─── */
+    /* ─── Grises neutros institucionales ─── */
     --color-slate-50:  #f8fafc;
     --color-slate-100: #f1f5f9;
     --color-slate-200: #e2e8f0;
@@ -65,15 +66,15 @@
 
     /* ─── Colores semánticos — Estados ─── */
     --color-success-50:  #f0fdf4;
-    --color-success-500: #16a34a;   /* Activo, confirmado, bajo riesgo */
-    --color-success-700: #15803d;
+    --color-success-500: #39A900;   /* Activo, Aprobado, confirmado */
+    --color-success-700: #267000;
 
     --color-warning-50:  #fffbeb;
-    --color-warning-500: #d97706;   /* Pendiente, riesgo medio */
+    --color-warning-500: #d97706;   /* Pendiente por aprobación */
     --color-warning-700: #b45309;
 
     --color-danger-50:   #fef2f2;
-    --color-danger-500:  #dc2626;   /* Error, riesgo alto, inactivo crítico */
+    --color-danger-500:  #dc2626;   /* No aprobado, error, riesgo alto */
     --color-danger-700:  #b91c1c;
 
     --color-info-50:     #eff6ff;
@@ -81,45 +82,45 @@
     --color-info-700:    #1d4ed8;
 
     /* ─── Tokens semánticos de la aplicación ─── */
-    /* Superficie y fondo */
-    --bg-app:          var(--color-slate-100);    /* Fondo general de la app */
+    /* Superficie y fondo: interfaz clara, limpia */
+    --bg-app:          #f8fafc;                    /* Fondo general claro de la app */
     --bg-surface:      #ffffff;                    /* Cards, modales, tablas */
-    --bg-sidebar:      var(--color-sena-950);      /* Sidebar principal */
-    --bg-sidebar-hover: var(--color-sena-900);     /* Hover en items del sidebar */
+    --bg-sidebar:      #ffffff;                    /* Sidebar institucional claro */
+    --bg-sidebar-hover: #f1f5f9;                   /* Hover suave en items de sidebar */
     --bg-header:       #ffffff;                    /* Header superior */
 
     /* Bordes */
-    --border-default:  var(--color-slate-200);     /* Bordes de cards, inputs, separadores */
-    --border-focus:    var(--color-sena-900);      /* Borde de focus accesible */
+    --border-default:  #e2e8f0;                    /* Bordes de cards, inputs, separadores */
+    --border-focus:    #39A900;                    /* Borde de focus accesible institucional */
 
     /* Texto */
-    --text-primary:    var(--color-slate-900);     /* Texto principal */
-    --text-secondary:  var(--color-slate-500);     /* Labels, metadata, descripciones */
-    --text-disabled:   var(--color-slate-300);     /* Texto deshabilitado */
-    --text-inverse:    #ffffff;                    /* Texto sobre fondos oscuros (sidebar) */
-    --text-brand:      var(--color-sena-900);      /* Texto de marca / links principales */
+    --text-primary:    #0f172a;                    /* Texto principal de alto contraste */
+    --text-secondary:  #475569;                    /* Labels, metadata, subtítulos */
+    --text-disabled:   #94a3b8;                    /* Texto deshabilitado */
+    --text-inverse:    #ffffff;                    /* Texto sobre fondos oscuros o botones */
+    --text-brand:      #267000;                    /* Texto de marca institucional */
 
     /* Colores primarios (botones, links, acciones) */
-    --primary:         var(--color-sena-900);
-    --primary-hover:   var(--color-sena-800);
-    --primary-light:   var(--color-sena-50);
+    --primary:         #39A900;
+    --primary-hover:   #319200;
+    --primary-light:   #f0fdf4;
 
-    /* Accent (confirmaciones, éxito) */
-    --accent:          var(--color-verde-500);
-    --accent-hover:    var(--color-verde-600);
+    /* Accent (detalles institucionales complementarios) */
+    --accent:          #003F8C;
+    --accent-hover:    #002660;
 
-    /* ─── Tokens de riesgo — SOLO para badges de riesgo, nunca decorativos ─── */
+    /* ─── Tokens de riesgo ─── */
     --risk-low-bg:     var(--color-success-50);
     --risk-low-text:   var(--color-success-700);
-    --risk-low-border: var(--color-success-500);
+    --risk-low-border: var(--color-verde-300);
 
     --risk-medium-bg:  var(--color-warning-50);
     --risk-medium-text: var(--color-warning-700);
-    --risk-medium-border: var(--color-warning-500);
+    --risk-medium-border: #fcd34d;
 
     --risk-high-bg:    var(--color-danger-50);
     --risk-high-text:  var(--color-danger-700);
-    --risk-high-border: var(--color-danger-500);
+    --risk-high-border: #fca5a5;
 
     /* ─── Tokens de estado de entidades ─── */
     --status-active-bg:    var(--color-success-50);
@@ -134,22 +135,22 @@
     --status-cancelled-bg:  var(--color-danger-50);
     --status-cancelled-text: var(--color-danger-700);
 
-    /* ─── Tipografía ─── */
-    --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    /* ─── Tipografía Institucional ─── */
+    --font-sans: "Work Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 
-    /* ─── Sombras ─── */
-    --shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
-    --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
-    --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.10);
+    /* ─── Sombras sobrias ─── */
+    --shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+    --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
 
     /* ─── Radios de borde ─── */
     --radius-sm:   0.25rem;   /* 4px  — badges, chips */
-    --radius-md:   0.375rem;  /* 6px  — inputs, botones pequeños */
+    --radius-md:   0.375rem;  /* 6px  — inputs, botones */
     --radius-lg:   0.5rem;    /* 8px  — cards, modales */
     --radius-xl:   0.75rem;   /* 12px — cards grandes */
-    --radius-full: 9999px;    /* Circular — avatares, badges pill */
+    --radius-full: 9999px;    /* Circular */
 
     /* ─── Transiciones ─── */
     --transition-fast: 150ms ease;
@@ -157,35 +158,35 @@
     --transition-slow: 300ms ease;
 
     /* ─── Dimensiones del layout ─── */
-    --sidebar-width:           260px;   /* Ancho del sidebar expandido */
-    --sidebar-width-collapsed:  64px;   /* Ancho del sidebar colapsado */
-    --header-height:            64px;   /* Alto del header */
+    --sidebar-width:           260px;
+    --sidebar-width-collapsed:  64px;
+    --header-height:            64px;
 
-    /* ─── Variables requeridas por shadcn/ui (compatibilidad HSL) ─── */
+    /* ─── Variables requeridas por shadcn/ui (Verde SENA #39A900) ─── */
     --background:        0 0% 100%;
     --foreground:        222.2 84% 4.9%;
     --card:              0 0% 100%;
     --card-foreground:   222.2 84% 4.9%;
     --popover:           0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary-shadcn:    221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
+    --primary-shadcn:    99.6 100% 33.1%;          /* #39A900 */
+    --primary-foreground: 0 0% 100%;
     --secondary:         210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted:             210 40% 96.1%;
     --muted-foreground:  215.4 16.3% 46.9%;
-    --accent-shadcn:     210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent-shadcn:     99.6 100% 96%;
+    --accent-foreground: 99.6 100% 25%;
     --destructive:       0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border:            214.3 31.8% 91.4%;
     --input:             214.3 31.8% 91.4%;
-    --ring:              221.2 83.2% 53.3%;
+    --ring:              99.6 100% 33.1%;          /* #39A900 */
     --radius:            0.5rem;
-    --chart-1:           12 76% 61%;
-    --chart-2:           173 58% 39%;
-    --chart-3:           197 37% 24%;
-    --chart-4:           43 74% 66%;
+    --chart-1:           99.6 100% 33.1%;
+    --chart-2:           210 100% 27.5%;
+    --chart-3:           43 74% 66%;
+    --chart-4:           173 58% 39%;
     --chart-5:           27 87% 67%;
   }
 }
@@ -361,6 +362,56 @@
     color: var(--status-cancelled-text);
   }
 
+  /* ── Badges de estados académicos (Actividades y Entregas) ── */
+  .badge-sin-entregar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.18rem 0.625rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+  .badge-pendiente-aprobacion {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.18rem 0.625rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+  }
+  .badge-aprobado {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.18rem 0.625rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #86efac;
+  }
+  .badge-no-aprobado {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.18rem 0.625rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+
   /* ── Animación de skeleton loading ── */
   .skeleton {
     background: linear-gradient(
@@ -470,10 +521,10 @@
     cursor: pointer;
   }
   .table-row-hover:hover {
-    background-color: var(--color-sena-50);
+    background-color: var(--color-verde-50);
   }
   .table-row-hover:active {
-    background-color: var(--color-sena-100);
+    background-color: var(--color-verde-100);
   }
 
   /* ── Input focus animado ── */
@@ -483,12 +534,13 @@
   input:hover:not(:disabled),
   textarea:hover:not(:disabled),
   select:hover:not(:disabled) {
-    border-color: var(--color-sena-400);
+    border-color: var(--color-verde-400);
   }
   input:focus,
   textarea:focus,
   select:focus {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-sena-900) 15%, transparent);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
   }
 
   /* ── Íconos en botones animados ── */

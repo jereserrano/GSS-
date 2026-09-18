@@ -60,6 +60,21 @@ export function canAccessRoute(role: string | undefined | null, pathname: string
     return true;
   }
 
+  // Restricciones para Aprendiz
+  if (normalRole === "APRENDIZ" || normalRole.includes("APRENDIZ")) {
+    const RUTAS_PERMITIDAS_APRENDIZ = [
+      "/dashboard",
+      "/fichas",
+      "/actividades",
+      "/entregas",
+      "/resultados",
+      "/plan-formacion",
+      "/documentos",
+      "/notificaciones",
+    ];
+    return RUTAS_PERMITIDAS_APRENDIZ.some((ruta) => pathname === ruta || pathname.startsWith(ruta + "/"));
+  }
+
   // Por defecto, permitir rutas base si no coincide
   return pathname.startsWith("/dashboard") || pathname.startsWith("/notificaciones");
 }

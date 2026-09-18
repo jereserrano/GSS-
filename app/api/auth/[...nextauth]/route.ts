@@ -40,10 +40,13 @@ export const authOptions = {
         });
 
         let normalizedRole = "INSTRUCTOR";
-        if (user.rol.nombre.toUpperCase().includes("ADMIN")) normalizedRole = "ADMINISTRADOR";
-        else if (user.rol.nombre.toUpperCase().includes("APOYO")) normalizedRole = "APOYO_ADMINISTRATIVO";
-        else if (user.rol.nombre.toUpperCase().includes("SEDE")) normalizedRole = "COORDINADOR_SEDE";
-        else if (user.rol.nombre.toUpperCase().includes("COORD")) normalizedRole = "COORDINADOR";
+        const rolUpper = user.rol.nombre.toUpperCase();
+        if (rolUpper.includes("ADMIN")) normalizedRole = "ADMINISTRADOR";
+        else if (rolUpper.includes("APRENDIZ")) normalizedRole = "APRENDIZ";
+        else if (rolUpper.includes("APOYO")) normalizedRole = "APOYO_ADMINISTRATIVO";
+        else if (rolUpper.includes("SEDE")) normalizedRole = "COORDINADOR_SEDE";
+        else if (rolUpper.includes("COORD")) normalizedRole = "COORDINADOR";
+        else if (rolUpper.includes("INSTRUCT")) normalizedRole = "INSTRUCTOR";
 
         const hierarchyLevel = getHierarchyLevel(user.rol.nombre);
 

@@ -28,6 +28,7 @@ export enum HierarchyLevel {
   COORDINADOR_SEDE = 3,
   APOYO_ADMINISTRATIVO = 3,
   INSTRUCTOR = 4,
+  APRENDIZ = 5,
   UNKNOWN = 99,
 }
 
@@ -84,21 +85,23 @@ export function getHierarchyLevel(rolNombre: string | undefined | null): Hierarc
 
   const upper = rolNombre.toUpperCase().trim();
 
-  // 1 — Administrador (máxima autoridad)
-  if (upper.includes("ADMIN")) return HierarchyLevel.ADMINISTRADOR;
-
-  // 3 — Apoyo Administrativo (nivel 3 sin capacidad de gestionar usuarios)
-  //     Se detecta ANTES que COORDINADOR para evitar falso positivo
+  // 3 — Apoyo Administrativo (se detecta ANTES que ADMIN/COORD porque contiene "ADMINISTRATIVO")
   if (upper.includes("APOYO")) return HierarchyLevel.APOYO_ADMINISTRATIVO;
 
-  // 3 — Coordinador de Sede (nivel 3 con capacidad limitada de gestionar Instructores en su sede)
+  // 3 — Coordinador de Sede (se detecta ANTES que COORD)
   if (upper.includes("SEDE")) return HierarchyLevel.COORDINADOR_SEDE;
+
+  // 1 — Administrador (máxima autoridad)
+  if (upper.includes("ADMIN")) return HierarchyLevel.ADMINISTRADOR;
 
   // 2 — Coordinador Académico / Regional
   if (upper.includes("COORD")) return HierarchyLevel.COORDINADOR;
 
-  // 4 — Instructor (nivel base, sin capacidad de administrar)
+  // 4 — Instructor (nivel base)
   if (upper.includes("INSTRUCT")) return HierarchyLevel.INSTRUCTOR;
+
+  // 5 — Aprendiz (estudiante en formación)
+  if (upper.includes("APRENDIZ")) return HierarchyLevel.APRENDIZ;
 
   return HierarchyLevel.UNKNOWN;
 }
@@ -113,6 +116,8 @@ function canRoleManageUsers(rolNombre: string): boolean {
   if (upper.includes("APOYO")) return false;
   // Instructor NO puede gestionar usuarios
   if (upper.includes("INSTRUCT")) return false;
+  // Aprendiz NO puede gestionar usuarios
+  if (upper.includes("APRENDIZ")) return false;
   // Los demás roles con nivel < 4 sí pueden (según su jerarquía)
   return true;
 }
@@ -247,6 +252,10 @@ export function getAssignableRoles(
   currentRolNombre: string,
   allRoles: Array<{ id: string; nombre: string }>
 ): Array<{ id: string; nombre: string }> {
+  if (!canRoleManageUsers(currentRolNombre)) {
+    return [];
+  }
+
   const currentLevel = getHierarchyLevel(currentRolNombre);
 
   return allRoles.filter((rol) => {

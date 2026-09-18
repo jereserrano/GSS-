@@ -4,8 +4,8 @@ import { SecurityGuard } from "@/components/shared/SecurityGuard";
 import "./globals.css";
 
 export const metadata = {
-  title: "GSS - Grade Submission System",
-  description: "Sistema de Gestión y Seguimiento Académico - SENA Regional Magdalena",
+  title: "GSS — Sistema de Información para el Seguimiento del Proceso de Integración con la Media Técnica",
+  description: "GSS — Proyecto académico desarrollado en el contexto del SENA para el seguimiento formativo de la Media Técnica",
 };
 
 export default function RootLayout({

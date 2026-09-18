@@ -210,7 +210,11 @@ test("LEVEL 05", "getHierarchyLevel('Instructor SENA') = 4",
   getHierarchyLevel("Instructor SENA") === 4,
   `result=${getHierarchyLevel("Instructor SENA")}`);
 
-test("LEVEL 06", "getHierarchyLevel(null) = 99 (desconocido)",
+test("LEVEL 06", "getHierarchyLevel('Aprendiz') = 5",
+  getHierarchyLevel("Aprendiz") === 5,
+  `result=${getHierarchyLevel("Aprendiz")}`);
+
+test("LEVEL 07", "getHierarchyLevel(null) = 99 (desconocido)",
   getHierarchyLevel(null) === 99,
   `result=${getHierarchyLevel(null)}`);
 
@@ -222,16 +226,17 @@ const allRolesMock = [
   { id: "r3", nombre: "Coordinador de Sede" },
   { id: "r4", nombre: "Apoyo Administrativo" },
   { id: "r5", nombre: "Instructor SENA" },
+  { id: "r6", nombre: "Aprendiz" },
 ];
 
 const rolesForAdmin = getAssignableRoles("Administrador del Sistema", allRolesMock);
-test("ASSIGN 01", "Admin puede asignar: Coord, CoordSede, Apoyo, Instructor (4 roles)",
-  rolesForAdmin.length === 4,
+test("ASSIGN 01", "Admin puede asignar: Coord, CoordSede, Apoyo, Instructor, Aprendiz (5 roles)",
+  rolesForAdmin.length === 5,
   `roles asignables por Admin: ${rolesForAdmin.map(r => r.nombre).join(", ")}`);
 
 const rolesForCoord = getAssignableRoles("Coordinador Académico", allRolesMock);
-test("ASSIGN 02", "Coordinador puede asignar: CoordSede, Apoyo, Instructor (3 roles)",
-  rolesForCoord.length === 3,
+test("ASSIGN 02", "Coordinador puede asignar: CoordSede, Apoyo, Instructor, Aprendiz (4 roles)",
+  rolesForCoord.length === 4,
   `roles asignables por Coordinador: ${rolesForCoord.map(r => r.nombre).join(", ")}`);
 
 const rolesForInstructor = getAssignableRoles("Instructor SENA", allRolesMock);
@@ -240,9 +245,9 @@ test("ASSIGN 03", "Instructor NO puede asignar ningún rol (0 roles)",
   `roles: ${rolesForInstructor.length}`);
 
 const rolesForApoyo = getAssignableRoles("Apoyo Administrativo", allRolesMock);
-test("ASSIGN 04", "Apoyo Admin solo puede asignar Instructor (1 rol)",
-  rolesForApoyo.length === 1 && (rolesForApoyo[0]?.nombre ?? "").includes("Instructor"),
-  `roles: ${rolesForApoyo.map(r => r.nombre).join(", ")}`);
+test("ASSIGN 04", "Apoyo Admin NO puede asignar ningún rol (0 roles)",
+  rolesForApoyo.length === 0,
+  `roles: ${rolesForApoyo.length}`);
 
 // =============================================================================
 // RESUMEN FINAL

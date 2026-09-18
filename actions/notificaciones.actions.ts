@@ -19,12 +19,10 @@ async function getSessionUserId() {
 
 export async function getMisNotificacionesAction() {
   try {
-    
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
-    if (!userId) return { success: false, error: "No autorizado" };
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR", "APRENDIZ"]);
 
     const notificaciones = await NotificacionRepository.findMany({
-      where: { userId },
+      where: { userId: user.id },
       orderBy: { creadoEn: "desc" },
     });
 
@@ -36,13 +34,11 @@ export async function getMisNotificacionesAction() {
 
 export async function marcarComoLeidaAction(id: string) {
   try {
-    
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
-    if (!userId) return { success: false, error: "No autorizado" };
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR", "APRENDIZ"]);
 
     // Verificar propiedad
     const notif = await NotificacionRepository.findUnique({ where: { id } });
-    if (!notif || notif.userId !== userId) return { success: false, error: "No autorizado" };
+    if (!notif || notif.userId !== user.id) return { success: false, error: "No autorizado" };
 
     await NotificacionRepository.update({
       where: { id },
@@ -58,9 +54,7 @@ export async function marcarComoLeidaAction(id: string) {
 
 export async function marcarTodasComoLeidasAction() {
   try {
-    
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
-    if (!userId) return { success: false, error: "No autorizado" };
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR", "APRENDIZ"]);
 
     await NotificacionRepository.updateMany({
       where: { userId: user.id, leida: false },
@@ -79,7 +73,7 @@ export async function crearNotificacionSistema(userId: string, titulo: string, m
   try {
     await NotificacionRepository.create({
       data: {
-        userId: user.id,
+        userId,
         titulo,
         mensaje,
         tipo,

@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ArrowRight, Lock, Mail } from "lucide-react";
+import { AlertCircle, ArrowRight, Lock, Mail, ShieldCheck, GraduationCap } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,7 +28,7 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Credenciales incorrectas. Verifique su correo y contraseña.");
+      setError("Credenciales no válidas. Verifique su correo institucional y contraseña.");
       setIsLoading(false);
       return;
     }
@@ -38,146 +38,139 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-slate-50">
-      {/* Sección Izquierda - Decorativa (Azul SENA oscuro) */}
-      <div className="hidden lg:flex w-1/2 bg-[#003F8C] relative overflow-hidden flex-col justify-between p-12 text-white">
-        {/* Patrón de fondo */}
-        <div className="absolute inset-0 opacity-10" 
-             style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "32px 32px" }}>
-        </div>
-        
-        {/* Círculos decorativos desenfocados (Verde SENA) */}
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#00A650]/20 blur-[100px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500/20 blur-[100px]" />
-
-        <div className="relative z-10">
+    <div className="min-h-screen flex flex-col justify-between bg-slate-50">
+      
+      {/* Barra superior institucional */}
+      <header className="w-full bg-white border-b border-slate-200 py-3 px-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-white/10 px-3 py-2 rounded-xl backdrop-blur-md border border-white/20 font-black text-xl text-[#00A650] tracking-widest">
+            <span className="bg-[#39A900] text-white font-bold text-sm px-2.5 py-1 rounded-md tracking-wider">
               GSS
+            </span>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-xs font-bold text-slate-800 tracking-tight">
+                Integración con la Media Técnica
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Proyecto académico en contexto SENA
+              </span>
             </div>
-            <span className="font-bold text-2xl tracking-tight">GRADE SUBMISSION SYSTEM</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200">
+            <GraduationCap size={15} className="text-[#39A900]" />
+            <span className="font-medium">Plataforma Académica</span>
           </div>
         </div>
+      </header>
 
-        <div className="relative z-10 max-w-lg">
-          <h1 className="text-5xl font-bold leading-tight mb-6">
-            Gestión Inteligente para la Media Técnica
-          </h1>
-          <p className="text-lg text-[#c5d8f5] leading-relaxed">
-            Plataforma centralizada para el seguimiento, control y administración de los procesos de integración con instituciones educativas.
-          </p>
-        </div>
-
-        <div className="relative z-10 flex items-center gap-4 text-sm text-[#c5d8f5] font-medium">
-          <p>SENA Regional Magdalena</p>
-          <div className="w-1.5 h-1.5 rounded-full bg-[#00A650]" />
-          <p>Centro de Logística y Promoción Ecoturística</p>
-        </div>
-      </div>
-
-      {/* Sección Derecha - Formulario */}
-      <div className="flex-1 flex flex-col justify-center items-center p-8 lg:p-12 relative bg-white">
-        
-        {/* Decoración sutil en móvil */}
-        <div className="absolute top-0 w-full h-[30vh] bg-[#003F8C] lg:hidden -z-10" />
-        
-        <div className="w-full max-w-[420px] animate-in fade-in slide-in-from-bottom-8 duration-700">
+      {/* Contenedor central del formulario */}
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 my-8">
+        <div className="w-full max-w-[440px] bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 shadow-xs">
           
-          {/* Header móvil */}
-          <div className="lg:hidden flex flex-col items-center mb-10 text-white">
-            <div className="bg-white/10 px-5 py-3 rounded-2xl backdrop-blur-md mb-4 shadow-lg border border-white/20 font-black text-3xl text-[#00A650] tracking-widest">
-              GSS
+          {/* Cabecera del formulario */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#f0fdf4] text-[#39A900] border border-[#bbf7d0] mb-4">
+              <ShieldCheck size={26} />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">GRADE SUBMISSION SYSTEM</h1>
-            <p className="text-[#c5d8f5] text-sm mt-1">SENA Regional Magdalena</p>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Ingreso a la Plataforma
+            </h1>
+            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              Sistema de Información para el Seguimiento del Proceso de Integración con la Media Técnica
+            </p>
           </div>
 
-          <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Bienvenido de nuevo</h2>
-              <p className="text-slate-500 text-sm">
-                Ingresa tus credenciales institucionales para acceder al panel de administración.
-              </p>
+          {/* Mensaje de error si falla la autenticación */}
+          {error && (
+            <div className="mb-5 p-3.5 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2.5">
+              <AlertCircle size={17} className="text-red-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-700 font-medium leading-normal">{error}</p>
+            </div>
+          )}
+
+          {/* Formulario accesible */}
+          <form onSubmit={handleLogin} className="space-y-4.5">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 block" htmlFor="email">
+                Correo institucional
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Mail size={16} />
+                </div>
+                <Input 
+                  id="email"
+                  name="email"
+                  placeholder="usuario@misena.edu.co" 
+                  type="email" 
+                  autoComplete="email"
+                  required
+                  className="pl-9 h-10 text-xs rounded-lg bg-white border-slate-200 focus-visible:border-[#39A900] focus-visible:ring-[#39A900]"
+                />
+              </div>
             </div>
 
-            {error && (
-              <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3 animate-in fade-in zoom-in-95 duration-300">
-                <AlertCircle size={20} className="text-red-500 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700 font-medium">{error}</p>
-              </div>
-            )}
-            
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2.5">
-                <label className="text-sm font-semibold text-slate-700" htmlFor="email">
-                  Correo institucional
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 block" htmlFor="password">
+                  Contraseña
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-slate-400" />
-                  </div>
-                  <Input 
-                    id="email"
-                    name="email"
-                    placeholder="usuario@sena.edu.co" 
-                    type="email" 
-                    autoComplete="email"
-                    required
-                    className="pl-11 h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-[#00A650]"
-                  />
-                </div>
+                <a href="#" className="text-[11px] font-medium text-[#267000] hover:text-[#1d5400] hover:underline transition-colors">
+                  ¿Olvidó su contraseña?
+                </a>
               </div>
-
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-slate-700" htmlFor="password">
-                    Contraseña
-                  </label>
-                  <a href="#" className="text-xs font-medium text-[#00823e] hover:text-[#004f26] hover:underline transition-colors">
-                    ¿Olvidaste tu contraseña?
-                  </a>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Lock size={16} />
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-slate-400" />
-                  </div>
-                  <Input 
-                    id="password"
-                    name="password"
-                    type="password" 
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    required
-                    className="pl-11 h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-[#00A650]"
-                  />
-                </div>
+                <Input 
+                  id="password"
+                  name="password"
+                  type="password" 
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                  className="pl-9 h-10 text-xs rounded-lg bg-white border-slate-200 focus-visible:border-[#39A900] focus-visible:ring-[#39A900]"
+                />
               </div>
+            </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-base font-semibold mt-4 rounded-xl bg-[#003F8C] hover:bg-[#002660] text-white shadow-lg shadow-blue-900/20 transition-all hover:-translate-y-0.5 active:translate-y-0 group" 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
-                    Iniciando sesión...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    Ingresar al sistema
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                )}
-              </Button>
-            </form>
+            <Button 
+              type="submit" 
+              className="w-full h-10.5 text-xs font-semibold mt-2 rounded-lg bg-[#39A900] hover:bg-[#319200] text-white shadow-xs transition-colors" 
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
+                  Validando credenciales...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-1.5">
+                  Acceder a la formación
+                  <ArrowRight size={15} />
+                </span>
+              )}
+            </Button>
+          </form>
+
+          {/* Nota de seguridad y privacidad */}
+          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+            <p className="text-[11px] text-slate-400 leading-normal">
+              Acceso restringido para instructores, aprendices y personal autorizado en el marco de la integración media técnica.
+            </p>
           </div>
-          
-          <p className="text-center text-sm text-slate-400 mt-8 font-medium">
-            © {new Date().getFullYear()} SENA Regional Magdalena. Todos los derechos reservados.
-          </p>
+
         </div>
-      </div>
+      </main>
+
+      {/* Footer del Login */}
+      <footer className="w-full border-t border-slate-200 bg-white py-4 px-6 text-center text-xs text-slate-500">
+        <p className="text-[11px]">
+          GSS es un proyecto académico desarrollado en el contexto de la formación del SENA.
+        </p>
+      </footer>
+
     </div>
   );
 }

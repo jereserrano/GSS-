@@ -31,7 +31,7 @@ export async function requireRole(allowedRoles?: UserRole[]) {
   const userRole = user.rol.nombre.toUpperCase();
   
   // El ADMINISTRADOR siempre tiene acceso a todo.
-  if (userRole === "ADMINISTRADOR") {
+  if (userRole === "ADMINISTRADOR" || userRole.includes("ADMIN")) {
     return user;
   }
 

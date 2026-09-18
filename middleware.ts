@@ -7,7 +7,7 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth?.token;
     const pathname = req.nextUrl.pathname;
-    const role = (token?.role as string) || "INSTRUCTOR";
+    const role = (token?.role as string) || "APRENDIZ";
 
     // Validar autorización de rol para la ruta solicitada
     if (!canAccessRoute(role, pathname)) {
@@ -29,7 +29,7 @@ export default withAuth(
   }
 );
 
-// Aplicar middleware SOLO a las rutas protegidas del sistema (sin /docentes)
+// Aplicar middleware a todas las rutas protegidas del sistema
 export const config = {
   matcher: [
     "/dashboard/:path*",
@@ -39,6 +39,7 @@ export const config = {
     "/fichas/:path*",
     "/aprendices/:path*",
     "/instructores/:path*",
+    "/docentes/:path*",
     "/competencias/:path*",
     "/resultados-aprendizaje/:path*",
     "/plan-formacion/:path*",
@@ -46,6 +47,7 @@ export const config = {
     "/entregas/:path*",
     "/asistencia/:path*",
     "/evaluaciones/:path*",
+    "/resultados/:path*",
     "/seguimiento/:path*",
     "/riesgos/:path*",
     "/reportes/:path*",

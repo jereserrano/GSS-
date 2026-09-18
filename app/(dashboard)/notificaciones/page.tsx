@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { CheckCheck, AlertTriangle, Info, Calendar, Bell, XCircle } from "lucide-react";
+import { 
+  CheckCheck, AlertTriangle, Info, Calendar, Bell, XCircle, 
+  BookCheck, FileSignature, Filter, CheckCircle2 
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getMisNotificacionesAction, marcarTodasComoLeidasAction, marcarComoLeidaAction } from "@/actions/notificaciones.actions";
@@ -9,24 +12,11 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
-const ICONS: Record<string, any> = {
-  ALERTA: AlertTriangle,
-  INFO: Info,
-  EXITO: CheckCheck,
-  ERROR: XCircle,
-};
-
-const COLORS: Record<string, string> = {
-  ALERTA: "text-warning-600 bg-warning-50",
-  INFO: "text-info-600 bg-info-50",
-  EXITO: "text-success-600 bg-success-50",
-  ERROR: "text-danger-600 bg-danger-50",
-};
-
 export default function NotificacionesPage() {
   const [notificaciones, setNotificaciones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
+  const [filtro, setFiltro] = useState<"TODAS" | "NO_LEIDAS" | "LEIDAS">("TODAS");
 
   const fetchNotificaciones = async () => {
     setLoading(true);
@@ -63,59 +53,167 @@ export default function NotificacionesPage() {
     }
   };
 
+  const notificacionesFiltradas = notificaciones.filter((n) => {
+    if (filtro === "NO_LEIDAS") return !n.leida;
+    if (filtro === "LEIDAS") return n.leida;
+    return true;
+  });
+
+  const unreadTotal = notificaciones.filter((n) => !n.leida).length;
+
+  const getIconAndStyle = (notif: any) => {
+    const tipo = (notif.tipo || "").toUpperCase();
+    const titulo = (notif.titulo || "").toLowerCase();
+
+    if (titulo.includes("aprob") || tipo === "EXITO") {
+      return {
+        icon: CheckCircle2,
+        style: "text-[#267000] bg-[#f0fdf4] border-[#bbf7d0]"
+      };
+    }
+    if (titulo.includes("no aprob") || tipo === "ERROR") {
+      return {
+        icon: XCircle,
+        style: "text-red-600 bg-red-50 border-red-200"
+      };
+    }
+    if (titulo.includes("entrega") || tipo.includes("ENTREGA")) {
+      return {
+        icon: FileSignature,
+        style: "text-amber-700 bg-amber-50 border-amber-200"
+      };
+    }
+    if (titulo.includes("actividad") || tipo.includes("ACTIVIDAD")) {
+      return {
+        icon: BookCheck,
+        style: "text-[#39A900] bg-[#f0fdf4] border-[#bbf7d0]"
+      };
+    }
+    if (tipo === "ALERTA" || titulo.includes("riesgo")) {
+      return {
+        icon: AlertTriangle,
+        style: "text-amber-600 bg-amber-50 border-amber-200"
+      };
+    }
+    return {
+      icon: Info,
+      style: "text-slate-600 bg-slate-100 border-slate-200"
+    };
+  };
+
   return (
-    <div className="page-container space-y-6 page-enter">
-      <div className="flex items-center justify-between">
+    <div className="page-container space-y-6 page-enter pb-10">
+      
+      {/* Encabezado */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Notificaciones</h1>
-          <p className="text-text-secondary mt-1">
-            Alertas y avisos del sistema en tiempo real.
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Centro de Notificaciones</h1>
+            {unreadTotal > 0 && (
+              <span className="text-xs font-semibold bg-[#f0fdf4] text-[#267000] border border-[#bbf7d0] px-2 py-0.5 rounded-full">
+                {unreadTotal} pendientes
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Avisos de actividades, entregas, evaluaciones y novedades académicas en tiempo real.
           </p>
         </div>
-        <Button variant="outline" className="gap-2 bg-surface" onClick={handleMarcarTodas} disabled={marking || loading || notificaciones.every(n => n.leida)}>
-          <CheckCheck size={16} /> Marcar todas como leídas
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-xs gap-1.5 bg-white border-slate-200 hover:border-[#39A900] hover:text-[#267000]" 
+            onClick={handleMarcarTodas} 
+            disabled={marking || loading || unreadTotal === 0}
+          >
+            <CheckCheck size={14} className="text-[#39A900]" />
+            <span>Marcar todo como leído</span>
+          </Button>
+        </div>
       </div>
 
-      <div className="space-y-3">
+      {/* Filtros de pestañas */}
+      <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 text-xs font-semibold">
+        <button
+          onClick={() => setFiltro("TODAS")}
+          className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+            filtro === "TODAS" 
+              ? "bg-[#39A900] text-white shadow-2xs" 
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          Todas ({notificaciones.length})
+        </button>
+        <button
+          onClick={() => setFiltro("NO_LEIDAS")}
+          className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+            filtro === "NO_LEIDAS" 
+              ? "bg-[#39A900] text-white shadow-2xs" 
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          No leídas ({unreadTotal})
+        </button>
+        <button
+          onClick={() => setFiltro("LEIDAS")}
+          className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+            filtro === "LEIDAS" 
+              ? "bg-[#39A900] text-white shadow-2xs" 
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          Leídas ({notificaciones.length - unreadTotal})
+        </button>
+      </div>
+
+      {/* Lista de Notificaciones */}
+      <div className="space-y-2.5">
         {loading ? (
-          <div className="text-center py-10 text-text-secondary">Cargando notificaciones...</div>
-        ) : notificaciones.length === 0 ? (
-          <div className="text-center py-10 text-text-secondary flex flex-col items-center gap-2">
-            <Bell size={40} className="text-slate-300" />
-            <p>No tienes notificaciones por el momento.</p>
+          <div className="text-center py-12 text-xs text-slate-400">Cargando avisos del sistema...</div>
+        ) : notificacionesFiltradas.length === 0 ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-10 text-center flex flex-col items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 mb-3 border border-slate-200">
+              <Bell size={22} />
+            </div>
+            <p className="text-sm font-semibold text-slate-700">No hay notificaciones</p>
+            <p className="text-xs text-slate-400 mt-1">
+              {filtro === "NO_LEIDAS" ? "Has revisado todos tus avisos pendientes." : "Tu bandeja de notificaciones está limpia."}
+            </p>
           </div>
         ) : (
-          notificaciones.map((notif) => {
-            const Icon = ICONS[notif.tipo] || Bell;
-            const color = COLORS[notif.tipo] || COLORS.INFO;
+          notificacionesFiltradas.map((notif) => {
+            const { icon: Icon, style } = getIconAndStyle(notif);
             
             return (
-              <Card 
+              <div 
                 key={notif.id}
                 onClick={() => handleMarcarLeida(notif.id, notif.leida)}
-                className={`border-0 shadow-sm transition-all cursor-pointer hover:shadow-md ${!notif.leida ? "border-l-4 border-l-primary" : "opacity-70"}`}
+                className={`p-4 rounded-xl border transition-all flex items-start gap-3.5 bg-white ${
+                  !notif.leida 
+                    ? "border-l-4 border-l-[#39A900] border-slate-200 shadow-2xs cursor-pointer hover:border-slate-300" 
+                    : "border-slate-200 opacity-75 hover:opacity-100"
+                }`}
               >
-                <CardContent className="p-4 flex items-start gap-4">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${color}`}>
-                    <Icon size={20} />
+                <div className={`p-2.5 rounded-xl shrink-0 border ${style}`}>
+                  <Icon size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <h2 className={`text-xs font-bold leading-tight ${!notif.leida ? "text-slate-900" : "text-slate-600"}`}>
+                      {notif.titulo}
+                    </h2>
+                    {!notif.leida && (
+                      <span className="h-2 w-2 rounded-full bg-[#39A900] shrink-0 mt-0.5" />
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className={`text-sm font-semibold ${!notif.leida ? "text-text-primary" : "text-text-secondary"}`}>
-                        {notif.titulo}
-                      </h3>
-                      {!notif.leida && (
-                        <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />
-                      )}
-                    </div>
-                    <p className="text-sm text-text-secondary mt-1 line-clamp-2">{notif.mensaje}</p>
-                    <span className="text-xs text-slate-400 mt-2 block">
-                      {formatDistanceToNow(new Date(notif.creadoEn), { addSuffix: true, locale: es })}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{notif.mensaje}</p>
+                  <span className="text-[10px] text-slate-400 mt-2 block font-medium">
+                    {formatDistanceToNow(new Date(notif.creadoEn), { addSuffix: true, locale: es })}
+                  </span>
+                </div>
+              </div>
             );
           })
         )}

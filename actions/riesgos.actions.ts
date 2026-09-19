@@ -27,6 +27,10 @@ export async function getRiesgosAction(filtros: any = {}) {
       ...(filtros.nivel ? { nivel: filtros.nivel } : {}),
     };
 
+    if (filtros.fichaIds && filtros.fichaIds.length > 0) {
+      where.aprendiz = { ...where.aprendiz, fichaId: { in: filtros.fichaIds } };
+    }
+
     const [data, total] = await TransactionRepository.$transaction([
       AlertaRiesgoRepository.findMany({
         where,

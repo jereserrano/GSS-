@@ -5,11 +5,12 @@ import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Download, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Download, Pencil, Trash2, Link as LinkIcon } from "lucide-react";
 import type { ColumnaDef } from "@/types/common.types";
 import { deleteInstructor, exportInstructoresCSV } from "@/actions/instructores.actions";
 import { importInstructoresMasivo } from "@/actions/import.actions";
 import { InstructorFormDialog } from "./InstructorFormDialog";
+import { AsignarFichasDialog } from "./AsignarFichasDialog";
 import { UploadExcelDialog } from "@/components/ui/UploadExcelDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,9 @@ export function InstructoresTable({ initialData }: InstructoresTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
+  
+  const [asignarDialogOpen, setAsignarDialogOpen] = useState(false);
+  const [instructorToAssign, setInstructorToAssign] = useState<any>(null);
 
   const instructores = initialData?.data || [];
 
@@ -37,6 +41,11 @@ export function InstructoresTable({ initialData }: InstructoresTableProps) {
   const handleCreate = () => {
     setSelectedInstructor(null);
     setDialogOpen(true);
+  };
+
+  const handleAssignFichas = (instructor: any) => {
+    setInstructorToAssign(instructor);
+    setAsignarDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -125,10 +134,13 @@ export function InstructoresTable({ initialData }: InstructoresTableProps) {
       align: "right",
       render: (i) => (
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(i)}>
+          <Button variant="ghost" size="icon" onClick={() => handleAssignFichas(i)} title="Asignar Fichas">
+            <LinkIcon size={16} className="text-sena-600" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(i)} title="Editar">
             <Pencil size={16} className="text-text-secondary" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(i.id)}>
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(i.id)} title="Eliminar">
             <Trash2 size={16} className="text-red-500" />
           </Button>
         </div>
@@ -182,6 +194,14 @@ export function InstructoresTable({ initialData }: InstructoresTableProps) {
         <InstructorFormDialog 
           instructor={selectedInstructor}
           onClose={() => setDialogOpen(false)}
+          onSuccess={() => router.refresh()}
+        />
+      )}
+
+      {asignarDialogOpen && instructorToAssign && (
+        <AsignarFichasDialog
+          instructor={instructorToAssign}
+          onClose={() => setAsignarDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />
       )}

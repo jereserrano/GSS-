@@ -159,6 +159,8 @@ export const alertaSchema = z.object({
 
 // Visita
 export const visitaSchema = z.object({
+  aprendizId: z.string().min(1, "Aprendiz obligatorio"),
+  fichaId: z.string().min(1, "Ficha obligatoria"),
   institucionId: z.string().optional(),
   institucionNombre: z.string().optional(),
   fecha: z.string().or(z.date()),

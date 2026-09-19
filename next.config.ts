@@ -6,6 +6,15 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  /* ── Configuración de Server Actions para permitir acceso desde LAN ── */
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000', '192.168.40.6:3000', '0.0.0.0:3000'],
+    },
+  },
+
+  /* ── Permitir acceso desde la red local en modo desarrollo ── */
+  allowedDevOrigins: ['192.168.40.6:3000', 'http://192.168.40.6:3000'],
 
   /* ── Imágenes externas permitidas (logos institucionales) ── */
   images: {

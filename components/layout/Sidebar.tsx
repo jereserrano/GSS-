@@ -40,6 +40,7 @@ const navAprendiz: NavSection[] = [
       { icon: BookCheck, label: "Mis actividades", href: "/actividades" },
       { icon: FileSignature, label: "Mis entregas", href: "/entregas" },
       { icon: TrendingUp, label: "Mis resultados", href: "/resultados" },
+      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
       { icon: ClipboardList, label: "Ruta de aprendizaje", href: "/plan-formacion" },
     ],
   },

@@ -45,7 +45,7 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
     busqueda: "",
     estado: undefined,
     nivelRiesgo: undefined,
-    fichaId: undefined
+    fichaId: fichas.length === 1 ? fichas[0].id : undefined
   });
 
   const cargarDatos = async () => {
@@ -274,19 +274,21 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
               </select>
             </div>
 
-            <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[200px]">
-              <label className="text-xs font-medium text-text-secondary">Ficha</label>
-              <select 
-                className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
-                value={filtros.fichaId || ""}
-                onChange={(e) => handleFilterSelect("fichaId", e.target.value)}
-              >
-                <option value="">Todas las fichas</option>
-                {fichas.map(f => (
-                  <option key={f.id} value={f.id}>{f.codigo}</option>
-                ))}
-              </select>
-            </div>
+            {fichas.length > 1 && (
+              <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[200px]">
+                <label className="text-xs font-medium text-text-secondary">Ficha</label>
+                <select 
+                  className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  value={filtros.fichaId || ""}
+                  onChange={(e) => handleFilterSelect("fichaId", e.target.value)}
+                >
+                  <option value="">Todas las fichas</option>
+                  {fichas.map(f => (
+                    <option key={f.id} value={f.id}>{f.codigo}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
 

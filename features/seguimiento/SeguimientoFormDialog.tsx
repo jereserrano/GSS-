@@ -9,7 +9,7 @@ import { X, MapPin } from "lucide-react";
 
 interface SeguimientoFormDialogProps {
   seguimiento?: any;
-  instituciones: { id: string; nombre: string }[];
+  fichas: any[];
   onClose: () => void;
   onSuccess?: () => void | Promise<void>;
 }
@@ -24,22 +24,38 @@ const ESTADOS = [
   { value: "CANCELADA", label: "Cancelada" },
 ];
 
-export function SeguimientoFormDialog({ seguimiento, instituciones, onClose, onSuccess }: SeguimientoFormDialogProps) {
+export function SeguimientoFormDialog({ seguimiento, fichas, onClose, onSuccess }: SeguimientoFormDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [selectedFicha, setSelectedFicha] = useState<string>(seguimiento?.fichaId || "");
   const isEditing = !!seguimiento;
+
+  const currentFicha = fichas.find(f => f.id === selectedFicha);
+  const aprendices = currentFicha?.aprendices || [];
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const data = {
-      institucionId: formData.get("institucionId") as string,
+    const data: any = {
+      fichaId: formData.get("fichaId") as string,
+      aprendizId: formData.get("aprendizId") as string,
       fecha: formData.get("fecha") as string,
       responsable: formData.get("responsable") as string,
-      novedades: formData.get("novedades") as string,
-      estado: formData.get("estado") as string,
     };
+    
+    // We don't send institucionId anymore since it's derived from Ficha in the backend.
+    
+    const nov = formData.get("novedades");
+    if (nov) data.novedades = Number(nov);
+    
+    const obs = formData.get("observaciones");
+    if (obs) data.observaciones = obs;
+    
+    const est = formData.get("estado");
+    if (est) data.estado = est;
+
+    console.log("Submitting data:", data);
 
     try {
       if (isEditing) {
@@ -79,24 +95,41 @@ export function SeguimientoFormDialog({ seguimiento, instituciones, onClose, onS
                 {isEditing ? "Editar Visita de Seguimiento" : "Programar Visita de Seguimiento"}
               </h2>
               <p className="text-xs text-text-secondary">
-                {isEditing ? `Editando visita a: ${seguimiento.institucion?.nombre}` : "Registrar visita técnica a institución"}
+                {isEditing ? `Editando visita a: ${seguimiento.aprendiz?.nombres || 'Aprendiz'}` : "Registrar visita técnica a un aprendiz"}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">Institución Educativa *</label>
-            <select name="institucionId" defaultValue={seguimiento?.institucionId || ""} required className={selectClass}>
-              <option value="" disabled>Seleccione una institución</option>
-              {instituciones.map(i => (
-                <option key={i.id} value={i.id}>{i.codigo} - {i.nombre}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text-primary">Ficha *</label>
+              <select 
+                name="fichaId" 
+                value={selectedFicha} 
+                onChange={(e) => setSelectedFicha(e.target.value)}
+                required 
+                className={selectClass}
+              >
+                <option value="" disabled>Seleccione una ficha</option>
+                {fichas.map(f => (
+                  <option key={f.id} value={f.id}>{f.codigo} - {f.programa?.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text-primary">Aprendiz *</label>
+              <select name="aprendizId" defaultValue={seguimiento?.aprendizId || ""} required className={selectClass} disabled={!selectedFicha}>
+                <option value="" disabled>Seleccione un aprendiz</option>
+                {aprendices.map((a: any) => (
+                  <option key={a.id} value={a.id}>{a.nombres} {a.apellidos}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -121,23 +154,34 @@ export function SeguimientoFormDialog({ seguimiento, instituciones, onClose, onS
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">Responsable *</label>
-            <Input
-              name="responsable"
-              defaultValue={seguimiento?.responsable}
-              required
-              placeholder="Ej: Enlace SENA / Coordinador Académico"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text-primary">Responsable *</label>
+              <Input
+                name="responsable"
+                defaultValue={seguimiento?.responsable}
+                required
+                placeholder="Ej: Enlace SENA / Coordinador Académico"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text-primary">Cant. de Novedades</label>
+              <Input
+                name="novedades"
+                type="number"
+                min="0"
+                defaultValue={seguimiento?.novedades || 0}
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">Novedades / Observaciones</label>
+            <label className="text-sm font-medium text-text-primary">Observaciones</label>
             <textarea
-              name="novedades"
-              defaultValue={seguimiento?.novedades}
+              name="observaciones"
+              defaultValue={seguimiento?.observaciones}
               rows={4}
-              placeholder="Registre las novedades encontradas durante la visita..."
+              placeholder="Registre las observaciones encontradas durante la visita..."
               className={selectClass + " h-auto resize-none"}
             />
           </div>

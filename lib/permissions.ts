@@ -70,6 +70,7 @@ export const RUTAS_APRENDIZ = [
   "/actividades",
   "/entregas",
   "/resultados",
+  "/seguimiento",
   "/plan-formacion",
   "/documentos"
 ];

@@ -30,20 +30,25 @@ interface Instructor {
   userId?: string;
 }
 
-export function TomaAsistenciaForm({ fichas, instructores }: { fichas: Ficha[], instructores: Instructor[] }) {
+export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccionado }: { 
+  fichas: Ficha[], 
+  instructores: Instructor[],
+  instructorPreseleccionado?: Instructor | null
+}) {
   const router = useRouter();
   const { data: session } = useSession();
   const userRole = ((session?.user as any)?.role || "").toUpperCase();
   const isInstructor = userRole.includes("INSTRUCTOR");
   const currentUserId = (session?.user as any)?.id;
   
-  // Encontrar el registro de instructor asociado al usuario actual si aplica
+  // Usar el instructor preseleccionado del servidor si está disponible
   const currentInstructorRecord = useMemo(() => {
+    if (instructorPreseleccionado) return instructorPreseleccionado;
     return isInstructor ? instructores.find(i => i.userId === currentUserId) : null;
-  }, [isInstructor, instructores, currentUserId]);
+  }, [instructorPreseleccionado, isInstructor, instructores, currentUserId]);
 
   const [fichaId, setFichaId] = useState("");
-  const [instructorId, setInstructorId] = useState(currentInstructorRecord?.id || "");
+  const [instructorId, setInstructorId] = useState(instructorPreseleccionado?.id || currentInstructorRecord?.id || "");
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   
   useEffect(() => {

@@ -41,14 +41,18 @@ export async function getFichasAction(filtros: {
 
     const session = await getServerSession(authOptions);
     let instructorIdFilter = null;
+    let aprendizFichaId = null;
+    
     if (session?.user?.email) {
       const userRecord = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { rol: true, instructor: true }
+        include: { rol: true, instructor: true, aprendiz: true }
       });
       const roleUpper = userRecord?.rol?.nombre?.toUpperCase() || "";
       if (roleUpper.includes("INSTRUCT") && userRecord?.instructor?.id) {
         instructorIdFilter = userRecord.instructor.id;
+      } else if (roleUpper.includes("APRENDIZ") && userRecord?.aprendiz?.fichaId) {
+        aprendizFichaId = userRecord.aprendiz.fichaId;
       }
     }
 
@@ -66,7 +70,15 @@ export async function getFichasAction(filtros: {
       ...(filtros.programaId ? { programaId: filtros.programaId } : {}),
       ...(filtros.estado ? { estado: filtros.estado.toUpperCase() } : {}),
       ...(instructorIdFilter ? { instructores: { some: { instructorId: instructorIdFilter } } } : {}),
+      ...(aprendizFichaId ? { id: aprendizFichaId } : {}),
     };
+
+    console.log("=== DEBUG GET FICHAS ===");
+    console.log("Session Email:", session?.user?.email);
+    console.log("Role:", session?.user?.role);
+    console.log("Aprendiz Ficha ID:", aprendizFichaId);
+    console.log("Where:", JSON.stringify(where));
+    console.log("========================");
 
     const [data, total] = await TransactionRepository.$transaction([
       FichaRepository.findMany({

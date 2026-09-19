@@ -4,10 +4,10 @@ import React, { useState } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Download, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Download, Pencil, Trash2, X, CalendarCheck } from "lucide-react";
 import type { ColumnaDef } from "@/types/common.types";
 import { formatDateShort } from "@/lib/utils";
-import { deleteAsistencia, exportAsistenciasXLSX } from "@/actions/asistencia.actions";
+import { deleteAsistencia } from "@/actions/asistencia.actions";
 import { AsistenciaFormDialog } from "./AsistenciaFormDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -26,6 +26,10 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAsistencia, setSelectedAsistencia] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
+  const [modalExportar, setModalExportar] = useState(false);
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
+  const [fichaIdExportar, setFichaIdExportar] = useState("");
 
   const asistencias = initialData?.data || [];
 
@@ -56,15 +60,19 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
   };
 
   const handleExport = async () => {
-    setExporting(true);
     try {
-      const result = await exportAsistenciasXLSX();
-      if (!result.success || !result.base64) throw new Error(result.error || "Error exportando");
-      // Decodificar base64 → Uint8Array → Blob
-      const binary = atob(result.base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      setExporting(true);
+      
+      // Construir URL con parámetros
+      const params = new URLSearchParams();
+      if (fichaIdExportar) params.set("fichaId", fichaIdExportar);
+      if (fechaInicio) params.set("fechaInicio", fechaInicio);
+      if (fechaFin) params.set("fechaFin", fechaFin);
+
+      const response = await fetch(`/api/asistencia/export?${params.toString()}`);
+      if (!response.ok) throw new Error("Error al generar el reporte");
+
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -74,6 +82,7 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success("Reporte XLSX exportado correctamente");
+      setModalExportar(false);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -192,7 +201,7 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
+          <Button variant="outline" className="bg-surface" onClick={() => setModalExportar(true)} disabled={exporting}>
             <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Reporte"}
           </Button>
           <Button onClick={() => router.push("/asistencia/tomar")}>
@@ -215,6 +224,66 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />
+      )}
+
+      {modalExportar && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
+            <div className="flex justify-between items-center px-6 py-4 border-b">
+              <h2 className="text-lg font-semibold text-text-primary">Exportar Asistencias</h2>
+              <button onClick={() => setModalExportar(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-text-secondary">
+                Seleccione un rango de fechas para filtrar el reporte. Si deja los campos vacíos, se exportarán todas las asistencias.
+              </p>
+              
+              <div className="grid gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary">Ficha / Grupo (Opcional)</label>
+                  <select 
+                    value={fichaIdExportar} 
+                    onChange={e => setFichaIdExportar(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <option value="">Todas las fichas</option>
+                    {fichas.map(f => (
+                      <option key={f.id} value={f.id}>{f.codigo} - {f.programa.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary">Desde (Fecha Inicial)</label>
+                  <Input 
+                    type="date" 
+                    value={fechaInicio} 
+                    onChange={e => setFechaInicio(e.target.value)} 
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary">Hasta (Fecha Final)</label>
+                  <Input 
+                    type="date" 
+                    value={fechaFin} 
+                    onChange={e => setFechaFin(e.target.value)} 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50 rounded-b-xl">
+              <Button variant="outline" onClick={() => setModalExportar(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleExport} disabled={exporting}>
+                {exporting ? "Descargando..." : "Descargar Reporte"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

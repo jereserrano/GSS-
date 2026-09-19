@@ -12,6 +12,7 @@ import { getFichasAction, deleteFicha, exportFichasCSV } from "@/actions/fichas.
 import { FichaFormDialog } from "./FichaFormDialog";
 import { formatDateShort } from "@/lib/utils";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface FichasTableProps {
   initialData: any;
@@ -99,7 +100,14 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
     {
       key: "codigo",
       header: "Número de Ficha",
-      render: (f) => <span className="font-bold text-text-primary text-base font-mono">{f.codigo}</span>
+      render: (f) => (
+        <Link 
+          href={`/fichas/${f.id}`}
+          className="font-bold text-primary hover:underline text-base font-mono"
+        >
+          {f.codigo}
+        </Link>
+      )
     },
     {
       key: "programa",

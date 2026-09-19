@@ -15,12 +15,13 @@ import { useSession } from "next-auth/react";
 
 interface EvaluacionesTableProps {
   initialData: any;
-  raps: { id: string; codigo: string; nombre: string }[];
-  aprendices: { id: string; nombres: string; apellidos: string; numeroDocumento: string; ficha: { codigo: string } }[];
-
+  raps: { id: string; codigo: string; nombre: string; competencia?: { programaId: string } }[];
+  aprendices: { id: string; nombres: string; apellidos: string; numeroDocumento: string; fichaId?: string; ficha: { id?: string; codigo: string } }[];
+  fichas: { id: string; codigo: string; programa: { nombre: string } }[];
+  rapIdFijo?: string;
 }
 
-export function EvaluacionesTable({ initialData, raps, aprendices }: EvaluacionesTableProps) {
+export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapIdFijo }: EvaluacionesTableProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -127,7 +128,7 @@ export function EvaluacionesTable({ initialData, raps, aprendices }: Evaluacione
     {
       key: "fecha",
       header: "Fecha de Evaluación",
-      render: (e) => <span className="text-sm">{e.fechaEvaluacion ? formatDateShort(e.fechaEvaluacion) : "—"}</span>
+      render: (e) => <span className="text-sm">{e.fecha ? formatDateShort(e.fecha) : "—"}</span>
     },
     {
       key: "acciones",
@@ -147,6 +148,9 @@ export function EvaluacionesTable({ initialData, raps, aprendices }: Evaluacione
       ),
     }
   ];
+
+  // Si estamos en la vista de un RAP específico, ocultamos la columna de RAP
+  const columnasVisibles = rapIdFijo ? columnas.filter(c => c.key !== "rap") : columnas;
 
   return (
     <div className="space-y-4">
@@ -175,7 +179,7 @@ export function EvaluacionesTable({ initialData, raps, aprendices }: Evaluacione
 
       <DataTable 
         data={evaluaciones} 
-        columnas={columnas} 
+        columnas={columnasVisibles} 
         isLoading={loading} 
       />
 
@@ -184,7 +188,8 @@ export function EvaluacionesTable({ initialData, raps, aprendices }: Evaluacione
           evaluacion={selectedEvaluacion}
           raps={raps}
           aprendices={aprendices}
-
+          fichas={fichas}
+          rapIdFijo={rapIdFijo}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

@@ -63,7 +63,9 @@ export function PlanFormacionTimeline({ programas }: Props) {
               Código: {programaDetail ? programaDetail.codigo : currentProgStr?.codigo}
             </p>
           </div>
-          <Button variant="outline" onClick={() => setSelectorOpen(true)}>Cambiar Programa</Button>
+          {programas.length > 1 && (
+            <Button variant="outline" onClick={() => setSelectorOpen(true)}>Cambiar Programa</Button>
+          )}
         </CardContent>
       </Card>
 

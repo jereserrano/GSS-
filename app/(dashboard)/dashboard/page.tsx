@@ -135,41 +135,41 @@ export default async function DashboardPage() {
                 </div>
 
                 <div className="space-y-3 mt-4">
-                  <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-[#f0fdf4] text-[#267000] border border-[#bbf7d0] flex items-center justify-center shrink-0 mt-0.5">
+                  <Link href="/actividades" className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 flex items-start gap-3 hover:bg-slate-100/60 transition-colors cursor-pointer group">
+                    <div className="h-6 w-6 rounded-full bg-[#f0fdf4] text-[#267000] border border-[#bbf7d0] flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
                       <CheckCircle2 size={14} />
                     </div>
                     <div>
-                      <h3 className="text-xs font-semibold text-slate-800">1. Consulta de Guías y Actividades</h3>
+                      <h3 className="text-xs font-semibold text-slate-800 group-hover:text-[#267000] transition-colors">1. Consulta de Guías y Actividades</h3>
                       <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                         Revisa detalladamente los resultados de aprendizaje, instrucciones y evidencias requeridas por tu instructor.
                       </p>
                     </div>
-                  </div>
+                  </Link>
 
-                  <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0 mt-0.5">
+                  <Link href="/entregas" className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 flex items-start gap-3 hover:bg-slate-100/60 transition-colors cursor-pointer group">
+                    <div className="h-6 w-6 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
                       <Clock size={14} />
                     </div>
                     <div>
-                      <h3 className="text-xs font-semibold text-slate-800">2. Envío Oportuno de Evidencias</h3>
+                      <h3 className="text-xs font-semibold text-slate-800 group-hover:text-amber-700 transition-colors">2. Envío Oportuno de Evidencias</h3>
                       <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                         Adjunta tus enlaces de trabajo u observaciones antes de la fecha límite estipulada para evitar alertas de retraso.
                       </p>
                     </div>
-                  </div>
+                  </Link>
 
-                  <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-emerald-50 text-[#267000] border border-emerald-200 flex items-center justify-center shrink-0 mt-0.5">
+                  <Link href="/resultados" className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 flex items-start gap-3 hover:bg-slate-100/60 transition-colors cursor-pointer group">
+                    <div className="h-6 w-6 rounded-full bg-emerald-50 text-[#267000] border border-emerald-200 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
                       <BookCheck size={14} />
                     </div>
                     <div>
-                      <h3 className="text-xs font-semibold text-slate-800">3. Retroalimentación y Aprobación</h3>
+                      <h3 className="text-xs font-semibold text-slate-800 group-hover:text-[#267000] transition-colors">3. Retroalimentación y Aprobación</h3>
                       <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                         Recibe la evaluación del instructor. Una vez revisada, tu evidencia quedará marcada como aprobada en el sistema.
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 </div>
               </div>
 
@@ -196,13 +196,13 @@ export default async function DashboardPage() {
           <div className="flex-1 flex flex-col gap-2.5">
             {proximosCierres.length > 0 ? (
               proximosCierres.map((act: any) => (
-                <div key={act.id} className="flex items-start gap-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-slate-100/60 transition-colors">
-                  <div className="h-2 w-2 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                <Link href="/actividades" key={act.id} className="flex items-start gap-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-slate-100/60 transition-colors cursor-pointer group">
+                  <div className="h-2 w-2 rounded-full bg-amber-500 mt-1.5 shrink-0 group-hover:scale-125 transition-transform" />
                   <div className="flex flex-col min-w-0">
-                    <span className="font-semibold text-xs text-slate-900 truncate">{act.title}</span>
+                    <span className="font-semibold text-xs text-slate-900 truncate group-hover:text-amber-700 transition-colors">{act.title}</span>
                     <span className="text-[11px] text-slate-500 mt-0.5">{act.ficha} • Vence: {act.date}</span>
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center text-xs text-slate-400">

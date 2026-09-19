@@ -25,6 +25,8 @@ export async function getEvaluacionesAction(filtros: any = {}) {
           { resultadoAprendizaje: { codigo: { contains: filtros.busqueda } } },
         ]
       } : {}),
+      ...(filtros.rapId ? { resultadoAprendizajeId: filtros.rapId } : {}),
+      ...(filtros.instructorFichaIds?.length ? { aprendiz: { fichaId: { in: filtros.instructorFichaIds } } } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([

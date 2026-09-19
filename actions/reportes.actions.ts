@@ -74,9 +74,14 @@ export async function getAuditLogsAction(filtros: any = {}) {
 }
 
 /** Genera datos para un reporte y lo devuelve como CSV string */
-export async function generarReporteAprendicesCSV() {
+export async function generarReporteAprendicesCSV(filtros?: { fichaId?: string }) {
   try {
+    const whereClause = filtros?.fichaId && filtros.fichaId !== "all" 
+      ? { fichaId: filtros.fichaId } 
+      : {};
+
     const aprendices = await AprendizRepository.findMany({
+      where: whereClause,
       select: {
         numeroDocumento: true,
         nombres: true,
@@ -118,9 +123,14 @@ export async function generarReporteAprendicesCSV() {
   }
 }
 
-export async function generarReporteRiesgosCSV() {
+export async function generarReporteRiesgosCSV(filtros?: { fichaId?: string }) {
   try {
+    const whereClause = filtros?.fichaId && filtros.fichaId !== "all" 
+      ? { aprendiz: { fichaId: filtros.fichaId } } 
+      : {};
+
     const alertas = await AlertaRiesgoRepository.findMany({
+      where: whereClause,
       include: {
         aprendiz: {
           select: {
@@ -157,9 +167,20 @@ export async function generarReporteRiesgosCSV() {
   }
 }
 
-export async function generarReporteAsistenciaCSV() {
+export async function generarReporteAsistenciaCSV(filtros?: { fichaId?: string, fechaInicio?: string, fechaFin?: string }) {
   try {
+    let whereClause: any = {};
+    if (filtros?.fichaId && filtros.fichaId !== "all") {
+      whereClause.fichaId = filtros.fichaId;
+    }
+    if (filtros?.fechaInicio || filtros?.fechaFin) {
+      whereClause.fecha = {};
+      if (filtros.fechaInicio) whereClause.fecha.gte = new Date(filtros.fechaInicio);
+      if (filtros.fechaFin) whereClause.fecha.lte = new Date(filtros.fechaFin);
+    }
+
     const registros = await AsistenciaRepository.findMany({
+      where: whereClause,
       include: {
         ficha: {
           select: {
@@ -196,9 +217,14 @@ export async function generarReporteAsistenciaCSV() {
   }
 }
 
-export async function generarReporteEvaluacionesCSV() {
+export async function generarReporteEvaluacionesCSV(filtros?: { fichaId?: string }) {
   try {
+    const whereClause = filtros?.fichaId && filtros.fichaId !== "all"
+      ? { aprendiz: { fichaId: filtros.fichaId } }
+      : {};
+
     const evaluaciones = await EvaluacionAprendizRepository.findMany({
+      where: whereClause,
       include: {
         aprendiz: {
           select: {

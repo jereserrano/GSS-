@@ -31,7 +31,7 @@ export async function getSeguimientosAction(filtros: any = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
-    const where = {
+    const where: any = {
       ...(filtros.busqueda ? {
         OR: [
           { institucionNombre: { contains: filtros.busqueda } },
@@ -40,9 +40,19 @@ export async function getSeguimientosAction(filtros: any = {}) {
       } : {}),
     };
 
+    if (filtros.aprendizId) {
+      where.aprendizId = filtros.aprendizId;
+    } else if (filtros.fichaIds && filtros.fichaIds.length > 0) {
+      where.fichaId = { in: filtros.fichaIds };
+    }
+
     const [data, total] = await TransactionRepository.$transaction([
       VisitaSeguimientoRepository.findMany({
         where,
+        include: {
+          aprendiz: true,
+          ficha: { include: { programa: true } }
+        },
         skip,
         take,
         orderBy: { fecha: "desc" },
@@ -60,14 +70,30 @@ export async function getSeguimientosAction(filtros: any = {}) {
 export async function createSeguimiento(data: z.infer<typeof visitaSchema>) {
   try {
     const parsed = visitaSchema.safeParse(data);
-    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    if (!parsed.success) {
+      console.error("Zod Validation Error (create):", parsed.error.errors);
+      return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    }
     
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
-    const institucion = data.institucionId ? await InstitucionRepository.findUnique({ where: { id: data.institucionId } }) : null;
-    const nombreInstitucion = institucion ? institucion.nombre : (data.institucionNombre || "Institución");
+    
+    // Si la visita está vinculada a una ficha o institución
+    let nombreInstitucion = data.institucionNombre || "Institución";
+    if (data.fichaId) {
+      // Buscar la institución a través de la ficha
+      const fichaData = await TransactionRepository.$queryRaw`SELECT i.nombre FROM fichas f JOIN instituciones i ON f.institucionId = i.id WHERE f.id = ${data.fichaId}`;
+      if (Array.isArray(fichaData) && fichaData.length > 0 && (fichaData[0] as any).nombre) {
+         nombreInstitucion = (fichaData[0] as any).nombre;
+      }
+    } else if (data.institucionId) {
+      const institucion = await InstitucionRepository.findUnique({ where: { id: data.institucionId } });
+      if (institucion) nombreInstitucion = institucion.nombre;
+    }
 
     const seguimiento = await VisitaSeguimientoRepository.create({
       data: {
+        aprendizId: data.aprendizId,
+        fichaId: data.fichaId,
         institucionNombre: nombreInstitucion,
         fecha: new Date(data.fecha),
         responsable: data.responsable,
@@ -81,7 +107,7 @@ export async function createSeguimiento(data: z.infer<typeof visitaSchema>) {
       userId: user.id,
       modulo: "Seguimientos",
       accion: "CREAR",
-      detalle: `Visita programada a: ${nombreInstitucion}`,
+      detalle: `Visita programada a aprendiz ${data.aprendizId} en ficha ${data.fichaId}`,
     });
     revalidatePath("/seguimiento");
     return { success: true, seguimiento };
@@ -94,20 +120,34 @@ export async function createSeguimiento(data: z.infer<typeof visitaSchema>) {
 export async function updateSeguimiento(id: string, data: z.infer<typeof visitaSchema>) {
   try {
     const parsed = visitaSchema.safeParse(data);
-    if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    if (!parsed.success) {
+      console.error("Zod Validation Error (update):", parsed.error.errors);
+      return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
+    }
     
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
-    const institucion = data.institucionId ? await InstitucionRepository.findUnique({ where: { id: data.institucionId } }) : null;
+    
+    let nombreInstitucion = data.institucionNombre;
+    if (data.fichaId) {
+      const fichaData = await TransactionRepository.$queryRaw`SELECT i.nombre FROM fichas f JOIN instituciones i ON f.institucionId = i.id WHERE f.id = ${data.fichaId}`;
+      if (Array.isArray(fichaData) && fichaData.length > 0 && (fichaData[0] as any).nombre) {
+         nombreInstitucion = (fichaData[0] as any).nombre;
+      }
+    } else if (data.institucionId) {
+      const institucion = await InstitucionRepository.findUnique({ where: { id: data.institucionId } });
+      if (institucion) nombreInstitucion = institucion.nombre;
+    }
+
     const dataToUpdate: any = {
+        aprendizId: data.aprendizId,
+        fichaId: data.fichaId,
         fecha: new Date(data.fecha),
         responsable: data.responsable,
         estado: data.estado as any,
         observaciones: data.observaciones || null,
     };
-    if (institucion) {
-      dataToUpdate.institucionNombre = institucion.nombre;
-    } else if (data.institucionNombre) {
-      dataToUpdate.institucionNombre = data.institucionNombre;
+    if (nombreInstitucion) {
+      dataToUpdate.institucionNombre = nombreInstitucion;
     }
 
     if (data.novedades !== undefined) {

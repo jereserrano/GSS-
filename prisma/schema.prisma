@@ -91,6 +91,7 @@ model Ficha {
   actividades  Actividad[]
   asistencias  Asistencia[]
   instructores InstructorFicha[]
+  visitasSeguimiento VisitaSeguimiento[]
 
   @@map("fichas")
 }
@@ -126,6 +127,7 @@ model Aprendiz {
   evaluaciones        EvaluacionAprendiz[]
   alertas             AlertaRiesgo[]
   detallesAsistencia  DetalleAsistencia[]
+  visitasSeguimiento  VisitaSeguimiento[]
 
   @@map("aprendices")
 }
@@ -157,6 +159,7 @@ model InstructorFicha {
   id           String     @id @default(cuid())
   instructorId String
   fichaId      String
+  rolFicha     String     @default("LIDER_TECNICO")
   asignadoEn   DateTime   @default(now())
 
   instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
@@ -333,7 +336,13 @@ model AlertaRiesgo {
 
 model VisitaSeguimiento {
   id            String            @id @default(cuid())
-  institucionNombre String
+  
+  aprendizId    String?
+  aprendiz      Aprendiz?         @relation(fields: [aprendizId], references: [id])
+  fichaId       String?
+  ficha         Ficha?            @relation(fields: [fichaId], references: [id])
+  
+  institucionNombre String?
   fecha         DateTime
   responsable   String
   novedades     Int               @default(0)

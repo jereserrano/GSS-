@@ -98,6 +98,9 @@ export async function createCompetencia(data: z.infer<typeof competenciaSchema>)
     return { success: true, competencia };
   } catch (error: any) {
     console.error("Error creating competencia:", error);
+    if (error.code === 'P2002') {
+      return { error: "Ya existe una competencia con ese código (violación de unicidad en base de datos)." };
+    }
     return { error: error.message || "Error al crear competencia" };
   }
 }
@@ -131,6 +134,9 @@ export async function updateCompetencia(id: string, data: z.infer<typeof compete
     return { success: true, competencia };
   } catch (error: any) {
     console.error("Error updating competencia:", error);
+    if (error.code === 'P2002') {
+      return { error: "Ya existe otra competencia con ese código (violación de unicidad)." };
+    }
     return { error: error.message || "Error al actualizar competencia" };
   }
 }

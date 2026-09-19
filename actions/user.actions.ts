@@ -179,8 +179,52 @@ export async function createUser(data: any) {
     // ── 5. Crear usuario ─────────────────────────────────────────────────────
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await UserRepository.create({
-      data: { nombre, email, passwordHash, rolId },
+      data: { 
+        nombre, 
+        email, 
+        passwordHash, 
+        rolId,
+        institucionId: data.institucionId || null 
+      },
     });
+
+    // ── 5.1 Crear perfiles automáticos según el rol ─────────────────────────
+    const rolNombreUpper = rolToAssign.nombre.toUpperCase();
+    
+    try {
+      if (rolNombreUpper.includes("APRENDIZ")) {
+        const { PrismaClient } = require("@prisma/client");
+        const prismaLocal = new PrismaClient();
+        await prismaLocal.aprendiz.create({
+          data: {
+            userId: user.id,
+            nombres: nombre,
+            apellidos: "Pendiente",
+            numeroDocumento: user.id.slice(-10), // Dummy para que sea único
+            emailSena: email,
+            estado: "EN_FORMACION",
+            nivelRiesgo: "BAJO"
+          }
+        });
+        await prismaLocal.$disconnect();
+      } else if (rolNombreUpper.includes("INSTRUCTOR")) {
+        const { PrismaClient } = require("@prisma/client");
+        const prismaLocal = new PrismaClient();
+        await prismaLocal.instructor.create({
+          data: {
+            userId: user.id,
+            nombres: nombre,
+            apellidos: "Pendiente",
+            numeroDocumento: user.id.slice(-10), // Dummy para que sea único
+            email: email,
+            estado: "ACTIVO"
+          }
+        });
+        await prismaLocal.$disconnect();
+      }
+    } catch (profileError) {
+      console.error("Error creando perfil automático:", profileError);
+    }
 
     // ── 6. Registrar auditoría exitosa ───────────────────────────────────────
     await logAudit({
@@ -268,8 +312,12 @@ export async function updateUser(id: string, data: any) {
     }
 
     // ── 4. Construir datos de actualización ─────────────────────────────────
-    const { nombre, email, password, rolId, estado } = data;
+    const { nombre, email, password, rolId, estado, institucionId } = data;
     let updateData: any = { nombre, email, rolId, estado };
+    
+    if (institucionId !== undefined) {
+      updateData.institucionId = institucionId || null;
+    }
 
     if (password && password.trim() !== "") {
       updateData.passwordHash = await bcrypt.hash(password, 10);

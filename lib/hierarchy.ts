@@ -85,22 +85,26 @@ export function getHierarchyLevel(rolNombre: string | undefined | null): Hierarc
 
   const upper = rolNombre.toUpperCase().trim();
 
-  // 3 — Apoyo Administrativo (se detecta ANTES que ADMIN/COORD porque contiene "ADMINISTRATIVO")
+  // 3 — Apoyo Administrativo / ApCoordinador (antes de ADMIN/COORD)
   if (upper.includes("APOYO")) return HierarchyLevel.APOYO_ADMINISTRATIVO;
+  if (upper.includes("APCOORD")) return HierarchyLevel.APOYO_ADMINISTRATIVO;
 
-  // 3 — Coordinador de Sede (se detecta ANTES que COORD)
+  // 3 — Coordinador de Sede (antes de COORD)
   if (upper.includes("SEDE")) return HierarchyLevel.COORDINADOR_SEDE;
 
   // 1 — Administrador (máxima autoridad)
   if (upper.includes("ADMIN")) return HierarchyLevel.ADMINISTRADOR;
 
+  // 2 — Subdirector (segunda autoridad, tratado al nivel de Coordinador)
+  if (upper.includes("SUBDIREC")) return HierarchyLevel.COORDINADOR;
+
   // 2 — Coordinador Académico / Regional
   if (upper.includes("COORD")) return HierarchyLevel.COORDINADOR;
 
-  // 4 — Instructor (nivel base)
+  // 4 — Instructor
   if (upper.includes("INSTRUCT")) return HierarchyLevel.INSTRUCTOR;
 
-  // 5 — Aprendiz (estudiante en formación)
+  // 5 — Aprendiz
   if (upper.includes("APRENDIZ")) return HierarchyLevel.APRENDIZ;
 
   return HierarchyLevel.UNKNOWN;

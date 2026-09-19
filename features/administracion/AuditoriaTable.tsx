@@ -18,7 +18,7 @@ function formatDetalle(detalle: string | null | undefined): string {
   if (!detalle) return "—";
 
   // Intentar parsear como JSON
-  let parsed: Record<string, any> | null = null;
+  let parsed: any = null;
   try {
     parsed = JSON.parse(detalle);
   } catch {
@@ -26,7 +26,7 @@ function formatDetalle(detalle: string | null | undefined): string {
     return detalle;
   }
 
-  if (!parsed || typeof parsed !== "object") return detalle;
+  if (!parsed || typeof parsed !== "object") return String(parsed);
 
   // --- Mapas de traducción de campos comunes ---
   const campoLabels: Record<string, string> = {
@@ -65,15 +65,22 @@ function formatDetalle(detalle: string | null | undefined): string {
   // Campos que no aportan valor visual
   const ignorados = new Set(["password", "passwordHash", "hash", "token", "createdAt", "updatedAt"]);
 
-  const partes: string[] = [];
-  for (const [key, val] of Object.entries(parsed)) {
-    if (ignorados.has(key)) continue;
-    if (val === null || val === undefined || val === "") continue;
-
-    const label = campoLabels[key] ?? key;
-    let valor = String(val);
-
-    // Traducir estados y enums a español
+  const procesarValor = (val: any): string => {
+    if (val === null || val === undefined) return "";
+    if (typeof val === "object") {
+      if (Array.isArray(val)) {
+        return val.map(procesarValor).filter(Boolean).join(", ");
+      }
+      const partesObj: string[] = [];
+      for (const [k, v] of Object.entries(val)) {
+        if (ignorados.has(k)) continue;
+        const subVal = procesarValor(v);
+        if (subVal) partesObj.push(`${campoLabels[k] ?? k}: ${subVal}`);
+      }
+      return partesObj.join(" | ");
+    }
+    
+    let strVal = String(val);
     const estadoMap: Record<string, string> = {
       ACTIVO: "Activo", INACTIVO: "Inactivo",
       ADMINISTRADOR: "Administrador", COORDINADOR: "Coordinador",
@@ -83,9 +90,20 @@ function formatDetalle(detalle: string | null | undefined): string {
       APROBADO: "Aprobado", DEFICIENTE: "Deficiente",
       true: "Sí", false: "No",
     };
-    valor = estadoMap[valor] ?? valor;
+    return estadoMap[strVal] ?? strVal;
+  };
 
-    partes.push(`${label}: ${valor}`);
+  const partes: string[] = [];
+  for (const [key, val] of Object.entries(parsed)) {
+    if (ignorados.has(key)) continue;
+    if (val === null || val === undefined || val === "") continue;
+
+    const label = campoLabels[key] ?? key;
+    const valor = procesarValor(val);
+
+    if (valor) {
+      partes.push(`${label}: ${valor}`);
+    }
   }
 
   return partes.length > 0 ? partes.join(" · ") : detalle;

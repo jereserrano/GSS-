@@ -34,7 +34,7 @@ export function ProgramaFormDialog({ programa, onClose }: ProgramaFormDialogProp
       codigo:         formData.get("codigo") as string,
       nombre:         formData.get("nombre") as string,
       nivelFormacion: formData.get("nivelFormacion") as string,
-      estado:         formData.get("estado") as string,
+      estado:         (formData.get("estado") as string) || "ACTIVO",
     };
 
     try {

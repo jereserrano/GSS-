@@ -101,8 +101,10 @@ export const resultadoAprendizajeSchema = z.object({
 export const actividadSchema = z.object({
   nombre: z.string().min(1, "Nombre obligatorio"),
   descripcion: z.string().optional(),
+  instrucciones: z.string().optional(),
   tipo: z.enum(["TALLER", "PROYECTO", "FORO", "QUIZ"]).optional(),
   fichaId: z.string().min(1, "Ficha obligatoria"),
+  fechaInicio: z.string().or(z.date()).optional(),
   fechaVencimiento: z.string().or(z.date()).optional(),
   fechaFin: z.string().or(z.date()).optional(), // Compatibilidad con el frontend actual
   estado: z.enum(["ACTIVA", "PUBLICADA", "CERRADA", "BORRADOR"]).optional(),

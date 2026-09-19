@@ -27,7 +27,25 @@ async function main() {
     create: { nombre: "Instructor", descripcion: "Gestión de sus fichas asignadas." }
   });
 
-  console.log("✅ Roles creados.");
+  const rolSubdirector = await prisma.rol.upsert({
+    where: { nombre: "Subdirector" },
+    update: {},
+    create: { nombre: "Subdirector", descripcion: "Visión global institucional." }
+  });
+
+  const rolApCoord = await prisma.rol.upsert({
+    where: { nombre: "ApCoordinador" },
+    update: {},
+    create: { nombre: "ApCoordinador", descripcion: "Apoyo a la coordinación académica." }
+  });
+
+  const rolAprendiz = await prisma.rol.upsert({
+    where: { nombre: "Aprendiz" },
+    update: {},
+    create: { nombre: "Aprendiz", descripcion: "Usuario final de la formación." }
+  });
+
+  console.log("✅ Roles creados (Admin, Subdirector, Coordinador, ApCoordinador, Instructor, Aprendiz).");
 
   // ----------------------------------------------------------
   // 2. USUARIO ADMINISTRADOR

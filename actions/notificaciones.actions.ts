@@ -69,7 +69,7 @@ export async function marcarTodasComoLeidasAction() {
 }
 
 // Función auxiliar para uso interno del sistema (no llamada desde el cliente directamente)
-export async function crearNotificacionSistema(userId: string, titulo: string, mensaje: string, tipo: string = "INFO") {
+export async function crearNotificacionSistema(userId: string, titulo: string, mensaje: string, tipo: string = "INFO", enlace?: string) {
   try {
     await NotificacionRepository.create({
       data: {
@@ -77,6 +77,7 @@ export async function crearNotificacionSistema(userId: string, titulo: string, m
         titulo,
         mensaje,
         tipo,
+        enlace,
       },
     });
   } catch (error) {

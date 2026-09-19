@@ -196,6 +196,53 @@ export async function generarReporteAsistenciaCSV() {
   }
 }
 
+export async function generarReporteEvaluacionesCSV() {
+  try {
+    const evaluaciones = await EvaluacionAprendizRepository.findMany({
+      include: {
+        aprendiz: {
+          select: {
+            nombres: true,
+            apellidos: true,
+            numeroDocumento: true,
+            ficha: {
+              select: { codigo: true, institucion: { select: { nombre: true } } }
+            }
+          }
+        },
+        resultadoAprendizaje: {
+          select: {
+            nombre: true,
+            codigo: true,
+            competencia: { select: { nombre: true, codigo: true } }
+          }
+        }
+      },
+      orderBy: [{ aprendiz: { ficha: { codigo: "asc" } } }, { aprendiz: { apellidos: "asc" } }],
+    });
+
+    const header = "Ficha,Institución,Documento,Aprendiz,Competencia,Resultado de Aprendizaje,Juicio Valorativo,Fecha Evaluación";
+    const rows = evaluaciones.map((e) =>
+      [
+        e.aprendiz?.ficha?.codigo || "",
+        e.aprendiz?.ficha?.institucion?.nombre || "",
+        e.aprendiz?.numeroDocumento || "",
+        `${e.aprendiz?.nombres || ""} ${e.aprendiz?.apellidos || ""}`,
+        `[${e.resultadoAprendizaje?.competencia?.codigo}] ${e.resultadoAprendizaje?.competencia?.nombre}`,
+        `[${e.resultadoAprendizaje?.codigo}] ${e.resultadoAprendizaje?.nombre}`,
+        e.juicio,
+        e.fecha ? new Date(e.fecha).toLocaleDateString("es-CO") : "Pendiente",
+      ]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(",")
+    );
+
+    return { success: true, csv: [header, ...rows].join("\n") };
+  } catch (error: any) {
+    return { success: false, error: "Error al generar reporte de evaluaciones" };
+  }
+}
+
 export async function getResumenReportes() {
   try {
     const session = await getServerSession(authOptions);
@@ -235,12 +282,13 @@ export async function getResumenReportes() {
         EvaluacionAprendizRepository.count({ where: evaluacionWhere }),
       ]);
 
-    revalidatePath("/reportes");
+
     return {
       success: true,
       data: { totalAprendices, alertasActivas, totalAsistencias, totalEvaluaciones },
     };
   } catch (error: any) {
+    console.error("DEBUG ERROR getResumenReportes:", error);
     return { success: false, error: "Error al obtener resumen: " + error.message };
   }
 }
@@ -273,5 +321,61 @@ export async function exportAuditoriaCSV() {
   } catch (error: any) {
     console.error("Error exporting auditoria:", error);
     return { success: false, error: "Error al generar reporte de auditoría" };
+  }
+}
+
+export async function getReportesListadosAction() {
+  try {
+    const session = await getServerSession(authOptions);
+    let userRecord = null;
+    if (session?.user?.email) {
+      userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: { rol: true, instructor: true }
+      });
+    }
+
+    const roleUpper = userRecord?.rol?.nombre?.toUpperCase() || "";
+    const isInstructor = roleUpper.includes("INSTRUCT") && userRecord?.instructor?.id;
+    
+    let aprendizWhere: any = {};
+    let alertaWhere: any = { gestionada: false };
+    let asistenciaWhere: any = {};
+
+    if (isInstructor) {
+      const fichaIds = (await prisma.instructorFicha.findMany({
+        where: { instructorId: userRecord!.instructor!.id },
+        select: { fichaId: true }
+      })).map(f => f.fichaId);
+
+      aprendizWhere = { fichaId: { in: fichaIds } };
+      alertaWhere = { gestionada: false, aprendiz: { fichaId: { in: fichaIds } } };
+      asistenciaWhere = { fichaId: { in: fichaIds } };
+    }
+
+    const [aprendices, alertas, asistencias] = await TransactionRepository.$transaction([
+      AprendizRepository.findMany({
+        take: 50,
+        where: aprendizWhere,
+        orderBy: { apellidos: "asc" },
+        include: { ficha: { include: { institucion: true } } },
+      }),
+      AlertaRiesgoRepository.findMany({
+        take: 50,
+        where: alertaWhere,
+        orderBy: { fechaDeteccion: "desc" },
+        include: { aprendiz: { include: { ficha: true } } },
+      }),
+      AsistenciaRepository.findMany({
+        take: 50,
+        where: asistenciaWhere,
+        orderBy: { fecha: "desc" },
+        include: { ficha: true },
+      }),
+    ]);
+    return { success: true, data: { aprendices, alertas, asistencias } };
+  } catch (error: any) {
+    console.error("Error fetching report lists:", error);
+    return { success: false, error: "Error al obtener listados para reportes" };
   }
 }

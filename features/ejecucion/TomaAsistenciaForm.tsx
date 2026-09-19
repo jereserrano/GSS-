@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -26,13 +27,30 @@ interface Instructor {
   id: string;
   nombres: string;
   apellidos: string;
+  userId?: string;
 }
 
 export function TomaAsistenciaForm({ fichas, instructores }: { fichas: Ficha[], instructores: Instructor[] }) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const userRole = ((session?.user as any)?.role || "").toUpperCase();
+  const isInstructor = userRole.includes("INSTRUCTOR");
+  const currentUserId = (session?.user as any)?.id;
+  
+  // Encontrar el registro de instructor asociado al usuario actual si aplica
+  const currentInstructorRecord = useMemo(() => {
+    return isInstructor ? instructores.find(i => i.userId === currentUserId) : null;
+  }, [isInstructor, instructores, currentUserId]);
+
   const [fichaId, setFichaId] = useState("");
-  const [instructorId, setInstructorId] = useState("");
+  const [instructorId, setInstructorId] = useState(currentInstructorRecord?.id || "");
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  
+  useEffect(() => {
+    if (currentInstructorRecord && !instructorId) {
+      setInstructorId(currentInstructorRecord.id);
+    }
+  }, [currentInstructorRecord, instructorId]);
   
   // Asistencias locales
   const [asistencias, setAsistencias] = useState<Record<string, "PRESENTE" | "FALLA" | "EXCUSA">>({});
@@ -111,12 +129,18 @@ export function TomaAsistenciaForm({ fichas, instructores }: { fichas: Ficha[], 
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">Instructor</label>
-          <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className={selectClass} required>
-            <option value="">Seleccione un instructor</option>
-            {instructores.map(i => (
-              <option key={i.id} value={i.id}>{i.nombres} {i.apellidos}</option>
-            ))}
-          </select>
+          {isInstructor && currentInstructorRecord ? (
+            <div className="flex h-10 w-full items-center rounded-md border border-input bg-sena-50 px-3 py-2 text-sm text-sena-800">
+              <span className="font-semibold">{currentInstructorRecord.nombres} {currentInstructorRecord.apellidos}</span>
+            </div>
+          ) : (
+            <select value={instructorId} onChange={(e) => setInstructorId(e.target.value)} className={selectClass} required>
+              <option value="">Seleccione un instructor</option>
+              {instructores.map(i => (
+                <option key={i.id} value={i.id}>{i.nombres} {i.apellidos}</option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">Fecha de Sesión</label>

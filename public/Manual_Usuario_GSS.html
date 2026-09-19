@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Manual de Usuario por Roles - GSS</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2.54cm;
+        }
+        @page :first {
+            margin-top: 0;
+        }
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12pt;
+            line-height: 2;
+            color: #000;
+            background: #fff;
+            margin: 2.54cm;
+            padding: 0;
+        }
+        @media print {
+            body { margin: 0; }
+        }
+        .cover-page {
+            text-align: center;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh;
+        }
+        .cover-page p {
+            text-indent: 0;
+        }
+        .toc {
+            page-break-after: always;
+        }
+        .toc h1 { text-align: center; }
+        .toc ul {
+            list-style: none;
+            padding: 0;
+        }
+        .toc li {
+            margin-bottom: 4pt;
+            border-bottom: 1px dotted #ccc;
+            padding-bottom: 4pt;
+        }
+        .toc li span.page {
+            float: right;
+        }
+        h1 {
+            font-size: 12pt;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 24pt;
+            margin-bottom: 24pt;
+            page-break-before: always;
+        }
+        h1:first-of-type {
+            page-break-before: avoid;
+        }
+        h2 {
+            font-size: 12pt;
+            font-weight: bold;
+            text-align: left;
+            margin-top: 24pt;
+            margin-bottom: 12pt;
+        }
+        h3 {
+            font-size: 12pt;
+            font-weight: bold;
+            font-style: italic;
+            text-align: left;
+            margin-top: 12pt;
+            margin-bottom: 12pt;
+        }
+        h4 {
+            font-size: 12pt;
+            font-weight: bold;
+            text-align: left;
+            margin-top: 12pt;
+            margin-bottom: 8pt;
+            text-indent: 1.27cm;
+        }
+        p {
+            text-indent: 1.27cm;
+            margin: 0;
+            text-align: justify;
+        }
+        p.no-indent {
+            text-indent: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12pt;
+            margin-bottom: 12pt;
+            line-height: 1.5;
+            font-size: 11pt;
+        }
+        th, td {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            border-left: none;
+            border-right: none;
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            font-weight: bold;
+            border-top: 2px solid #000;
+            border-bottom: 1px solid #000;
+        }
+        tr:last-child td {
+            border-bottom: 2px solid #000;
+        }
+        .table-title {
+            font-weight: bold;
+            text-indent: 0;
+            margin-bottom: 0;
+        }
+        .table-subtitle {
+            font-style: italic;
+            text-indent: 0;
+            margin-bottom: 6pt;
+        }
+        .table-note {
+            font-size: 10pt;
+            text-indent: 0;
+            margin-top: 4pt;
+            font-style: italic;
+        }
+        .reference-list {
+            padding-left: 1.27cm;
+        }
+        .reference-list p {
+            text-indent: -1.27cm;
+            margin-bottom: 12pt;
+        }
+        ul, ol {
+            margin-left: 1.27cm;
+            margin-bottom: 12pt;
+        }
+        li {
+            margin-bottom: 6pt;
+        }
+        .figure-placeholder {
+            border: 2px dashed #888;
+            padding: 18px;
+            text-align: center;
+            font-style: italic;
+            margin: 12pt 0;
+            text-indent: 0;
+            background: #fafafa;
+            color: #555;
+        }
+        .figure-title {
+            font-weight: bold;
+            text-indent: 0;
+            margin-bottom: 0;
+        }
+        .figure-note {
+            font-style: italic;
+            font-size: 10pt;
+            text-indent: 0;
+            margin-top: 4pt;
+        }
+        .step-box {
+            background: #f8f8f8;
+            border-left: 3px solid #39A900;
+            padding: 10px 14px;
+            margin: 10pt 0;
+            text-indent: 0;
+            line-height: 1.6;
+        }
+        .step-box p { text-indent: 0; }
+        .page-break {
+            page-break-before: always;
+        }
+        .module-header {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 8px 14px;
+            margin: 12pt 0 8pt 0;
+            font-weight: bold;
+            text-indent: 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================================================== -->
+<!-- PORTADA -->
+<!-- ============================================================== -->
+<div class="cover-page">
+    <p style="font-weight: bold; font-size: 14pt; margin-bottom: 60px;">Manual de Usuario por Roles</p>
+    <p style="font-weight: bold; font-size: 13pt; margin-bottom: 10px;">GSS — Sistema de Información para el Seguimiento del Proceso de Integración con la Media Técnica</p>
+    <p style="margin-bottom: 60px;">Versión 1.0</p>
+    <p>Equipo Desarrollador GSS</p>
+    <p>Servicio Nacional de Aprendizaje (SENA)</p>
+    <p>Centro de Formación — Regional</p>
+    <p>Programa de Articulación con la Media Técnica</p>
+    <p style="margin-top: 30px;">Instructor / Evaluador</p>
+    <p>Septiembre de 2026</p>
+</div>
+
+<!-- ============================================================== -->
+<!-- TABLA DE CONTENIDO -->
+<!-- ============================================================== -->
+<div class="toc">
+    <h1 style="page-break-before: avoid;">Tabla de Contenido</h1>
+    <ul>
+        <li>Capítulo 1. Acceso General al Sistema y Navegación</li>
+        <li>Capítulo 2. Rol Aprendiz — Guía Completa</li>
+        <li>&emsp;2.1 Dashboard: Mi Espacio Formativo</li>
+        <li>&emsp;2.2 Módulo Mi Formación (Fichas)</li>
+        <li>&emsp;2.3 Módulo Mis Actividades</li>
+        <li>&emsp;2.4 Módulo Mis Entregas</li>
+        <li>&emsp;2.5 Módulo Mis Resultados</li>
+        <li>&emsp;2.6 Módulo Ruta de Aprendizaje (Plan de Formación)</li>
+        <li>&emsp;2.7 Módulo Documentos</li>
+        <li>&emsp;2.8 Módulo Notificaciones</li>
+        <li>&emsp;2.9 Módulo Perfil</li>
+        <li>Capítulo 3. Rol Instructor — Guía Completa</li>
+        <li>&emsp;3.1 Dashboard: Panel de Gestión Académica</li>
+        <li>&emsp;3.2 Módulo Fichas / Grupos</li>
+        <li>&emsp;3.3 Módulo Aprendices</li>
+        <li>&emsp;3.4 Módulo Competencias</li>
+        <li>&emsp;3.5 Módulo Resultados de Aprendizaje</li>
+        <li>&emsp;3.6 Módulo Plan de Formación</li>
+        <li>&emsp;3.7 Módulo Actividades</li>
+        <li>&emsp;3.8 Módulo Entregas (Evidencias)</li>
+        <li>&emsp;3.9 Módulo Asistencia</li>
+        <li>&emsp;3.10 Módulo Evaluaciones (Juicios Valorativos)</li>
+        <li>&emsp;3.11 Módulo Resultados</li>
+        <li>&emsp;3.12 Módulo Seguimiento (Visitas)</li>
+        <li>&emsp;3.13 Módulo Riesgos (Alertas Tempranas)</li>
+        <li>&emsp;3.14 Módulo Reportes</li>
+        <li>&emsp;3.15 Módulo Documentos</li>
+        <li>&emsp;3.16 Módulo Notificaciones</li>
+        <li>Capítulo 4. Rol Coordinador Académico / de Sede</li>
+        <li>Capítulo 5. Rol Apoyo Administrativo / ApCoordinador</li>
+        <li>Capítulo 6. Rol Subdirector de Centro</li>
+        <li>Capítulo 7. Rol Administrador del Sistema</li>
+        <li>Capítulo 8. Resolución de Incidencias Frecuentes</li>
+        <li>Capítulo 9. Referencias</li>
+    </ul>
+</div>
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 1: ACCESO GENERAL -->
+<!-- ============================================================== -->
+<h1>Capítulo 1. Acceso General al Sistema y Navegación</h1>
+
+<h2>1.1 Requisitos Previos</h2>
+<p>Para acceder al sistema GSS, el usuario necesita un dispositivo con conexión a internet (computador de escritorio, portátil, tableta o teléfono inteligente) y un navegador web actualizado. Los navegadores compatibles son Google Chrome versión 90 o superior, Microsoft Edge versión 90 o superior, Mozilla Firefox versión 88 o superior, y Safari versión 14 o superior. No se requiere instalar ninguna aplicación adicional en el dispositivo.</p>
+
+<h2>1.2 Pantalla de Inicio de Sesión</h2>
+<p>Al ingresar la dirección web proporcionada por la administración del centro de formación en la barra de direcciones del navegador, el sistema mostrará la pantalla de inicio de sesión. Esta pantalla presenta el logotipo institucional del SENA y dos campos obligatorios para completar.</p>
+<p>El primer campo, "Correo Electrónico", requiere que el usuario ingrese su dirección de correo institucional completa (por ejemplo, nombre@sena.edu.co). El segundo campo, "Contraseña", requiere que el usuario ingrese la clave de acceso asignada por el Administrador del Sistema. La contraseña distingue entre mayúsculas y minúsculas, por lo que el usuario debe verificar que la tecla de bloqueo de mayúsculas (Caps Lock) no esté activada.</p>
+<p>Una vez completados ambos campos, el usuario debe presionar el botón verde "Iniciar Sesión". Si las credenciales son válidas, el sistema redirigirá al usuario al Dashboard correspondiente a su rol. Si las credenciales son inválidas, se mostrará un mensaje de error en color rojo indicando "Credenciales inválidas".</p>
+<div class="figure-placeholder">[Figura 1: Pantalla de inicio de sesión del sistema GSS con campos de correo electrónico y contraseña]</div>
+<p class="figure-title">Figura 1</p>
+<p class="figure-note">Nota. Interfaz de autenticación segura mostrando los campos obligatorios de correo y contraseña junto al botón de ingreso institucional.</p>
+
+<h2>1.3 Estructura General de la Interfaz</h2>
+<p>Una vez autenticado, el usuario encontrará la interfaz organizada en tres zonas principales que permanecen constantes durante toda la navegación.</p>
+<p>La primera zona es la Barra Lateral de Navegación (Sidebar), ubicada en el lado izquierdo de la pantalla. Esta barra presenta el logotipo "GSS Media Técnica - Seguimiento Formativo" en la parte superior, seguido de las secciones y módulos organizados por categorías según el rol del usuario. Cada módulo se identifica con un icono descriptivo y un nombre. El módulo activo se resalta en verde con un borde lateral izquierdo. En la parte inferior de la barra lateral, se muestra el indicador de "Rol Activo" con el nombre del perfil actual del usuario (por ejemplo, "INSTRUCTOR"). El usuario puede colapsar o expandir esta barra haciendo clic en el icono de flecha ubicado en la esquina superior derecha de la misma. En dispositivos móviles, la barra lateral se oculta automáticamente y se accede mediante el icono de menú (tres líneas horizontales) ubicado en la esquina superior izquierda.</p>
+<p>La segunda zona es la Barra Superior (Header), ubicada en la parte superior de la pantalla. Contiene una barra de búsqueda global para localizar aprendices, fichas o actividades por palabras clave, un icono de campana que indica el número de notificaciones no leídas, y el nombre del usuario con su rol junto a un avatar. Al hacer clic en el nombre del usuario, se despliega un menú con la opción "Cerrar Sesión".</p>
+<p>La tercera zona es el Área de Contenido Principal, que ocupa el espacio central y derecho de la pantalla. En esta zona se renderizan las páginas de cada módulo con sus tablas de datos, formularios, gráficos y demás contenidos específicos según la funcionalidad seleccionada en la barra lateral.</p>
+<div class="figure-placeholder">[Figura 2: Vista general de la interfaz mostrando las tres zonas: sidebar, header y área de contenido]</div>
+<p class="figure-title">Figura 2</p>
+<p class="figure-note">Nota. Distribución general de la interfaz con la barra lateral izquierda, barra superior y área de contenido central.</p>
+
+<h2>1.4 Navegación entre Módulos</h2>
+<p>Para acceder a cualquier módulo, el usuario debe hacer clic en la opción correspondiente dentro de la barra lateral izquierda. El sistema cargará el contenido del módulo seleccionado en el área de contenido principal. El módulo activo quedará resaltado en verde en la barra lateral. Al navegar entre módulos, los datos se actualizan automáticamente sin necesidad de recargar toda la página.</p>
+
+<h2>1.5 Cierre de Sesión</h2>
+<p>Para cerrar la sesión de forma segura, el usuario debe hacer clic en el icono de flecha de salida ubicado en la esquina superior derecha de la barra superior (Header), junto a su nombre de usuario. Al presionar este icono, el sistema cerrará la sesión activa, eliminará los datos temporales de autenticación del navegador y redirigirá al usuario de vuelta a la pantalla de inicio de sesión. Se recomienda cerrar sesión siempre que se utilice un equipo compartido o público.</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 2: ROL APRENDIZ -->
+<!-- ============================================================== -->
+<h1>Capítulo 2. Rol Aprendiz — Guía Completa</h1>
+<p>El Aprendiz es el actor central del proceso formativo en la articulación con la Media Técnica. Su interacción con el sistema se centra en consultar el material pedagógico publicado por los instructores, enviar evidencias de aprendizaje, y monitorear sus resultados académicos y asistencia. El menú lateral del Aprendiz se organiza en dos secciones: "Mi Aprendizaje" y "Recursos y Cuenta".</p>
+
+<h2>2.1 Dashboard: Mi Espacio Formativo</h2>
+<p>Al iniciar sesión, el Aprendiz es dirigido automáticamente al Dashboard titulado "Mi Espacio Formativo". Este panel presenta un resumen visual del estado académico del aprendiz, estructurado de la siguiente manera.</p>
+<p>En la parte superior del Dashboard, se muestra una etiqueta verde con el texto "Rol Aprendiz", el título de la página y una descripción contextual que invita al aprendiz a consultar su progreso. A la derecha, un botón verde "Ver Mis Actividades" permite acceder directamente al módulo de actividades.</p>
+<p>Inmediatamente debajo, se presentan cuatro tarjetas de indicadores clave (KPI). La primera tarjeta, "Actividades Asignadas", muestra el número total de actividades publicadas para la ficha del aprendiz y responde a la pregunta "¿Cuántas actividades tengo?". La segunda tarjeta, "Entregas Realizadas", indica cuántas evidencias ha enviado el aprendiz y responde "¿Cuántas evidencias he enviado?". La tercera tarjeta, "Evidencias Aprobadas", muestra el conteo de resultados de aprendizaje cumplidos exitosamente. La cuarta tarjeta, "Promedio Asistencia", muestra el porcentaje de asistencia del aprendiz a las sesiones de formación.</p>
+<p>En la sección inferior izquierda, se presenta la tarjeta "Ruta de Formación y Juicios Evaluativos", que describe en tres pasos el flujo pedagógico: (1) Consulta de guías y actividades, (2) Envío oportuno de evidencias y (3) Retroalimentación y aprobación. En la sección inferior derecha, se muestra el panel "Próximos Vencimientos", con las fechas límite de las actividades más próximas a vencer.</p>
+<div class="figure-placeholder">[Figura 3: Dashboard completo del Aprendiz mostrando KPIs, ruta de formación y próximos vencimientos]</div>
+<p class="figure-title">Figura 3</p>
+<p class="figure-note">Nota. Panel principal del aprendiz con indicadores numéricos, guía pedagógica y actividades próximas a vencer.</p>
+
+<h2>2.2 Módulo Mi Formación (Fichas)</h2>
+<p>Al hacer clic en "Mi formación" en el menú lateral, el aprendiz accede a la información de la ficha (grupo) de formación a la que fue matriculado. En esta vista se muestra el código de la ficha (por ejemplo, 2987654), el nombre del programa técnico asociado (por ejemplo, "Técnico en Programación de Software"), la institución educativa vinculada, la sede correspondiente y el estado de la ficha (Activo o Inactivo). El aprendiz puede consultar estos datos pero no modificarlos, ya que la gestión de fichas es responsabilidad del coordinador o administrador.</p>
+
+<h2>2.3 Módulo Mis Actividades</h2>
+<p>Al acceder al módulo "Mis actividades", el aprendiz visualiza una tabla de datos con todas las actividades (guías, talleres, proyectos) creadas por los instructores para su ficha. La tabla presenta las siguientes columnas: Título de la Actividad, Ficha asignada, Fecha de Vencimiento y Estado de Entrega.</p>
+<p>La columna "Estado" muestra una etiqueta visual con código de color que puede ser: "SIN ENTREGAR" (color gris), indicando que el aprendiz aún no ha enviado evidencia para esa actividad; "ENTREGADO — PENDIENTE" (color amarillo/ámbar), indicando que la evidencia fue enviada pero el instructor aún no la ha calificado; "CALIFICADA" (color verde), indicando que el instructor asignó una calificación numérica junto con la nota obtenida (por ejemplo, "Nota: 5.0"); "APROBADA" (color verde), indicando que el instructor marcó explícitamente la evidencia como aprobada; o "NO APROBADA" (color rojo), indicando que la evidencia fue rechazada y el aprendiz debe repetirla o corregirla.</p>
+<p>En la esquina superior derecha de la tabla, el aprendiz encontrará una barra de búsqueda donde puede escribir palabras clave para filtrar actividades por nombre o por código de ficha. Junto a la barra de búsqueda, si la actividad está pendiente de entrega, aparecerá un botón con icono de nube y flecha hacia arriba (Entregar Evidencia) en la columna de acciones de cada fila.</p>
+
+<h3>Procedimiento para Entregar una Evidencia</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> Localice la actividad deseada en la tabla de "Mis Actividades".</p>
+<p><strong>Paso 2.</strong> Haga clic en el botón verde con icono de nube y flecha (Entregar Evidencia) ubicado en la columna de acciones de esa fila.</p>
+<p><strong>Paso 3.</strong> Se abrirá una ventana emergente (modal) titulada "Entregar Evidencia". El campo "Aprendiz" se completará automáticamente con su nombre y apellido, sin posibilidad de modificación. El campo "Fecha de Entrega" se completará automáticamente con la fecha y hora actual de Colombia.</p>
+<p><strong>Paso 4.</strong> En el campo "Comentario", escriba una descripción breve de su trabajo o las instrucciones que considere relevantes.</p>
+<p><strong>Paso 5.</strong> En la sección "Documento / Evidencia", seleccione el modo de adjuntar: puede hacer clic en "Subir archivo" para seleccionar un documento desde su equipo (formatos permitidos: PDF, DOCX, XLSX, JPG, PNG, ZIP; tamaño máximo: 5 MB) o escribir un enlace web (URL de Google Drive, OneDrive u otro repositorio).</p>
+<p><strong>Paso 6.</strong> Verifique que todos los campos estén completos y presione el botón "Guardar Cambios".</p>
+<p><strong>Paso 7.</strong> Si la entrega fue exitosa, aparecerá un mensaje verde de confirmación "Entrega registrada correctamente" y la ventana se cerrará automáticamente. El estado de la actividad en la tabla cambiará a "ENTREGADO — PENDIENTE".</p>
+</div>
+<div class="figure-placeholder">[Figura 4: Ventana emergente (modal) para entregar evidencia con campos autocompletados]</div>
+<p class="figure-title">Figura 4</p>
+<p class="figure-note">Nota. Formulario de entrega de evidencia mostrando campos autocompletados de aprendiz y fecha, junto con la opción de subir archivo.</p>
+
+<h2>2.4 Módulo Mis Entregas</h2>
+<p>Este módulo presenta un historial consolidado de todas las evidencias enviadas por el aprendiz. La tabla incluye las columnas: Actividad (nombre de la tarea), Aprendiz (su nombre), Fecha de Entrega (día y hora), Documento (enlace o nombre del archivo adjunto), Estado / Juicio (ENTREGADO — PENDIENTE, CALIFICADA, APROBADA o NO APROBADA), y la Retroalimentación del instructor (en cursiva, debajo de la etiqueta de estado cuando el instructor haya escrito observaciones). El aprendiz puede utilizar la barra de búsqueda para filtrar entregas por nombre de actividad.</p>
+
+<h2>2.5 Módulo Mis Resultados</h2>
+<p>En el módulo "Mis resultados", el aprendiz visualiza un panel informativo indicando que la funcionalidad de reporte de evaluaciones se encuentra en proceso de integración con el módulo de juicios evaluativos. Cuando esta funcionalidad se active completamente, el aprendiz podrá consultar aquí un resumen consolidado de todos sus juicios de competencia (APROBADO, NO APROBADO) por cada Resultado de Aprendizaje (RAP) evaluado.</p>
+
+<h2>2.6 Módulo Ruta de Aprendizaje (Plan de Formación)</h2>
+<p>Al hacer clic en "Ruta de aprendizaje", el aprendiz accede a una vista en formato de línea de tiempo (timeline) que presenta la estructura curricular de su programa de formación. Se organizan jerárquicamente los Programas, dentro de cada programa las Competencias técnicas y transversales, y dentro de cada competencia los Resultados de Aprendizaje (RAP) que debe alcanzar. El aprendiz puede expandir y colapsar cada nivel para explorar la estructura completa de su ruta formativa.</p>
+
+<h2>2.7 Módulo Documentos</h2>
+<p>El módulo "Documentos" permite al aprendiz consultar el repositorio de actas, resoluciones y acuerdos de articulación vinculados a su institución educativa. La tabla presenta las columnas: Nombre del documento, Tipo de documento, Institución asociada, Fecha de subida y un enlace para visualizar o descargar el archivo. Este módulo es de solo lectura para el aprendiz.</p>
+
+<h2>2.8 Módulo Notificaciones</h2>
+<p>El módulo "Notificaciones" presenta la bandeja completa de avisos del sistema. En la parte superior, se muestran tres pestañas de filtrado: "Todas" (muestra todas las notificaciones), "No leídas" (solo las pendientes de revisión, marcadas con un punto verde) y "Leídas" (las ya revisadas). Junto a las pestañas, hay un botón "Marcar todo como leído" para limpiar todos los avisos pendientes de una vez.</p>
+<p>Cada notificación muestra un icono representativo (campana para avisos generales, documento para entregas, verificación para evaluaciones), un título en negrita, el cuerpo del mensaje descriptivo, y el tiempo transcurrido desde su emisión (por ejemplo, "hace 5 minutos"). Las notificaciones no leídas se destacan con un borde izquierdo verde y un punto verde en la esquina. Al hacer clic en una notificación, esta se marca como leída automáticamente y, si contiene un enlace de acción (por ejemplo, redirigir al módulo de actividades), el sistema navegará directamente a esa ubicación.</p>
+
+<h2>2.9 Módulo Perfil</h2>
+<p>Al hacer clic en "Perfil", el aprendiz puede consultar la información de su cuenta de usuario: nombre registrado, correo electrónico, rol asignado y estado de la cuenta (Activo o Inactivo). Desde esta vista, el aprendiz no puede modificar su rol ni su correo, pero puede actualizar su nombre si es necesario.</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 3: ROL INSTRUCTOR -->
+<!-- ============================================================== -->
+<h1>Capítulo 3. Rol Instructor — Guía Completa</h1>
+<p>El Instructor es el responsable directo de la ejecución formativa. Su menú lateral se organiza en cuatro secciones: "Gestión Formativa", "Ejecución y Evaluación", y "Acompañamiento". A continuación se detalla cada módulo accesible y cómo utilizar todas sus funcionalidades.</p>
+
+<h2>3.1 Dashboard: Panel de Gestión Académica</h2>
+<p>Al iniciar sesión, el Instructor accede al Dashboard titulado "Panel de Gestión Académica". En la parte superior se muestra la etiqueta "Rol Instructor" y un botón de acceso rápido "Revisar Entregas" que lleva directamente al módulo de evidencias pendientes.</p>
+<p>Las cuatro tarjetas KPI del instructor son: "Total Aprendices" (cantidad de estudiantes en sus fichas asignadas), "Mis Fichas / Grupos" (número de grupos en los que orienta formación), "Actividades en Curso" (guías y talleres activos publicados), y "Asistencia Global" (porcentaje promedio de asistencia registrado).</p>
+<p>En la sección intermedia, se presentan dos gráficos analíticos: el "Gráfico de Tendencia" (línea temporal que muestra la evolución de entregas a lo largo del tiempo) y el "Gráfico de Distribución" (representación visual de la distribución de estados de las entregas o niveles de riesgo).</p>
+<p>En la sección inferior izquierda, se presenta la tabla "Aprendices en Riesgo", que lista a los estudiantes con nivel de riesgo ALTO o MEDIO, junto con su ficha y motivo de alerta. En la sección inferior derecha, se muestra el panel "Próximos Vencimientos" con las fechas límite más cercanas de actividades publicadas.</p>
+<div class="figure-placeholder">[Figura 5: Dashboard completo del Instructor con KPIs, gráficos analíticos y tabla de riesgos]</div>
+<p class="figure-title">Figura 5</p>
+<p class="figure-note">Nota. Panel del instructor mostrando indicadores de gestión, gráficos de tendencia y distribución, lista de aprendices en riesgo y vencimientos próximos.</p>
+
+<h2>3.2 Módulo Fichas / Grupos</h2>
+<p>En este módulo, el instructor visualiza las fichas de formación activas. La tabla presenta las columnas: Código de Ficha, Programa asociado, Institución, Sede, Cantidad de Aprendices matriculados y Estado (Activo/Inactivo). El instructor puede buscar fichas por código o nombre de programa usando la barra de búsqueda superior. Dependiendo de sus permisos, puede consultar los detalles de cada ficha haciendo clic en la fila, lo que despliega el listado completo de aprendices inscritos en ese grupo.</p>
+
+<h2>3.3 Módulo Aprendices</h2>
+<p>La tabla de aprendices presenta las columnas: Nombre completo, Número de Documento, Tipo de Documento (CC, TI, CE), Ficha asignada, Estado formativo (EN_FORMACION, RETIRADO, CERTIFICADO), Nivel de Riesgo (BAJO, MEDIO, ALTO con etiqueta de color) y Porcentaje de Asistencia. El instructor puede buscar aprendices por nombre o documento. Al hacer clic en un aprendiz, accede a su perfil detallado, donde puede consultar información personal, historial de entregas y registro de asistencia.</p>
+<div class="figure-placeholder">[Figura 6: Tabla de aprendices mostrando datos personales, ficha, riesgo y asistencia]</div>
+<p class="figure-title">Figura 6</p>
+<p class="figure-note">Nota. Listado completo de aprendices con indicadores de riesgo y asistencia por código de colores.</p>
+
+<h2>3.4 Módulo Competencias</h2>
+<p>El módulo "Competencias" permite gestionar la estructura de competencias técnicas y transversales del diseño curricular SENA. La tabla muestra las columnas: Código de Competencia, Nombre, Programa al que pertenece, y Estado (Activo/Inactivo).</p>
+<h3>Crear una Nueva Competencia</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> Haga clic en el botón "+ Nueva Competencia" ubicado en la esquina superior derecha.</p>
+<p><strong>Paso 2.</strong> En el formulario emergente, complete el campo "Código" con el código oficial de la competencia según el diseño curricular SENA.</p>
+<p><strong>Paso 3.</strong> Complete el campo "Nombre" con la denominación completa de la competencia.</p>
+<p><strong>Paso 4.</strong> Seleccione el "Programa" al que pertenece la competencia usando el desplegable.</p>
+<p><strong>Paso 5.</strong> Presione "Guardar" para registrar la competencia. Esta aparecerá inmediatamente en la tabla.</p>
+</div>
+<p>Para editar una competencia existente, haga clic en el icono de lápiz (Editar) en la columna de acciones de la fila correspondiente. Para eliminarla, haga clic en el icono de papelera (Eliminar); el sistema solicitará confirmación antes de proceder.</p>
+
+<h2>3.5 Módulo Resultados de Aprendizaje</h2>
+<p>Este módulo gestiona los Resultados de Aprendizaje (RAP) que deben alcanzar los aprendices. La tabla presenta: Código del RAP, Nombre descriptivo, Competencia asociada y Estado. El procedimiento para crear, editar y eliminar RAPs es análogo al de Competencias: usar el botón "+ Nuevo Resultado", completar código, nombre y seleccionar la competencia asociada en el desplegable.</p>
+
+<h2>3.6 Módulo Plan de Formación</h2>
+<p>El Plan de Formación presenta una vista de línea de tiempo (timeline) jerárquica que permite al instructor visualizar toda la estructura curricular: Programas → Competencias → Resultados de Aprendizaje. Cada nivel se puede expandir o colapsar haciendo clic sobre el nombre del elemento. Esta vista es de consulta y sirve como referencia para diseñar actividades alineadas con los RAPs.</p>
+
+<h2>3.7 Módulo Actividades</h2>
+<p>El módulo "Actividades" es el centro operativo para la creación y gestión de guías, talleres y proyectos. La tabla presenta las columnas: Título de la Actividad, Ficha objetivo, Fecha de Vencimiento, Estado de las entregas asociadas y columna de Acciones.</p>
+
+<h3>Crear una Nueva Actividad</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> Haga clic en el botón "+ Nueva Actividad" en la esquina superior derecha de la tabla.</p>
+<p><strong>Paso 2.</strong> En el formulario emergente, complete el campo "Título" con el nombre descriptivo de la actividad (por ejemplo, "Taller de Algoritmos — Unidad 3").</p>
+<p><strong>Paso 3.</strong> Seleccione la "Ficha" a la que se asignará la actividad usando el desplegable, que muestra el código de ficha seguido del nombre del programa (por ejemplo, "2987654 - Técnico en Programación").</p>
+<p><strong>Paso 4.</strong> Complete el campo "Descripción" con las instrucciones detalladas, requisitos de la evidencia y criterios de evaluación.</p>
+<p><strong>Paso 5.</strong> Seleccione la "Fecha de Vencimiento" usando el selector de fecha (calendario desplegable). La fecha seleccionada será la fecha límite para que los aprendices envíen sus evidencias.</p>
+<p><strong>Paso 6.</strong> Presione el botón "Guardar" para publicar la actividad. Esta aparecerá inmediatamente en la tabla del instructor y en el módulo "Mis Actividades" de todos los aprendices de la ficha seleccionada.</p>
+</div>
+<p>Para editar una actividad, haga clic en el icono de lápiz (Editar) en la columna de acciones. Para eliminarla, haga clic en el icono de papelera; el sistema advertirá que todas las entregas asociadas también serán eliminadas y solicitará confirmación. Para exportar el listado completo de actividades en formato CSV, presione el botón "Exportar CSV" ubicado junto al botón de creación.</p>
+
+<h2>3.8 Módulo Entregas (Evidencias)</h2>
+<p>El módulo "Evidencias y Entregas" permite al instructor revisar, calificar y retroalimentar las evidencias enviadas por los aprendices. La tabla presenta: Actividad, Aprendiz (nombre y documento), Fecha de Entrega, Documento (enlace al archivo adjunto), Estado / Juicio (con etiquetas de color), y columna de Acciones.</p>
+
+<h3>Calificar una Entrega</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> Localice la entrega que desea calificar en la tabla. Las entregas pendientes muestran la etiqueta amarilla "ENTREGADO — PENDIENTE".</p>
+<p><strong>Paso 2.</strong> Haga clic en el icono de lápiz (Evaluar) en la columna de acciones de esa fila.</p>
+<p><strong>Paso 3.</strong> Se abrirá el formulario de evaluación. Descargue o visualice el archivo adjunto por el aprendiz haciendo clic en el enlace del documento.</p>
+<p><strong>Paso 4.</strong> En el campo "Calificación", ingrese la nota numérica (por ejemplo, 4.5).</p>
+<p><strong>Paso 5.</strong> En el desplegable "Estado", seleccione explícitamente "APROBADA" si la evidencia cumple los criterios, o "NO_APROBADA" si no los cumple. Si solo ingresa la nota sin cambiar el estado, el sistema la marcará como "CALIFICADA".</p>
+<p><strong>Paso 6.</strong> En el campo "Retroalimentación", redacte observaciones cualitativas para el aprendiz (aspectos positivos, aspectos por mejorar, sugerencias).</p>
+<p><strong>Paso 7.</strong> Presione "Guardar Cambios". El aprendiz recibirá automáticamente una notificación con el resultado de la evaluación, y al hacer clic en dicha notificación será redirigido al módulo de actividades.</p>
+</div>
+
+<h2>3.9 Módulo Asistencia</h2>
+<p>El módulo de Asistencia se divide en dos secciones: la vista de consulta (tabla de registros históricos) y la vista de toma de asistencia (formulario masivo).</p>
+
+<h3>Vista de Consulta (Control de Asistencia)</h3>
+<p>La tabla principal muestra los registros de asistencia con las columnas: Aprendiz (nombre y documento), Ficha, Instructor que tomó la asistencia, Fecha de la sesión, Estado (PRESENTE, FALLA, EXCUSA con etiquetas de color) y Observaciones. El instructor puede filtrar por ficha, instructor o fecha usando los controles de búsqueda superiores.</p>
+
+<h3>Tomar Asistencia (Modo Lista)</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> Haga clic en el enlace o botón "Tomar Asistencia" para acceder al formulario masivo.</p>
+<p><strong>Paso 2.</strong> El campo "Instructor" se completará automáticamente con su nombre y apellido sin posibilidad de modificación (autodetectado por su sesión activa).</p>
+<p><strong>Paso 3.</strong> Seleccione la "Ficha / Grupo" en el desplegable. Al seleccionar una ficha, se desplegará automáticamente el listado completo de aprendices activos matriculados en ese grupo.</p>
+<p><strong>Paso 4.</strong> El campo "Fecha de Sesión" se completa automáticamente con la fecha actual. Si necesita registrar asistencia de una fecha anterior, modifique este campo usando el selector de fecha.</p>
+<p><strong>Paso 5.</strong> Todos los aprendices aparecerán marcados por defecto como "Presente" (botón verde con marca de verificación). Para registrar una inasistencia, haga clic en "Falla" (botón rojo con X) junto al aprendiz correspondiente. Para registrar una excusa justificada, haga clic en "Excusa" (botón naranja con escudo).</p>
+<p><strong>Paso 6.</strong> Opcionalmente, escriba observaciones en el campo de texto junto a cada aprendiz (por ejemplo, "Llegó tarde 15 minutos" o "Excusa médica presentada").</p>
+<p><strong>Paso 7.</strong> Si necesita restablecer todos los estados a "Presente", haga clic en el botón "Marcar todos como Presente" ubicado en la esquina superior derecha del listado.</p>
+<p><strong>Paso 8.</strong> Presione el botón "Guardar Asistencia" para registrar masivamente todos los estados. El sistema confirmará con un mensaje de éxito y redirigirá a la vista de consulta de asistencia.</p>
+</div>
+<div class="figure-placeholder">[Figura 7: Formulario de Toma de Asistencia en Modo Lista con campo de instructor autocompletado]</div>
+<p class="figure-title">Figura 7</p>
+<p class="figure-note">Nota. Vista de toma de asistencia masiva con el instructor autodetectado, selector de ficha y listado de aprendices con botones de estado.</p>
+
+<h2>3.10 Módulo Evaluaciones (Juicios Valorativos)</h2>
+<p>El módulo "Juicios Valorativos" permite al instructor registrar las calificaciones definitivas de los Resultados de Aprendizaje (RAP). La tabla muestra: Aprendiz (nombre, documento y ficha), Resultado de Aprendizaje (código y nombre del RAP), Calificación numérica, Juicio (APROBADO / NO APROBADO), y Fecha de evaluación.</p>
+
+<h3>Registrar un Juicio Evaluativo</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> Haga clic en el botón "+ Nuevo Juicio" en la esquina superior derecha.</p>
+<p><strong>Paso 2.</strong> Seleccione el "Aprendiz" del desplegable (se muestra nombre, apellido, documento y ficha).</p>
+<p><strong>Paso 3.</strong> Seleccione el "Resultado de Aprendizaje (RAP)" del desplegable (se muestra código y nombre).</p>
+<p><strong>Paso 4.</strong> Ingrese la calificación numérica en el campo correspondiente.</p>
+<p><strong>Paso 5.</strong> Seleccione el juicio final: "APROBADO" o "NO APROBADO".</p>
+<p><strong>Paso 6.</strong> Presione "Guardar" para registrar el juicio. Este quedará reflejado en el historial del aprendiz.</p>
+</div>
+
+<h2>3.11 Módulo Resultados</h2>
+<p>Este módulo ofrece una vista consolidada de los resultados acumulados de las evaluaciones realizadas. El instructor puede consultar aquí el progreso general de sus fichas según los juicios valorativos emitidos.</p>
+
+<h2>3.12 Módulo Seguimiento (Visitas de Seguimiento)</h2>
+<p>En el módulo "Seguimiento", el instructor puede registrar y consultar las visitas técnicas realizadas a las instituciones educativas vinculadas al programa de articulación. La tabla muestra: Institución visitada, Fecha de visita, Tipo de visita, Observaciones y Estado.</p>
+<h3>Registrar una Visita</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> Haga clic en "+ Nueva Visita".</p>
+<p><strong>Paso 2.</strong> Seleccione la "Institución" del desplegable.</p>
+<p><strong>Paso 3.</strong> Seleccione la "Fecha" de la visita.</p>
+<p><strong>Paso 4.</strong> Complete el campo "Observaciones" con un resumen detallado de lo observado durante la visita.</p>
+<p><strong>Paso 5.</strong> Presione "Guardar" para registrar la visita en la bitácora.</p>
+</div>
+
+<h2>3.13 Módulo Riesgos (Alertas Tempranas)</h2>
+<p>El módulo "Riesgos" permite crear y gestionar alertas tempranas de deserción, inasistencia o bajo rendimiento. La tabla presenta: Aprendiz en riesgo, Tipo de alerta (Académico, Psicosocial, Inasistencia), Nivel de Riesgo (BAJO, MEDIO, ALTO con etiqueta de color), Estado de la alerta (ABIERTA, EN_TRATAMIENTO, RESUELTA) y Fecha de creación.</p>
+
+<h3>Crear una Alerta Temprana</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> Haga clic en "+ Nueva Alerta".</p>
+<p><strong>Paso 2.</strong> Seleccione el "Aprendiz" afectado del desplegable (se muestra nombre, documento y ficha).</p>
+<p><strong>Paso 3.</strong> Seleccione el "Tipo" de alerta: Académico, Psicosocial o Inasistencia.</p>
+<p><strong>Paso 4.</strong> Seleccione el "Nivel de Riesgo": BAJO, MEDIO o ALTO.</p>
+<p><strong>Paso 5.</strong> Escriba una descripción detallada del motivo de la alerta en el campo de observaciones.</p>
+<p><strong>Paso 6.</strong> Presione "Guardar". La alerta será visible para el coordinador académico, quien dará seguimiento.</p>
+</div>
+
+<h2>3.14 Módulo Reportes</h2>
+<p>El módulo "Reportes" presenta un panel de generación y exportación de informes estadísticos. En la parte superior, se muestran tarjetas resumen con métricas globales: total de aprendices, total de alertas activas, promedio de asistencia, entre otros indicadores. En la sección inferior, se ofrecen opciones para exportar listados en formato CSV: listado de aprendices, listado de alertas de riesgo y listado de registros de asistencia. Para descargar un reporte, haga clic en el botón "Exportar CSV" correspondiente al listado deseado.</p>
+
+<h2>3.15 Módulo Documentos</h2>
+<p>Igual que en la sección del Aprendiz (2.7), el instructor puede consultar el repositorio de documentos institucionales (actas, resoluciones, acuerdos). Adicionalmente, dependiendo de sus permisos, puede subir nuevos documentos asociados a una institución específica.</p>
+
+<h2>3.16 Módulo Notificaciones</h2>
+<p>El funcionamiento es idéntico al descrito en la sección del Aprendiz (2.8). El instructor recibe notificaciones automáticas cuando un aprendiz envía una nueva entrega de evidencia, y puede utilizar los filtros de "Todas", "No leídas" y "Leídas" para gestionar su bandeja.</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 4: COORDINADOR -->
+<!-- ============================================================== -->
+<h1>Capítulo 4. Rol Coordinador Académico / de Sede — Guía Completa</h1>
+<p>El Coordinador Académico o de Sede tiene una visión de supervisión sobre el proceso formativo. Su menú lateral se organiza en cinco secciones: Dashboard, "Gestión Institucional", "Actores", "Académico", "Ejecución", y "Seguimiento y Reportes".</p>
+
+<h2>4.1 Dashboard</h2>
+<p>El Dashboard del Coordinador presenta el título "Panel de Gestión y Articulación" con métricas globales de cobertura: Total Aprendices vinculados al programa, Total Instituciones articuladas, Fichas Activas, y Asistencia Global promedio. Incluye gráficos de tendencia y distribución, tabla de aprendices en riesgo y panel de próximos vencimientos.</p>
+
+<h2>4.2 Módulos de Gestión Institucional</h2>
+<p>El Coordinador accede a los módulos de "Programas" y "Fichas / Grupos". En "Programas", puede consultar y gestionar los programas técnicos registrados (código, nombre, nivel, duración y estado). En "Fichas / Grupos", puede crear nuevas fichas, editar sus datos y asignar programas, instituciones y sedes.</p>
+
+<h2>4.3 Módulos de Actores</h2>
+<p>En "Aprendices", el Coordinador puede consultar la tabla completa de aprendices, crear nuevos registros, editar información y cambiar el estado formativo. En "Instructores", puede gestionar el directorio de instructores: nombre, documento, correo, teléfono, profesión y estado (Activo/Inactivo). Puede crear nuevos registros de instructor y editar los existentes.</p>
+
+<h2>4.4 Módulos Académicos</h2>
+<p>El Coordinador tiene acceso completo a "Competencias", "Resultados de Aprendizaje" y "Plan de Formación" con las mismas funcionalidades descritas para el Instructor (secciones 3.4, 3.5 y 3.6).</p>
+
+<h2>4.5 Módulos de Ejecución</h2>
+<p>El Coordinador puede acceder a "Actividades", "Entregas", "Asistencia", "Evaluaciones" y "Resultados" con funcionalidades de supervisión similares a las del Instructor (secciones 3.7 a 3.11), con la diferencia de que su vista puede abarcar todas las fichas del centro, no solo las asignadas a un instructor específico.</p>
+
+<h2>4.6 Módulos de Seguimiento y Reportes</h2>
+<p>El Coordinador es el principal gestor del módulo "Riesgos" (Alertas Tempranas). Desde aquí puede cambiar el estado de una alerta de "ABIERTA" a "EN_TRATAMIENTO" (cuando inicia la intervención con el aprendiz) y posteriormente a "RESUELTA" (cuando el caso se cierra satisfactoriamente). También accede al módulo "Seguimiento" (Visitas), "Reportes" (exportación CSV), "Documentos" (repositorio de actas) y "Notificaciones".</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 5: APOYO ADMINISTRATIVO -->
+<!-- ============================================================== -->
+<h1>Capítulo 5. Rol Apoyo Administrativo / ApCoordinador — Guía Completa</h1>
+<p>El perfil de Apoyo Administrativo (ApCoordinador) comparte el mismo menú lateral que el Coordinador Académico. Su responsabilidad principal es la configuración y parametrización de la estructura institucional.</p>
+
+<h2>5.1 Gestión Institucional: Programas y Fichas</h2>
+<p>En "Programas", el ApCoordinador puede crear nuevos programas técnicos con los campos: Código del programa, Nombre completo, Nivel (Técnico, Tecnólogo), Duración en horas, y Estado. En "Fichas / Grupos", puede crear nuevas fichas seleccionando el programa, la institución y la sede correspondientes.</p>
+
+<h3>Crear una Ficha / Grupo</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> En el módulo "Fichas / Grupos", haga clic en "+ Nueva Ficha".</p>
+<p><strong>Paso 2.</strong> Ingrese el "Código" único de la ficha (número asignado por el SENA).</p>
+<p><strong>Paso 3.</strong> Seleccione el "Programa" técnico en el desplegable.</p>
+<p><strong>Paso 4.</strong> Seleccione la "Institución" educativa vinculada.</p>
+<p><strong>Paso 5.</strong> Seleccione la "Sede" donde se imparte la formación.</p>
+<p><strong>Paso 6.</strong> Defina la "Fecha de Inicio" y opcionalmente la "Fecha de Fin" de la formación.</p>
+<p><strong>Paso 7.</strong> Presione "Guardar" para crear la ficha. Esta quedará disponible para asignar aprendices e instructores.</p>
+</div>
+
+<h2>5.2 Módulo Actores: Matrícula y Asignación</h2>
+<p>En "Aprendices", el ApCoordinador puede matricular nuevos aprendices completando: tipo de documento, número de documento, nombres, apellidos, correo SENA, y seleccionando la ficha de asignación. En "Instructores", puede registrar nuevos instructores con: número de documento, nombres, apellidos, correo, teléfono y profesión. Al crear un instructor, el sistema vincula automáticamente su perfil con la cuenta de usuario.</p>
+
+<h2>5.3 Demás Módulos</h2>
+<p>El ApCoordinador tiene acceso a los módulos de "Competencias", "Resultados de Aprendizaje", "Plan de Formación", "Actividades", "Entregas", "Asistencia", "Evaluaciones", "Resultados", "Seguimiento", "Riesgos", "Reportes", "Documentos" y "Notificaciones" con las mismas funcionalidades descritas para el Coordinador (Capítulo 4).</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 6: SUBDIRECTOR -->
+<!-- ============================================================== -->
+<h1>Capítulo 6. Rol Subdirector de Centro — Guía Completa</h1>
+<p>El Subdirector de Centro tiene una visión ejecutiva y global del proceso de articulación. Su menú lateral se organiza en tres secciones: "Institucional", "Población" y "Supervisión".</p>
+
+<h2>6.1 Dashboard</h2>
+<p>El Dashboard del Subdirector presenta el título "Panel de Gestión y Articulación" con métricas globales consolidadas de todo el centro: total de aprendices vinculados, total de instituciones articuladas, fichas activas y promedio de asistencia global. Los gráficos de tendencia y distribución permiten identificar patrones de deserción o bajo rendimiento a nivel macro. La tabla de aprendices en riesgo muestra los casos más críticos del centro.</p>
+
+<h2>6.2 Módulos Institucionales</h2>
+
+<h3>Instituciones</h3>
+<p>El módulo "Instituciones" presenta la tabla completa de colegios y entidades educativas articulados con el SENA. Las columnas incluyen: Nombre de la institución, NIT, Dirección, Municipio, Estado (Activo/Inactivo) y número de sedes registradas. El Subdirector puede consultar los detalles de cada institución haciendo clic en su nombre, lo que despliega las sedes asociadas, las fichas vinculadas y los datos de contacto del rector.</p>
+
+<h3>Sedes</h3>
+<p>El módulo "Sedes" muestra las sedes o sucursales de cada institución educativa: Nombre de la sede, Institución a la que pertenece, Dirección, Estado y número de fichas asociadas.</p>
+
+<h3>Programas y Fichas</h3>
+<p>El Subdirector puede consultar (solo lectura o con permisos limitados de edición) los módulos de "Programas" y "Fichas / Grupos" para verificar la oferta formativa activa del centro.</p>
+
+<h2>6.3 Módulos de Población</h2>
+<p>En "Aprendices" e "Instructores", el Subdirector tiene acceso de consulta para verificar la cantidad de actores vinculados, sus estados formativos y la distribución por fichas e instituciones.</p>
+
+<h2>6.4 Módulos de Supervisión</h2>
+<p>En "Seguimiento" (Visitas), el Subdirector consulta la bitácora de visitas realizadas a instituciones. En "Riesgos", visualiza las alertas tempranas activas para monitorear la deserción. En "Reportes", puede generar y exportar los informes consolidados del centro para remitir a la Dirección Regional. En "Documentos", consulta las actas y resoluciones de articulación. En "Notificaciones", recibe avisos del sistema sobre eventos relevantes.</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 7: ADMINISTRADOR -->
+<!-- ============================================================== -->
+<h1>Capítulo 7. Rol Administrador del Sistema — Guía Completa</h1>
+<p>El Administrador del Sistema tiene acceso irrestricto a todos los módulos del aplicativo. Además de acceder a todas las funcionalidades descritas para los roles anteriores, dispone de una sección exclusiva "Administración del Sistema" que contiene cinco módulos adicionales.</p>
+
+<h2>7.1 Dashboard</h2>
+<p>El Dashboard del Administrador presenta métricas globales consolidadas idénticas a las del Subdirector, con acceso completo a gráficos de tendencia, distribución, tabla de riesgos y vencimientos.</p>
+
+<h2>7.2 Módulos Institucionales Completos</h2>
+<p>El Administrador tiene permisos de lectura y escritura en "Instituciones" (crear, editar y desactivar colegios), "Sedes" (crear y gestionar sedes por institución), "Programas" (crear y administrar la oferta formativa) y "Fichas / Grupos" (gestión completa de la matrícula grupal).</p>
+
+<h3>Crear una Institución</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> En el módulo "Instituciones", haga clic en "+ Nueva Institución".</p>
+<p><strong>Paso 2.</strong> Complete los campos: Nombre de la institución, NIT, Dirección, Municipio, Teléfono, Correo electrónico de contacto y Nombre del rector.</p>
+<p><strong>Paso 3.</strong> Presione "Guardar". La institución quedará registrada en estado "Activo" y disponible para vincular sedes y fichas.</p>
+</div>
+
+<h2>7.3 Módulo Usuarios</h2>
+<p>El módulo "Usuarios" permite la gestión centralizada de todas las cuentas de acceso al sistema. La tabla presenta: Nombre del usuario, Correo electrónico, Rol asignado, Estado (Activo/Inactivo), y Último Acceso (fecha y hora del último inicio de sesión).</p>
+
+<h3>Crear un Nuevo Usuario</h3>
+<div class="step-box">
+<p><strong>Paso 1.</strong> Haga clic en "+ Nuevo Usuario".</p>
+<p><strong>Paso 2.</strong> Complete el campo "Nombre" con el nombre completo del usuario.</p>
+<p><strong>Paso 3.</strong> Complete el campo "Correo Electrónico" con la dirección institucional.</p>
+<p><strong>Paso 4.</strong> Complete el campo "Contraseña" con una clave segura (mínimo 8 caracteres, incluyendo mayúsculas, minúsculas y números).</p>
+<p><strong>Paso 5.</strong> Seleccione el "Rol" del desplegable (Aprendiz, Instructor, Coordinador Académico, Apoyo Administrativo, Subdirector o Administrador).</p>
+<p><strong>Paso 6.</strong> Opcionalmente, seleccione la "Institución" a la que pertenece el usuario.</p>
+<p><strong>Paso 7.</strong> Presione "Guardar". El sistema creará la cuenta de usuario y automáticamente generará el perfil correspondiente (expediente de Aprendiz o Instructor) según el rol seleccionado, evitando así el error de "cuenta sin perfil".</p>
+</div>
+<p>Para editar un usuario, haga clic en el icono de lápiz. Para desactivar una cuenta (sin eliminarla), cambie su estado a "Inactivo"; el usuario no podrá iniciar sesión pero su historial se conservará.</p>
+
+<h2>7.4 Módulo Roles y Permisos</h2>
+<p>En "Roles y Permisos", el Administrador puede consultar la tabla de roles configurados en el sistema con sus nombres, niveles jerárquicos y permisos asociados. Este módulo permite visualizar la estructura jerárquica de control de acceso basado en roles (RBAC) implementada en el sistema.</p>
+
+<h2>7.5 Módulo Auditoría (AuditLog)</h2>
+<p>El módulo "Auditoría" es la herramienta de trazabilidad del sistema. Presenta una tabla cronológica e inmutable con todos los eventos sensibles registrados automáticamente. Las columnas incluyen: Fecha y Hora del evento, Usuario que ejecutó la acción (nombre y correo), Módulo afectado (por ejemplo, USUARIOS, ENTREGAS, ASISTENCIA), Tipo de Acción (CREAR_USUARIO, EVALUAR_ENTREGA, ELIMINAR_ACTIVIDAD), y el Detalle completo del evento (información del objeto antes y después del cambio, incluyendo el ID del solicitante y su rol).</p>
+<p>El Administrador puede utilizar los filtros de búsqueda para localizar eventos por módulo, por usuario específico o por rango de fechas. Este módulo es de solo lectura; los registros de auditoría no pueden ser modificados ni eliminados por ningún usuario, garantizando la integridad de la trazabilidad.</p>
+<div class="figure-placeholder">[Figura 8: Módulo de Auditoría mostrando el registro cronológico de acciones del sistema]</div>
+<p class="figure-title">Figura 8</p>
+<p class="figure-note">Nota. Vista del AuditLog con filtros de búsqueda y detalle expandido de un evento de creación de usuario.</p>
+
+<h2>7.6 Módulo Configuración</h2>
+<p>El módulo "Configuración" permite al Administrador ajustar los parámetros globales del sistema: nombre de la institución principal, datos de contacto del centro de formación, y otros valores de parametrización general. Los cambios realizados aquí afectan a toda la plataforma.</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 8: RESOLUCIÓN DE INCIDENCIAS -->
+<!-- ============================================================== -->
+<h1>Capítulo 8. Resolución de Incidencias Frecuentes</h1>
+<p>A continuación se documentan los errores y situaciones más comunes que pueden presentarse durante el uso del sistema GSS, junto con la causa probable y la acción correctiva que debe realizar el usuario.</p>
+
+<p class="table-title">Tabla 1</p>
+<p class="table-subtitle">Matriz de Resolución de Incidencias Frecuentes del Sistema GSS</p>
+<table>
+    <thead>
+        <tr>
+            <th style="width:30%">Mensaje o Síntoma en Pantalla</th>
+            <th style="width:30%">Causa Probable</th>
+            <th style="width:40%">Acción Correctiva del Usuario</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>"Credenciales inválidas" al intentar iniciar sesión.</td>
+            <td>La contraseña ingresada no coincide con la registrada, o el correo electrónico está mal escrito. La tecla Caps Lock puede estar activada.</td>
+            <td>Verificar que el correo sea el completo (incluyendo @sena.edu.co). Verificar que Caps Lock esté desactivada. Si persiste, solicitar al Administrador del Sistema el restablecimiento de la contraseña.</td>
+        </tr>
+        <tr>
+            <td>La entrega muestra "ENTREGADO — PENDIENTE" a pesar de que el instructor ya calificó.</td>
+            <td>El instructor asignó una calificación numérica pero no cambió explícitamente el estado del desplegable a "APROBADA" o "NO_APROBADA", dejando el estado en "CALIFICADA".</td>
+            <td>(Aprendiz) Actualizar la página presionando F5 o el icono de recarga del navegador. Si la etiqueta cambió a "CALIFICADA", significa que la nota fue asignada exitosamente. (Instructor) Editar la entrega y seleccionar explícitamente "APROBADA" o "NO_APROBADA" en el desplegable de estado.</td>
+        </tr>
+        <tr>
+            <td>"Datos inválidos" al intentar guardar una entrega de evidencia.</td>
+            <td>Alguno de los campos obligatorios del formulario (Actividad, Aprendiz, Documento) está vacío o contiene un formato no reconocido por el sistema.</td>
+            <td>Verificar que todos los campos marcados como obligatorios estén completos. Si el archivo fue adjuntado, verificar que su formato sea válido (PDF, DOCX, JPG, PNG, ZIP) y que no exceda los 5 MB.</td>
+        </tr>
+        <tr>
+            <td>No aparecen aprendices al seleccionar una ficha en la toma de asistencia.</td>
+            <td>La ficha seleccionada no tiene aprendices matriculados en estado "EN_FORMACION". Los aprendices pueden estar en estado "RETIRADO" o no haber sido asignados a esa ficha.</td>
+            <td>Verificar en el módulo "Aprendices" que los estudiantes estén matriculados en la ficha correcta y en estado "EN_FORMACION". Si no están registrados, solicitar al Apoyo Administrativo o Coordinador que realice la matrícula.</td>
+        </tr>
+        <tr>
+            <td>El archivo de entrega no se sube y aparece un error de carga.</td>
+            <td>El archivo excede el límite de tamaño permitido (5 MB) o tiene una extensión no soportada por el servidor de carga.</td>
+            <td>Comprimir el archivo o convertirlo a un formato estándar (PDF). Si el archivo es muy pesado, subirlo primero a Google Drive y pegar el enlace de compartición en el campo de URL.</td>
+        </tr>
+        <tr>
+            <td>El campo "Instructor" en la toma de asistencia sigue mostrando un desplegable vacío.</td>
+            <td>El usuario autenticado tiene el rol de Instructor en su cuenta de acceso, pero no se ha creado su perfil en la tabla de Instructores o no se ha vinculado su cuenta de usuario al registro del instructor.</td>
+            <td>Solicitar al Administrador del Sistema que verifique en el módulo "Instructores" que existe un registro con su correo electrónico y que la columna "userId" esté vinculada a su cuenta de usuario.</td>
+        </tr>
+        <tr>
+            <td>El usuario inicia sesión pero solo ve una pantalla en blanco sin módulos.</td>
+            <td>El rol asignado al usuario no coincide con ninguno de los roles reconocidos por el sistema (APRENDIZ, INSTRUCTOR, COORDINADOR, etc.), o la cuenta fue creada sin asignar un rol válido.</td>
+            <td>Solicitar al Administrador del Sistema que verifique el rol asignado a la cuenta de usuario en el módulo "Usuarios" y que este coincida con uno de los roles registrados en "Roles y Permisos".</td>
+        </tr>
+        <tr>
+            <td>Las notificaciones aparecen pero al hacer clic no redirigen a ningún módulo.</td>
+            <td>La notificación fue generada sin un enlace de destino asociado (campo "enlace" vacío en la base de datos).</td>
+            <td>Hacer clic en la notificación para marcarla como leída y navegar manualmente al módulo indicado en el texto de la notificación (por ejemplo, si dice "Tu evidencia fue evaluada", dirigirse a "Actividades" o "Entregas").</td>
+        </tr>
+        <tr>
+            <td>"Error al registrar asistencia" después de presionar "Guardar".</td>
+            <td>No se completó alguno de los tres campos obligatorios: Ficha, Instructor o Fecha. También puede ocurrir si ya existe un registro de asistencia para el mismo aprendiz, ficha y fecha.</td>
+            <td>Verificar que los tres campos superiores (Ficha, Instructor y Fecha) estén completos. Si ya existe un registro para esa fecha, editarlo desde la tabla de consulta de asistencia en lugar de crear uno nuevo.</td>
+        </tr>
+        <tr>
+            <td>La hora de la entrega no coincide con la hora real de Colombia.</td>
+            <td>El navegador o el sistema operativo del dispositivo están configurados con una zona horaria diferente a "América/Bogotá" (UTC-5).</td>
+            <td>Verificar en la configuración del sistema operativo que la zona horaria esté establecida como "(UTC-05:00) Bogotá, Lima, Quito". El sistema GSS utiliza la hora del navegador del usuario para registrar las entregas.</td>
+        </tr>
+    </tbody>
+</table>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 9: REFERENCIAS -->
+<!-- ============================================================== -->
+<h1>Capítulo 9. Referencias</h1>
+<div class="reference-list">
+    <p>American Psychological Association. (2020). <i>Publication manual of the American Psychological Association</i> (7.ª ed.). American Psychological Association. https://doi.org/10.1037/0000165-000</p>
+    <p>IEEE Computer Society. (1998). <i>IEEE Standard for Software Test Documentation</i> (IEEE Std 829-1998). Institute of Electrical and Electronics Engineers.</p>
+    <p>IEEE Computer Society. (2001). <i>IEEE Standard for Software User Documentation</i> (IEEE Std 1063-2001). Institute of Electrical and Electronics Engineers.</p>
+    <p>Next.js. (2025). <i>Next.js Documentation: App Router, Server Components and Server Actions</i>. Vercel Inc. https://nextjs.org/docs</p>
+    <p>NextAuth.js. (2025). <i>NextAuth.js Documentation: Authentication for Next.js</i>. https://next-auth.js.org/</p>
+    <p>Prisma. (2025). <i>Prisma ORM Documentation: Data Modeling, Queries and Migrations</i>. Prisma Data Inc. https://www.prisma.io/docs</p>
+    <p>Servicio Nacional de Aprendizaje. (2023). <i>Lineamientos para la articulación de la Educación Media con la Formación Profesional Integral</i>. SENA. https://www.sena.edu.co</p>
+</div>
+
+</body>
+</html>

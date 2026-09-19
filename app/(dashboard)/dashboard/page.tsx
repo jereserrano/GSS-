@@ -7,6 +7,8 @@ import type { KpiData } from "@/types/common.types";
 import { Clock, BookCheck, FileSignature, CheckCircle2, AlertCircle, ArrowRight, BookOpen } from "lucide-react";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const result = await getDashboardKpis();
 

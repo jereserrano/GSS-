@@ -1,22 +1,77 @@
 // Sistema de Control de Acceso Basado en Roles (RBAC)
 // GSS Media Técnica — SENA Regional Magdalena
 
-export type UserRole = "ADMINISTRADOR" | "COORDINADOR" | "INSTRUCTOR" | string;
+export type UserRole = "ADMINISTRADOR" | "SUBDIRECTOR" | "COORDINADOR" | "APCOORDINADOR" | "INSTRUCTOR" | "APRENDIZ" | string;
 
-// Rutas exclusivas del Administrador del Sistema
-export const RUTAS_ADMIN_SOLO = [
-  "/usuarios",
-  "/roles",
-  "/auditoria",
-  "/configuracion",
-];
+// Rutas base comunes para todos los roles permitidos en el dashboard
+const RUTAS_COMUNES = ["/dashboard", "/notificaciones"];
 
-// Rutas de gestión institucional (Admin y Coordinador)
-export const RUTAS_GESTION_INSTITUCIONAL = [
+// Listas Blancas (Whitelists) estrictas por Rol:
+
+export const RUTAS_SUBDIRECTOR = [
+  ...RUTAS_COMUNES,
   "/instituciones",
   "/sedes",
   "/programas",
+  "/fichas",
+  "/aprendices",
   "/instructores",
+  "/reportes",
+  "/seguimiento",
+  "/riesgos",
+  "/documentos"
+];
+
+export const RUTAS_COORDINADOR = [
+  ...RUTAS_COMUNES,
+  "/programas",
+  "/fichas",
+  "/aprendices",
+  "/instructores",
+  "/competencias",
+  "/resultados-aprendizaje",
+  "/plan-formacion",
+  "/seguimiento",
+  "/riesgos",
+  "/reportes",
+  "/actividades",
+  "/entregas",
+  "/asistencia",
+  "/evaluaciones",
+  "/resultados",
+  "/documentos"
+];
+
+// ApCoordinador comparte las mismas rutas visibles que el Coordinador,
+// la restricción de acciones específicas se maneja en los Server Actions
+export const RUTAS_APCOORDINADOR = RUTAS_COORDINADOR;
+
+export const RUTAS_INSTRUCTOR = [
+  ...RUTAS_COMUNES,
+  "/fichas",
+  "/aprendices",
+  "/competencias",
+  "/resultados-aprendizaje",
+  "/plan-formacion",
+  "/actividades",
+  "/entregas",
+  "/asistencia",
+  "/evaluaciones",
+  "/resultados",
+  "/seguimiento",
+  "/riesgos",
+  "/reportes",
+  "/documentos"
+];
+
+export const RUTAS_APRENDIZ = [
+  ...RUTAS_COMUNES,
+  "/fichas",
+  "/actividades",
+  "/entregas",
+  "/resultados",
+  "/plan-formacion",
+  "/documentos"
 ];
 
 /**
@@ -24,59 +79,44 @@ export const RUTAS_GESTION_INSTITUCIONAL = [
  */
 export function canAccessRoute(role: string | undefined | null, pathname: string): boolean {
   if (!role) return false;
-
   const normalRole = role.toUpperCase();
 
-  // El Administrador tiene acceso irrestricto a todo el sistema
+  // 1. ADMINISTRADOR: Acceso irrestricto a TODO el sistema
   if (normalRole === "ADMINISTRADOR" || normalRole.includes("ADMIN")) {
     return true;
   }
 
-  // Comprobar si es una ruta exclusiva de administración
-  const esRutaAdmin = RUTAS_ADMIN_SOLO.some((ruta) => pathname.startsWith(ruta));
-  if (esRutaAdmin) {
-    return false;
+  // Helper para comprobar si el pathname está autorizado en un array de rutas
+  const isAllowed = (rutasPermitidas: string[]) => {
+    return rutasPermitidas.some(ruta => pathname === ruta || pathname.startsWith(ruta + "/"));
+  };
+
+  // 2. Comprobaciones por Whitelists
+  if (normalRole === "SUBDIRECTOR" || normalRole.includes("SUBDIR")) {
+    return isAllowed(RUTAS_SUBDIRECTOR);
   }
 
-  // El Coordinador tiene acceso a todo excepto las rutas exclusivas de administración
   if (normalRole === "COORDINADOR" || normalRole.includes("COORD")) {
-    return true;
-  }
-
-  // Restricciones para Instructor
-  if (normalRole === "INSTRUCTOR" || normalRole.includes("INSTRUCT")) {
-    // Un instructor no puede gestionar instituciones, sedes, programas o administración
-    const esGestionInstitucional = RUTAS_GESTION_INSTITUCIONAL.some((ruta) =>
-      pathname.startsWith(ruta)
-    );
-    if (esGestionInstitucional) {
-      return false;
+    // Si incluye 'APCOORDINADOR' entra en la siguiente, así que validamos exactamente
+    if (!normalRole.includes("APCOORD")) {
+      return isAllowed(RUTAS_COORDINADOR);
     }
-
-    // Rutas permitidas para Instructor:
-    // /dashboard, /fichas, /aprendices, /competencias, /resultados-aprendizaje,
-    // /plan-formacion, /actividades, /entregas, /asistencia, /evaluaciones,
-    // /resultados, /seguimiento, /riesgos, /reportes, /documentos, /notificaciones
-    return true;
   }
 
-  // Restricciones para Aprendiz
+  if (normalRole === "APCOORDINADOR" || normalRole.includes("APCOORD")) {
+    return isAllowed(RUTAS_APCOORDINADOR);
+  }
+
+  if (normalRole === "INSTRUCTOR" || normalRole.includes("INSTRUCT")) {
+    return isAllowed(RUTAS_INSTRUCTOR);
+  }
+
   if (normalRole === "APRENDIZ" || normalRole.includes("APRENDIZ")) {
-    const RUTAS_PERMITIDAS_APRENDIZ = [
-      "/dashboard",
-      "/fichas",
-      "/actividades",
-      "/entregas",
-      "/resultados",
-      "/plan-formacion",
-      "/documentos",
-      "/notificaciones",
-    ];
-    return RUTAS_PERMITIDAS_APRENDIZ.some((ruta) => pathname === ruta || pathname.startsWith(ruta + "/"));
+    return isAllowed(RUTAS_APRENDIZ);
   }
 
-  // Por defecto, permitir rutas base si no coincide
-  return pathname.startsWith("/dashboard") || pathname.startsWith("/notificaciones");
+  // Por defecto, si el rol no coincide con nada, denegar acceso.
+  return false;
 }
 
 /**

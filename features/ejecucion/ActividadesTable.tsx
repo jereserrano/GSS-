@@ -113,13 +113,22 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
       )
     },
     {
+      key: "fechaInicio",
+      header: "Inicio",
+      render: (a) => (
+        <span className="text-sm text-text-secondary">
+          {a.fechaInicio ? formatDateShort(a.fechaInicio) : "—"}
+        </span>
+      )
+    },
+    {
       key: "fechaVencimiento",
       header: "Vencimiento",
       render: (a) => {
-        const vencida = new Date(a.fechaFin) < new Date();
+        const vencida = a.fechaVencimiento && new Date(a.fechaVencimiento) < new Date();
         return (
           <span className={`text-sm ${vencida ? 'text-danger-600 font-medium' : ''}`}>
-            {formatDateShort(a.fechaFin)}
+            {a.fechaVencimiento ? formatDateShort(a.fechaVencimiento) : "—"}
           </span>
         );
       }
@@ -134,8 +143,13 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
         }
 
         const est = (entrega.estado || "").toUpperCase();
-        if (est === "APROBADO" || est === "APROBADA") {
-          return <span className="badge-aprobado">APROBADO</span>;
+        if (est === "APROBADO" || est === "APROBADA" || est === "CALIFICADA") {
+          return (
+            <div className="flex flex-col items-start gap-1">
+              <span className="badge-aprobado">{est === "CALIFICADA" ? "CALIFICADA" : "APROBADA"}</span>
+              {entrega.calificacion && <span className="text-[10px] font-bold text-slate-500">Nota: {entrega.calificacion}</span>}
+            </div>
+          );
         }
         if (est === "NO_APROBADA" || est === "RECHAZADO") {
           return <span className="badge-no-aprobado">NO APROBADO</span>;
@@ -183,13 +197,22 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
       )
     },
     {
+      key: "fechaInicio",
+      header: "Inicio",
+      render: (a) => (
+        <span className="text-sm text-text-secondary">
+          {a.fechaInicio ? formatDateShort(a.fechaInicio) : "—"}
+        </span>
+      )
+    },
+    {
       key: "fechaVencimiento",
       header: "Vencimiento",
       render: (a) => {
-        const vencida = new Date(a.fechaFin) < new Date();
+        const vencida = a.fechaVencimiento && new Date(a.fechaVencimiento) < new Date();
         return (
           <span className={`text-sm ${vencida ? 'text-danger-600 font-medium' : ''}`}>
-            {formatDateShort(a.fechaFin)}
+            {a.fechaVencimiento ? formatDateShort(a.fechaVencimiento) : "—"}
           </span>
         );
       }

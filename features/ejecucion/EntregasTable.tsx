@@ -130,7 +130,7 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
 
         if (est === "APROBADA" || est === "APROBADO" || est === "CALIFICADA") {
           badgeClass = "badge-aprobado";
-          labelText = "APROBADO";
+          labelText = est === "CALIFICADA" ? "CALIFICADA" : "APROBADA";
         } else if (est === "NO_APROBADA" || est === "RECHAZADO") {
           badgeClass = "badge-no-aprobado";
           labelText = "NO APROBADO";

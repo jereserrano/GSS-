@@ -9,9 +9,13 @@ import {
 import { 
   generarReporteAprendicesCSV, 
   generarReporteRiesgosCSV,
-  generarReporteAsistenciaCSV 
+  generarReporteAsistenciaCSV,
+  generarReporteEvaluacionesCSV
 } from "@/actions/reportes.actions";
 import { toast } from "sonner";
+
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { DataTable } from "@/components/shared/DataTable";
 
 interface ReportesPageClientProps {
   resumen: {
@@ -20,6 +24,11 @@ interface ReportesPageClientProps {
     totalAsistencias: number;
     totalEvaluaciones: number;
   } | null;
+  listados: {
+    aprendices: any[];
+    alertas: any[];
+    asistencias: any[];
+  };
 }
 
 const REPORTES = [
@@ -53,9 +62,19 @@ const REPORTES = [
     accion: generarReporteAsistenciaCSV,
     filename: "reporte_asistencia.csv",
   },
+  {
+    id: "evaluaciones",
+    titulo: "Reporte de Evaluaciones",
+    descripcion: "Juicios valorativos de todos los aprendices por resultado de aprendizaje.",
+    icono: Shield,
+    color: "text-purple-600",
+    bg: "bg-purple-50",
+    accion: generarReporteEvaluacionesCSV,
+    filename: "reporte_evaluaciones.csv",
+  },
 ];
 
-export function ReportesPageClient({ resumen }: ReportesPageClientProps) {
+export function ReportesPageClient({ resumen, listados }: ReportesPageClientProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const handleDescargar = async (reporte: typeof REPORTES[number]) => {
@@ -143,23 +162,55 @@ export function ReportesPageClient({ resumen }: ReportesPageClientProps) {
             </div>
           ))}
 
-          {/* Placeholder - próximamente */}
-          <div className="card-institucional flex flex-col gap-4 p-6 opacity-50 border-dashed">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-purple-50">
-                <Shield size={22} className="text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-text-primary">Reporte de Evaluaciones</h3>
-                <span className="text-[11px] text-text-secondary font-mono bg-slate-100 px-1.5 py-0.5 rounded">Próximamente</span>
-              </div>
-            </div>
-            <p className="text-sm text-text-secondary leading-relaxed flex-1">Juicios valorativos de todos los aprendices por resultado de aprendizaje.</p>
-            <Button disabled className="w-full" variant="outline">
-              <FileText size={15} className="mr-2" /> Disponible pronto
-            </Button>
-          </div>
+
         </div>
+      </div>
+
+      <div className="pt-6">
+        <h2 className="text-lg font-semibold text-text-primary mb-4">Vista Previa de Listados</h2>
+        <Tabs defaultValue="aprendices" className="w-full bg-white rounded-xl border border-slate-200 p-4">
+          <TabsList className="mb-4">
+            <TabsTrigger value="aprendices">Aprendices</TabsTrigger>
+            <TabsTrigger value="alertas">Alertas de Riesgo</TabsTrigger>
+            <TabsTrigger value="asistencia">Asistencia</TabsTrigger>
+          </TabsList>
+          <TabsContent value="aprendices">
+            <DataTable 
+              data={listados.aprendices} 
+              columnas={[
+                { key: "numeroDocumento", header: "Documento" },
+                { key: "nombres", header: "Nombres" },
+                { key: "apellidos", header: "Apellidos" },
+                { key: "ficha", header: "Ficha", render: (item) => item.ficha?.codigo || "N/A" },
+                { key: "institucion", header: "Institución", render: (item) => item.ficha?.institucion?.nombre || "N/A" },
+                { key: "estado", header: "Estado" },
+                { key: "riesgo", header: "Riesgo", render: (item) => item.nivelRiesgo }
+              ]} 
+            />
+          </TabsContent>
+          <TabsContent value="alertas">
+            <DataTable 
+              data={listados.alertas} 
+              columnas={[
+                { key: "fecha", header: "Fecha", render: (item) => new Date(item.fechaDeteccion).toLocaleDateString("es-CO") },
+                { key: "aprendiz", header: "Aprendiz", render: (item) => `${item.aprendiz?.nombres} ${item.aprendiz?.apellidos}` },
+                { key: "motivo", header: "Motivo", render: (item) => item.motivo },
+                { key: "nivel", header: "Nivel" },
+                { key: "estado", header: "Estado", render: (item) => item.gestionada ? "Gestionada" : "Pendiente" }
+              ]} 
+            />
+          </TabsContent>
+          <TabsContent value="asistencia">
+            <DataTable 
+              data={listados.asistencias} 
+              columnas={[
+                { key: "fecha", header: "Fecha", render: (item) => new Date(item.fecha).toLocaleDateString("es-CO") },
+                { key: "ficha", header: "Ficha", render: (item) => item.ficha?.codigo || "N/A" },
+                { key: "sesionId", header: "ID Sesión", render: (item) => item.id.substring(0,8) }
+              ]} 
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

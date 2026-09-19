@@ -26,6 +26,7 @@ interface Usuario {
 interface UsuariosTableProps {
   initialUsers: any[];
   roles: any[];
+  instituciones: any[];
   /** Sesión del usuario en sesión (pasado desde el Server Component padre). */
   currentUserSession: {
     id: string;
@@ -34,7 +35,7 @@ interface UsuariosTableProps {
   };
 }
 
-export function UsuariosTable({ initialUsers, roles, currentUserSession }: UsuariosTableProps) {
+export function UsuariosTable({ initialUsers, roles, instituciones, currentUserSession }: UsuariosTableProps) {
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -234,6 +235,7 @@ export function UsuariosTable({ initialUsers, roles, currentUserSession }: Usuar
         <UsuarioFormDialog 
           user={selectedUser} 
           roles={roles}
+          instituciones={instituciones}
           currentUserSession={currentUserSession}
           onClose={() => setDialogOpen(false)} 
         />

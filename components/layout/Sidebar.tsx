@@ -92,7 +92,7 @@ const navInstructor: NavSection[] = [
   },
 ];
 
-// Menú para COORDINADORES (Académico, Regional, Sede) — Sin acceso a administración global
+// Menú para COORDINADORES (Académico) y APCOORDINADOR
 const navCoordinador: NavSection[] = [
   {
     items: [
@@ -102,8 +102,6 @@ const navCoordinador: NavSection[] = [
   {
     title: "Gestión Institucional",
     items: [
-      { icon: Building2, label: "Instituciones", href: "/instituciones" },
-      { icon: MapPin, label: "Sedes", href: "/sedes" },
       { icon: BookOpen, label: "Programas", href: "/programas" },
       { icon: Users, label: "Fichas / Grupos", href: "/fichas" },
     ],
@@ -135,6 +133,41 @@ const navCoordinador: NavSection[] = [
   },
   {
     title: "Seguimiento y Reportes",
+    items: [
+      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
+      { icon: AlertTriangle, label: "Riesgos", href: "/riesgos" },
+      { icon: PieChart, label: "Reportes", href: "/reportes" },
+      { icon: FolderOpen, label: "Documentos", href: "/documentos" },
+      { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
+    ],
+  },
+];
+
+// Menú para SUBDIRECTOR (Visión global directiva)
+const navSubdirector: NavSection[] = [
+  {
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    ],
+  },
+  {
+    title: "Institucional",
+    items: [
+      { icon: Building2, label: "Instituciones", href: "/instituciones" },
+      { icon: MapPin, label: "Sedes", href: "/sedes" },
+      { icon: BookOpen, label: "Programas", href: "/programas" },
+      { icon: Users, label: "Fichas / Grupos", href: "/fichas" },
+    ],
+  },
+  {
+    title: "Población",
+    items: [
+      { icon: GraduationCap, label: "Aprendices", href: "/aprendices" },
+      { icon: UserCheck, label: "Instructores", href: "/instructores" },
+    ],
+  },
+  {
+    title: "Supervisión",
     items: [
       { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
       { icon: AlertTriangle, label: "Riesgos", href: "/riesgos" },
@@ -218,7 +251,8 @@ export function Sidebar() {
   const isAprendiz = rawRole === "APRENDIZ" || rawRole.includes("APRENDIZ");
   const isInstructor = rawRole === "INSTRUCTOR" || rawRole.includes("INSTRUCT");
   const isAdmin = rawRole === "ADMINISTRADOR" || rawRole.includes("ADMIN");
-  const isCoordinador = !isAdmin && (rawRole.includes("COORD") || rawRole.includes("SEDE") || rawRole.includes("APOYO"));
+  const isSubdirector = rawRole === "SUBDIRECTOR" || rawRole.includes("SUBDIR");
+  const isCoordinador = !isAdmin && !isSubdirector && (rawRole.includes("COORD") || rawRole.includes("APCOORD"));
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   const closeMobile = () => setMobileOpen(false);
@@ -228,6 +262,8 @@ export function Sidebar() {
     ? []
     : isAdmin
     ? navAdmin
+    : isSubdirector
+    ? navSubdirector
     : isCoordinador
     ? navCoordinador
     : isInstructor

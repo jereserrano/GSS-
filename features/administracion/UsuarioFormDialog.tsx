@@ -11,6 +11,7 @@ import { getHierarchyLevel } from "@/lib/hierarchy";
 interface UsuarioFormDialogProps {
   user?: any;
   roles: any[];
+  instituciones?: any[];
   /** Sesión del usuario en sesión, para filtrar roles asignables. */
   currentUserSession: {
     id: string;
@@ -20,7 +21,7 @@ interface UsuarioFormDialogProps {
   onClose: () => void;
 }
 
-export function UsuarioFormDialog({ user, roles, currentUserSession, onClose }: UsuarioFormDialogProps) {
+export function UsuarioFormDialog({ user, roles, instituciones = [], currentUserSession, onClose }: UsuarioFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!user;
 
@@ -42,6 +43,7 @@ export function UsuarioFormDialog({ user, roles, currentUserSession, onClose }: 
       nombre: formData.get("nombre") as string,
       email: formData.get("email") as string,
       rolId: formData.get("rolId") as string,
+      institucionId: formData.get("institucionId") as string || null,
       password: formData.get("password") as string,
       estado: formData.get("estado") as string,
     };
@@ -108,6 +110,24 @@ export function UsuarioFormDialog({ user, roles, currentUserSession, onClose }: 
                 ))}
               </select>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Institución (Opcional)</label>
+            <select 
+              id="select-institucion-usuario"
+              name="institucionId" 
+              defaultValue={user?.institucionId || ""} 
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <option value="">Ninguna / Global</option>
+              {instituciones.map((inst) => (
+                <option key={inst.id} value={inst.id}>
+                  {inst.nombre}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-slate-500">Útil para Subdirectores, Coordinadores y roles limitados por sede.</p>
           </div>
 
           <div className="space-y-2">

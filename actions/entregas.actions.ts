@@ -294,13 +294,14 @@ export async function evaluarEntregaAction(
     // Notificar dinámicamente al aprendiz con el resultado
     if (entrega.aprendiz?.userId) {
       try {
-        const esAprobada = evaluacionData.estado === "APROBADA";
-        const estadoEtiqueta = esAprobada ? "APROBADA ✅" : "NO APROBADA ⚠️";
+        const estadoEtiqueta = evaluacionData.estado === "APROBADA" ? "APROBADA ✅" : 
+                               evaluacionData.estado === "NO_APROBADA" ? "NO APROBADA ⚠️" : "CALIFICADA 📝";
         await crearNotificacionSistema(
           entrega.aprendiz.userId,
-          `Tu entrega ha sido evaluada: ${entrega.actividad.nombre} (${estadoEtiqueta})`,
-          `Resultado: ${estadoEtiqueta}. Retroalimentación del instructor: ${evaluacionData.retroalimentacion || "Sin observaciones."}`,
-          esAprobada ? "EXITO" : "ALERTA"
+          `Tu entrega ha sido evaluada: ${entrega.actividad.nombre}`,
+          `Resultado: ${estadoEtiqueta}. Retroalimentación del instructor: ${evaluacionData.retroalimentacion || "Sin comentarios."}`,
+          evaluacionData.estado === "APROBADA" ? "EXITO" : "ALERTA",
+          "/actividades"
         );
       } catch (notifErr) {
         console.error("Error enviando notificación al aprendiz:", notifErr);

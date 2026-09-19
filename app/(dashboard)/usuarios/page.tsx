@@ -19,6 +19,8 @@ export default async function UsuariosPage() {
 
   const usuarios = await getUsers();
   const roles = await getRoles();
+  const { prisma } = await import("@/lib/prisma");
+  const instituciones = await prisma.institucion.findMany({ select: { id: true, nombre: true }, orderBy: { nombre: "asc" } });
 
   return (
     <div className="page-container space-y-6 page-enter">
@@ -31,6 +33,7 @@ export default async function UsuariosPage() {
       <UsuariosTable
         initialUsers={usuarios}
         roles={roles}
+        instituciones={instituciones}
         currentUserSession={currentUserSession}
       />
     </div>

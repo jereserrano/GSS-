@@ -21,6 +21,7 @@ interface NotificacionItem {
   mensaje: string;
   creadoEn: string | Date;
   leida: boolean;
+  enlace?: string | null;
 }
 
 export function Header() {
@@ -74,11 +75,23 @@ export function Header() {
     await marcarTodasComoLeidasAction();
   };
 
-  const marcarComoLeida = async (id: string) => {
-    setNotificaciones((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, leida: true } : n))
-    );
-    await marcarComoLeidaAction(id);
+  const marcarComoLeida = async (id: string, enlace?: string | null) => {
+    // Si la notificación no está leída, enviamos la actualización al backend
+    const notif = notificaciones.find(n => n.id === id);
+    if (notif && !notif.leida) {
+      setNotificaciones(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
+      try {
+        await marcarComoLeidaAction(id);
+      } catch (e) {
+        console.error("Error al marcar como leída:", e);
+      }
+    }
+    
+    // Si tiene un enlace, navegamos hacia allá y cerramos el menú
+    if (enlace) {
+      setIsNotifOpen(false);
+      router.push(enlace);
+    }
   };
 
   // Iniciales para el avatar
@@ -115,7 +128,7 @@ export function Header() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && searchQuery.trim()) {
-                router.push(`/dashboard?busqueda=${encodeURIComponent(searchQuery.trim())}`);
+                router.push(`/busqueda?q=${encodeURIComponent(searchQuery.trim())}`);
               }
             }}
           />
@@ -198,7 +211,7 @@ export function Header() {
                     return (
                       <div
                         key={notif.id}
-                        onClick={() => marcarComoLeida(notif.id)}
+                        onClick={() => marcarComoLeida(notif.id, notif.enlace)}
                         className={`p-3.5 flex items-start gap-3 transition-colors cursor-pointer ${
                           !notif.leida ? "bg-emerald-50/30 hover:bg-emerald-50/50" : "hover:bg-slate-50/80 opacity-80"
                         }`}

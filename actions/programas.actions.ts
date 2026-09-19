@@ -142,7 +142,10 @@ export async function deletePrograma(id: string) {
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting programa:", error);
-    return { error: error.message || "Error al eliminar el programa. Verifique que no tenga fichas asociadas." };
+    if (error.code === 'P2003') {
+      return { error: "No se puede eliminar el programa porque tiene fichas o competencias asociadas." };
+    }
+    return { error: error.message || "Error al eliminar el programa." };
   }
 }
 

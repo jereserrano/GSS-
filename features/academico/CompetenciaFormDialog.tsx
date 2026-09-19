@@ -36,9 +36,9 @@ export function CompetenciaFormDialog({ competencia, programas, onClose, onSucce
       codigo: formData.get("codigo") as string,
       nombre: formData.get("nombre") as string,
       programaId: formData.get("programaId") as string,
-      tipo: formData.get("tipo") as string,
+      tipo: (formData.get("tipo") as string) || "TECNICA",
       duracionHoras: formData.get("duracionHoras") as string,
-      estado: formData.get("estado") as string,
+      estado: (formData.get("estado") as string) || "ACTIVO",
     };
 
     try {

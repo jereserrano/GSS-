@@ -3,6 +3,8 @@ import { FichasTable } from "@/features/fichas/FichasTable";
 import { getFichasAction } from "@/actions/fichas.actions";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function FichasPage() {
   const [initialResult, programas, instituciones, sedes] = await Promise.all([
     getFichasAction({ pagina: 1, tamano: 10 }),

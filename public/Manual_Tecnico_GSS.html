@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Manual Técnico - GSS</title>
+    <style>
+        @page { size: letter; margin: 2.54cm; }
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12pt;
+            line-height: 2;
+            color: #000;
+            background: #fff;
+            margin: 2.54cm;
+            padding: 0;
+        }
+        @media print { body { margin: 0; } }
+        .cover-page {
+            text-align: center;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh;
+        }
+        .cover-page p { text-indent: 0; }
+        .toc { page-break-after: always; }
+        .toc h1 { text-align: center; }
+        .toc ul { list-style: none; padding: 0; }
+        .toc li { margin-bottom: 4pt; border-bottom: 1px dotted #ccc; padding-bottom: 4pt; }
+        h1 {
+            font-size: 12pt; font-weight: bold; text-align: center;
+            margin-top: 24pt; margin-bottom: 24pt;
+            page-break-before: always;
+        }
+        h1:first-of-type { page-break-before: avoid; }
+        h2 { font-size: 12pt; font-weight: bold; text-align: left; margin-top: 24pt; margin-bottom: 12pt; }
+        h3 { font-size: 12pt; font-weight: bold; font-style: italic; text-align: left; margin-top: 12pt; margin-bottom: 12pt; }
+        p { text-indent: 1.27cm; margin: 0; text-align: justify; }
+        p.no-indent { text-indent: 0; }
+        table {
+            width: 100%; border-collapse: collapse;
+            margin-top: 12pt; margin-bottom: 12pt;
+            line-height: 1.5; font-size: 10pt;
+        }
+        th, td {
+            border-top: 1px solid #000; border-bottom: 1px solid #000;
+            border-left: none; border-right: none;
+            padding: 5px 6px; text-align: left; vertical-align: top;
+        }
+        th { font-weight: bold; border-top: 2px solid #000; }
+        tr:last-child td { border-bottom: 2px solid #000; }
+        .table-title { font-weight: bold; text-indent: 0; margin-bottom: 0; }
+        .table-subtitle { font-style: italic; text-indent: 0; margin-bottom: 6pt; }
+        .table-note { font-size: 10pt; text-indent: 0; margin-top: 4pt; font-style: italic; }
+        .reference-list { padding-left: 1.27cm; }
+        .reference-list p { text-indent: -1.27cm; margin-bottom: 12pt; }
+        ul, ol { margin-left: 1.27cm; margin-bottom: 12pt; }
+        li { margin-bottom: 6pt; }
+        code { font-family: "Courier New", Courier, monospace; font-size: 10pt; background: #f4f4f4; padding: 1px 3px; }
+        pre { font-family: "Courier New", Courier, monospace; font-size: 10pt; background: #f4f4f4; padding: 10px; margin: 10pt 0; line-height: 1.4; white-space: pre-wrap; }
+        .page-break { page-break-before: always; }
+        .diagram-box { border: 2px dashed #888; padding: 15px; margin: 12pt 0; text-indent: 0; text-align: center; font-style: italic; background: #fafafa; color: #555; }
+        .figure-title { font-weight: bold; text-indent: 0; margin-bottom: 0; }
+        .figure-note { font-style: italic; font-size: 10pt; text-indent: 0; margin-top: 4pt; }
+    </style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div class="cover-page">
+    <p style="font-weight: bold; font-size: 14pt; margin-bottom: 60px;">Manual Técnico</p>
+    <p style="font-weight: bold; font-size: 13pt; margin-bottom: 10px;">GSS — Sistema de Información para el Seguimiento del Proceso de Integración con la Media Técnica</p>
+    <p style="margin-bottom: 60px;">Versión 1.0</p>
+    <p>Equipo Desarrollador GSS</p>
+    <p>Servicio Nacional de Aprendizaje (SENA)</p>
+    <p>Centro de Formación — Regional Magdalena</p>
+    <p>Programa de Articulación con la Media Técnica</p>
+    <p style="margin-top: 30px;">Instructor / Evaluador</p>
+    <p>Septiembre de 2026</p>
+</div>
+
+<!-- TABLA DE CONTENIDO -->
+<div class="toc">
+    <h1 style="page-break-before: avoid;">Tabla de Contenido</h1>
+    <ul>
+        <li>Capítulo 1. Introducción, Justificación y Alcance</li>
+        <li>Capítulo 2. Arquitectura del Sistema</li>
+        <li>&emsp;2.1 Justificación del Monolito Modular</li>
+        <li>&emsp;2.2 Flujo de Interacción (Cliente → RSC → Server Actions → Prisma → MySQL)</li>
+        <li>&emsp;2.3 Mapa de Estructura de Directorios</li>
+        <li>&emsp;2.4 Catálogo de Server Actions</li>
+        <li>Capítulo 3. Seguridad y Control de Acceso (RBAC)</li>
+        <li>&emsp;3.1 Autenticación (NextAuth.js + bcrypt)</li>
+        <li>&emsp;3.2 Middleware Perimetral</li>
+        <li>&emsp;3.3 Sistema RBAC (Listas Blancas por Rol)</li>
+        <li>&emsp;3.4 Defensa en Profundidad y OWASP</li>
+        <li>Capítulo 4. Modelo de Datos y Persistencia (Prisma + MySQL)</li>
+        <li>&emsp;4.1 Diagrama Conceptual de Entidades</li>
+        <li>&emsp;4.2 Diccionario de Datos: Gestión Institucional</li>
+        <li>&emsp;4.3 Diccionario de Datos: Actores</li>
+        <li>&emsp;4.4 Diccionario de Datos: Estructura Académica</li>
+        <li>&emsp;4.5 Diccionario de Datos: Ejecución</li>
+        <li>&emsp;4.6 Diccionario de Datos: Seguimiento y Riesgos</li>
+        <li>&emsp;4.7 Diccionario de Datos: Administración y Seguridad</li>
+        <li>&emsp;4.8 Catálogo de Enumeraciones (ENUMs)</li>
+        <li>Capítulo 5. Lógica de Servidor y Server Actions</li>
+        <li>&emsp;5.1 Patrón de Implementación</li>
+        <li>&emsp;5.2 Especificación de Acciones Clave</li>
+        <li>&emsp;5.3 Creación Automática de Perfiles</li>
+        <li>Capítulo 6. Componentes de Frontend</li>
+        <li>Capítulo 7. Guía de Instalación y Despliegue</li>
+        <li>Capítulo 8. Referencias</li>
+    </ul>
+</div>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 1 -->
+<!-- ============================================================== -->
+<h1>Capítulo 1. Introducción, Justificación y Alcance</h1>
+
+<h2>1.1 Propósito del Documento</h2>
+<p>El presente Manual Técnico describe de forma exhaustiva la arquitectura de software, el modelo de datos, los protocolos de seguridad, la lógica de servidor y los procedimientos de instalación y despliegue del sistema GSS (Sistema de Información para el Seguimiento del Proceso de Integración con la Media Técnica). Este documento está dirigido a desarrolladores de software, arquitectos de sistemas, administradores de bases de datos (DBA), y personal de soporte de tecnologías de la información (TI) del Servicio Nacional de Aprendizaje (SENA).</p>
+
+<h2>1.2 Justificación del Proyecto</h2>
+<p>El programa de articulación con la Media Técnica del SENA involucra la coordinación de múltiples actores (instituciones educativas, sedes, instructores, aprendices, coordinadores y subdirectores) distribuidos geográficamente en la Regional Magdalena. Antes de la implementación de GSS, los procesos de control de asistencia, entrega de evidencias de aprendizaje, evaluación de resultados y seguimiento de riesgos de deserción se gestionaban de forma manual mediante hojas de cálculo, formularios físicos y comunicaciones por correo electrónico. Esta dispersión de datos generaba demoras en la consolidación de informes, pérdida de trazabilidad en las evaluaciones, imposibilidad de emitir alertas tempranas de deserción en tiempo real, y dificultades para cumplir con los requerimientos de auditoría del SENA.</p>
+<p>GSS centraliza todos estos procesos en una plataforma web única, segura y accesible desde cualquier dispositivo con conexión a internet, eliminando la duplicidad de información, garantizando la trazabilidad de cada acción mediante un registro de auditoría inmutable (AuditLog), y habilitando notificaciones en tiempo real entre actores del proceso formativo.</p>
+
+<h2>1.3 Alcance Técnico</h2>
+<p>El alcance del sistema comprende los siguientes subsistemas funcionales: (a) Gestión Institucional (instituciones, sedes, programas y fichas), (b) Gestión de Actores (aprendices, instructores y docentes), (c) Estructura Académica (competencias, resultados de aprendizaje y plan de formación), (d) Ejecución Formativa (actividades, entregas de evidencias, asistencia y evaluaciones), (e) Seguimiento y Riesgos (alertas tempranas y visitas de seguimiento), (f) Administración del Sistema (usuarios, roles, auditoría, configuración y notificaciones), y (g) Reportes y Exportación de Datos.</p>
+
+<h2>1.4 Stack Tecnológico</h2>
+<p class="table-title">Tabla 1</p>
+<p class="table-subtitle">Stack Tecnológico del Sistema GSS</p>
+<table>
+    <thead>
+        <tr><th>Capa</th><th>Tecnología</th><th>Versión</th><th>Propósito</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Framework Frontend</td><td>React</td><td>18.x</td><td>Biblioteca de interfaces de usuario basada en componentes declarativos.</td></tr>
+        <tr><td>Framework Fullstack</td><td>Next.js (App Router)</td><td>15.5.25</td><td>Framework de React con renderizado en servidor (SSR), React Server Components (RSC) y Server Actions para mutaciones seguras.</td></tr>
+        <tr><td>Lenguaje</td><td>TypeScript</td><td>5.x</td><td>Superset tipado de JavaScript que garantiza seguridad de tipos en compilación.</td></tr>
+        <tr><td>Estilos CSS</td><td>Tailwind CSS</td><td>3.x</td><td>Framework de utilidades CSS para diseño responsivo.</td></tr>
+        <tr><td>Componentes UI</td><td>Radix UI / Shadcn UI</td><td>Última</td><td>Primitivas accesibles y componentes preestilizados.</td></tr>
+        <tr><td>Autenticación</td><td>NextAuth.js</td><td>4.x</td><td>Gestión de sesiones JWT con soporte para múltiples proveedores.</td></tr>
+        <tr><td>Hashing de Contraseñas</td><td>bcrypt</td><td>5.x</td><td>Algoritmo de hashing adaptativo con factor de coste configurable (salt rounds = 10).</td></tr>
+        <tr><td>ORM</td><td>Prisma</td><td>5.x</td><td>Object-Relational Mapping con generación de cliente tipado y migraciones declarativas.</td></tr>
+        <tr><td>Base de Datos</td><td>MySQL</td><td>8.x</td><td>Sistema de gestión de bases de datos relacional.</td></tr>
+        <tr><td>Notificaciones</td><td>Sonner (Toast)</td><td>1.x</td><td>Biblioteca de notificaciones tipo toast para feedback visual inmediato.</td></tr>
+        <tr><td>Iconografía</td><td>Lucide React</td><td>Última</td><td>Biblioteca de iconos SVG para la interfaz.</td></tr>
+        <tr><td>Runtime</td><td>Node.js</td><td>18.x+</td><td>Entorno de ejecución de JavaScript del lado del servidor.</td></tr>
+    </tbody>
+</table>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 2 -->
+<!-- ============================================================== -->
+<h1>Capítulo 2. Arquitectura del Sistema</h1>
+
+<h2>2.1 Justificación del Monolito Modular con Next.js 15 App Router</h2>
+<p>La arquitectura adoptada es un Monolito Modular Moderno implementado sobre Next.js 15 con App Router. Esta decisión se fundamenta en tres criterios técnicos principales. Primero, la cohesión operativa: al mantener frontend y backend en una sola base de código, se elimina la complejidad de mantener servicios separados (API REST + SPA), se reduce la latencia de comunicación entre capas y se simplifica el despliegue a un único artefacto de producción. Segundo, la seguridad inherente: las Server Actions de Next.js ejecutan la lógica de negocio exclusivamente en el servidor, lo que impide que el código de acceso a la base de datos o las claves de conexión sean expuestas al cliente. Tercero, el rendimiento percibido: al utilizar React Server Components (RSC), el renderizado de componentes pesados (tablas con cientos de registros, gráficos analíticos) se realiza en el servidor antes de enviar el HTML al navegador, reduciendo drásticamente el JavaScript transferido al cliente.</p>
+
+<h2>2.2 Flujo de Interacción</h2>
+<p>El flujo de datos del sistema sigue un patrón unidireccional y seguro con cinco capas bien definidas:</p>
+<ol>
+    <li><strong>Capa de Presentación (Cliente):</strong> El navegador del usuario renderiza los componentes React. Los componentes de interfaz (botones, formularios, tablas) capturan las interacciones del usuario.</li>
+    <li><strong>Capa de React Server Components (RSC):</strong> Cuando una página requiere datos, los RSC ejecutan consultas directamente en el servidor antes de enviar el HTML resultante al cliente. Esto se implementa en los archivos <code>page.tsx</code> de cada ruta, que son funciones <code>async</code> que invocan acciones del servidor o consultan Prisma directamente.</li>
+    <li><strong>Capa de Server Actions:</strong> Las mutaciones (crear, actualizar, eliminar datos) se canalizan a través de Server Actions definidas en la carpeta <code>/actions</code>. Cada acción implementa: verificación de sesión (NextAuth.js), validación de permisos (RBAC jerárquico), validación de datos de entrada, interacción con la base de datos (Prisma), registro de auditoría (AuditLog), y revalidación de caché (<code>revalidatePath</code>).</li>
+    <li><strong>Capa de Persistencia (Prisma ORM):</strong> Las consultas y mutaciones a la base de datos se realizan mediante el cliente tipado de Prisma, que genera automáticamente las interfaces TypeScript a partir del esquema <code>schema.prisma</code>. Esto garantiza que cualquier error de tipo (campo inexistente, tipo incorrecto) sea detectado en tiempo de compilación.</li>
+    <li><strong>Capa de Almacenamiento (MySQL):</strong> La base de datos MySQL almacena todos los datos persistentes del sistema. Las tablas se mapean 1:1 con los modelos de Prisma mediante la directiva <code>@@map</code>.</li>
+</ol>
+<div class="diagram-box">[Figura 1: Diagrama de flujo de arquitectura — Cliente → RSC → Server Actions → Prisma → MySQL]</div>
+<p class="figure-title">Figura 1</p>
+<p class="figure-note">Nota. Flujo de datos unidireccional desde la interfaz del usuario hasta la capa de persistencia, con validación de seguridad en cada nivel.</p>
+
+<h2>2.3 Mapa de Estructura de Directorios</h2>
+<p>La organización del código fuente sigue una estructura funcional adaptada al App Router de Next.js:</p>
+<pre>
+c:\GSS\
+├── app/                         # Enrutador principal (App Router)
+│   ├── (dashboard)/             # Layout protegido para usuarios autenticados
+│   │   ├── actividades/         # Página de gestión de actividades
+│   │   ├── aprendices/          # Tabla y perfil de aprendices
+│   │   ├── asistencia/          # Control de asistencia
+│   │   │   └── tomar/           # Formulario masivo de toma de asistencia
+│   │   ├── auditoria/           # Registro de auditoría (solo Admin)
+│   │   ├── competencias/        # Gestión de competencias SENA
+│   │   ├── configuracion/       # Parámetros globales del sistema
+│   │   ├── dashboard/           # Panel principal (KPIs, gráficos)
+│   │   ├── documentos/          # Repositorio de actas y resoluciones
+│   │   ├── entregas/            # Revisión de evidencias
+│   │   ├── evaluaciones/        # Juicios valorativos por RAP
+│   │   ├── fichas/              # Gestión de fichas (grupos)
+│   │   ├── instituciones/       # Colegios articulados
+│   │   ├── instructores/        # Directorio de instructores
+│   │   ├── notificaciones/      # Bandeja de notificaciones
+│   │   ├── plan-formacion/      # Ruta pedagógica (timeline)
+│   │   ├── programas/           # Programas técnicos SENA
+│   │   ├── reportes/            # Módulo de reportes y exportación
+│   │   ├── resultados/          # Consolidado de resultados
+│   │   ├── resultados-aprendizaje/ # Gestión de RAPs
+│   │   ├── riesgos/             # Alertas tempranas de deserción
+│   │   ├── roles/               # Roles y permisos (solo Admin)
+│   │   ├── sedes/               # Sedes de instituciones
+│   │   ├── seguimiento/         # Visitas de seguimiento
+│   │   └── usuarios/            # Gestión de cuentas de usuario
+│   ├── api/                     # Endpoints API (auth, upload)
+│   │   ├── auth/[...nextauth]/  # Configuración NextAuth.js
+│   │   └── upload/              # Endpoint de carga de archivos
+│   ├── login/                   # Página pública de inicio de sesión
+│   ├── layout.tsx               # Layout raíz (providers, fuentes)
+│   └── globals.css              # Estilos globales y sistema de diseño
+├── actions/                     # Server Actions (24 archivos)
+│   ├── actividades.actions.ts
+│   ├── aprendices.actions.ts
+│   ├── asistencia.actions.ts
+│   ├── entregas.actions.ts
+│   ├── evaluaciones.actions.ts
+│   ├── user.actions.ts
+│   └── ... (18 archivos adicionales)
+├── components/                  # Componentes reutilizables
+│   ├── layout/                  # Sidebar, Header
+│   ├── shared/                  # DataTable, modales genéricos
+│   └── ui/                      # Primitivas UI (Button, Input, etc.)
+├── features/                    # Componentes por dominio
+│   ├── academico/               # CompetenciasTable, RAPs, PlanFormacion
+│   ├── actores/                 # InstructoresTable
+│   ├── aprendices/              # AprendicesTable, perfil detallado
+│   ├── dashboard/               # KpiCard, Charts, RiskTable
+│   ├── ejecucion/               # ActividadesTable, EntregaFormDialog,
+│   │                            # TomaAsistenciaForm, EvaluacionesTable
+│   ├── reportes/                # ReportesPageClient
+│   └── seguimiento/             # SeguimientoTable, RiesgosTable, DocumentosTable
+├── lib/                         # Utilidades centrales
+│   ├── prisma.ts                # Instancia singleton del cliente Prisma
+│   ├── permissions.ts           # Motor RBAC (canAccessRoute)
+│   └── utils.ts                 # Funciones auxiliares (cn, formatDate)
+├── prisma/
+│   ├── schema.prisma            # Esquema de base de datos (555 líneas, 22 modelos)
+│   └── migrations/              # Historial de migraciones
+├── middleware.ts                 # Middleware perimetral de autenticación y RBAC
+├── public/                      # Archivos estáticos y uploads
+└── package.json                 # Dependencias y scripts
+</pre>
+
+<h2>2.4 Catálogo de Server Actions</h2>
+<p>El sistema define 24 archivos de Server Actions en la carpeta <code>/actions</code>. Cada archivo agrupa las operaciones CRUD y consultas de un dominio específico.</p>
+<p class="table-title">Tabla 2</p>
+<p class="table-subtitle">Catálogo Completo de Archivos de Server Actions</p>
+<table>
+    <thead><tr><th>Archivo</th><th>Dominio</th><th>Operaciones Principales</th></tr></thead>
+    <tbody>
+        <tr><td><code>actividades.actions.ts</code></td><td>Actividades</td><td>getActividadesAction, createActividad, updateActividad, deleteActividad, exportActividadesCSV</td></tr>
+        <tr><td><code>aprendices.actions.ts</code></td><td>Aprendices</td><td>getAprendicesAction, createAprendiz, updateAprendiz, getAprendizDetail</td></tr>
+        <tr><td><code>asistencia.actions.ts</code></td><td>Asistencia</td><td>getAsistenciasAction, guardarAsistenciaMasiva</td></tr>
+        <tr><td><code>competencias.actions.ts</code></td><td>Competencias</td><td>getCompetenciasAction, createCompetencia, updateCompetencia, deleteCompetencia</td></tr>
+        <tr><td><code>configuracion.actions.ts</code></td><td>Configuración</td><td>getConfiguracion, updateConfiguracion</td></tr>
+        <tr><td><code>dashboard.actions.ts</code></td><td>Dashboard</td><td>getDashboardKpis (métricas adaptadas por rol)</td></tr>
+        <tr><td><code>docentes.actions.ts</code></td><td>Docentes</td><td>getDocentesAction, createDocente, updateDocente</td></tr>
+        <tr><td><code>documentos.actions.ts</code></td><td>Documentos</td><td>getDocumentosAction, createDocumento, deleteDocumento</td></tr>
+        <tr><td><code>entregas.actions.ts</code></td><td>Entregas</td><td>getEntregasAction, createEntrega, evaluarEntregaAction</td></tr>
+        <tr><td><code>evaluaciones.actions.ts</code></td><td>Evaluaciones</td><td>getEvaluacionesAction, createEvaluacion, updateEvaluacion</td></tr>
+        <tr><td><code>fichas.actions.ts</code></td><td>Fichas</td><td>getFichasAction, createFicha, updateFicha, deleteFicha</td></tr>
+        <tr><td><code>institucion.actions.ts</code></td><td>Instituciones</td><td>getInstitucionesAction, createInstitucion, updateInstitucion</td></tr>
+        <tr><td><code>instructores.actions.ts</code></td><td>Instructores</td><td>getInstructoresAction, createInstructor, updateInstructor</td></tr>
+        <tr><td><code>notificaciones.actions.ts</code></td><td>Notificaciones</td><td>getMisNotificacionesAction, marcarComoLeidaAction, marcarTodasLeidasAction, crearNotificacionSistema</td></tr>
+        <tr><td><code>programas.actions.ts</code></td><td>Programas</td><td>getProgramasAction, createPrograma, updatePrograma</td></tr>
+        <tr><td><code>reportes.actions.ts</code></td><td>Reportes</td><td>getResumenReportes, getReportesListadosAction</td></tr>
+        <tr><td><code>resultados_aprendizaje.actions.ts</code></td><td>RAPs</td><td>getResultadosAprendizajeAction, createRAP, updateRAP, deleteRAP</td></tr>
+        <tr><td><code>riesgos.actions.ts</code></td><td>Riesgos</td><td>getRiesgosAction, createAlerta, updateAlerta</td></tr>
+        <tr><td><code>roles.actions.ts</code></td><td>Roles</td><td>getRolesAction</td></tr>
+        <tr><td><code>sedes.actions.ts</code></td><td>Sedes</td><td>getSedesAction, createSede, updateSede</td></tr>
+        <tr><td><code>seguimientos.actions.ts</code></td><td>Seguimiento</td><td>getSeguimientosAction, createVisita, updateVisita</td></tr>
+        <tr><td><code>user.actions.ts</code></td><td>Usuarios</td><td>getUsersAction, createUser, updateUser, deleteUser (con creación automática de perfiles Aprendiz/Instructor)</td></tr>
+        <tr><td><code>busqueda.actions.ts</code></td><td>Búsqueda</td><td>searchGlobal (búsqueda transversal por aprendiz, ficha, actividad)</td></tr>
+        <tr><td><code>import.actions.ts</code></td><td>Importación</td><td>Importación masiva de datos desde archivos</td></tr>
+    </tbody>
+</table>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 3 -->
+<!-- ============================================================== -->
+<h1>Capítulo 3. Seguridad y Control de Acceso (RBAC)</h1>
+
+<h2>3.1 Autenticación (NextAuth.js + bcrypt)</h2>
+<p>La autenticación del sistema se implementa mediante NextAuth.js configurado con la estrategia <code>CredentialsProvider</code>. El flujo de autenticación opera de la siguiente manera: (1) El usuario envía su correo electrónico y contraseña desde el formulario de inicio de sesión. (2) El servidor busca al usuario en la base de datos por su correo electrónico y verifica que su estado sea "ACTIVO". (3) La contraseña ingresada se compara contra el hash almacenado en el campo <code>passwordHash</code> utilizando <code>bcrypt.compare()</code> con un factor de coste de 10 salt rounds. (4) Si la verificación es exitosa, NextAuth.js genera un JSON Web Token (JWT) que contiene el ID del usuario, su nombre, correo, rol normalizado (por ejemplo, "INSTRUCTOR"), el nombre original del rol y su nivel jerárquico numérico. (5) Este JWT se almacena en una cookie HTTP-only segura y se propaga automáticamente en cada solicitud subsiguiente.</p>
+<p>El callback <code>jwt</code> de NextAuth.js se encarga de poblar el token durante el primer inicio de sesión y de mantenerlo actualizado en sesiones posteriores. El callback <code>session</code> copia los datos del JWT (origen confiable del servidor) hacia el objeto <code>session.user</code> disponible en el cliente, incluyendo los campos <code>role</code>, <code>rolName</code>, <code>hierarchyLevel</code> e <code>id</code>. Crucialmente, el callback de actualización (<code>trigger === "update"</code>) solo permite modificar campos no sensibles como el nombre, prohibiendo explícitamente la alteración del rol o nivel jerárquico desde el cliente.</p>
+
+<h2>3.2 Middleware Perimetral</h2>
+<p>El archivo <code>middleware.ts</code> en la raíz del proyecto actúa como primera línea de defensa. Utiliza <code>withAuth</code> de NextAuth.js para interceptar todas las solicitudes a las 24 rutas protegidas del dashboard antes de que lleguen a los componentes de página. El middleware ejecuta dos verificaciones secuenciales: primero, confirma que la solicitud contenga un JWT válido (verificación de autenticación); segundo, invoca la función <code>canAccessRoute(role, pathname)</code> del módulo de permisos para comprobar que el rol del usuario esté autorizado para acceder a la ruta solicitada (verificación de autorización). Si la autorización falla, el middleware redirige al usuario a la ruta <code>/dashboard?denied=true</code> en lugar de mostrar un error genérico.</p>
+<p>Las rutas protegidas por el middleware se definen explícitamente en el array <code>config.matcher</code>, que incluye las 24 rutas del dashboard con el patrón <code>/:path*</code> para cubrir subrutas dinámicas (por ejemplo, <code>/aprendices/[id]</code> o <code>/instituciones/[id]</code>). Las rutas públicas como <code>/login</code> y <code>/api/auth</code> quedan fuera del matcher y son accesibles sin autenticación.</p>
+
+<h2>3.3 Sistema RBAC (Listas Blancas por Rol)</h2>
+<p>El sistema de Control de Acceso Basado en Roles (RBAC) se implementa en el archivo <code>lib/permissions.ts</code> mediante listas blancas (whitelists) estrictas. Cada rol del sistema tiene un array constante que enumera exhaustivamente las rutas a las que puede acceder. A continuación se documenta la configuración RBAC completa.</p>
+
+<p class="table-title">Tabla 3</p>
+<p class="table-subtitle">Matriz de Acceso RBAC — Rutas Autorizadas por Rol</p>
+<table>
+    <thead><tr><th>Ruta</th><th>Admin</th><th>Subdir.</th><th>Coord.</th><th>ApCoord.</th><th>Instruct.</th><th>Aprend.</th></tr></thead>
+    <tbody>
+        <tr><td>/dashboard</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>/notificaciones</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>/instituciones</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>/sedes</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>/programas</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+        <tr><td>/fichas</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>/aprendices</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+        <tr><td>/instructores</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+        <tr><td>/competencias</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+        <tr><td>/resultados-aprendizaje</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+        <tr><td>/plan-formacion</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>/actividades</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>/entregas</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>/asistencia</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+        <tr><td>/evaluaciones</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+        <tr><td>/resultados</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>/seguimiento</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+        <tr><td>/riesgos</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+        <tr><td>/reportes</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+        <tr><td>/documentos</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>/usuarios</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>/roles</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>/auditoria</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>/configuracion</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    </tbody>
+</table>
+<p class="table-note">Nota. El rol Administrador tiene acceso irrestricto a todas las rutas sin necesidad de verificación individual (cortocircuito en la función canAccessRoute).</p>
+
+<h2>3.4 Defensa en Profundidad y Mitigación OWASP</h2>
+<p>Además del middleware perimetral, cada Server Action implementa una segunda capa de seguridad. Al inicio de cada mutación, se invoca <code>getCurrentUserCtx()</code> para extraer la sesión activa del JWT y verificar que el usuario siga autenticado en el momento exacto de la ejecución. Posteriormente, se valida la jerarquía del rol mediante la función <code>canManageUser()</code>, que compara el nivel jerárquico del solicitante contra el del usuario objetivo, impidiendo la escalación de privilegios (por ejemplo, un coordinador no puede modificar la cuenta de un administrador). Las entradas de usuario se validan mediante esquemas de Zod antes de interactuar con Prisma, mitigando ataques de inyección. React escapa automáticamente todo texto renderizado en el DOM, previniendo ataques XSS. Las contraseñas nunca se transmiten en texto plano ni se almacenan sin hashear.</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 4 -->
+<!-- ============================================================== -->
+<h1>Capítulo 4. Modelo de Datos y Persistencia (Prisma + MySQL)</h1>
+
+<h2>4.1 Diagrama Conceptual de Entidades</h2>
+<p>El esquema de base de datos consta de 22 modelos (tablas) organizados en 6 dominios funcionales, con 14 enumeraciones (ENUMs) que definen los estados y tipos válidos del sistema. Las relaciones clave son: Institución (1:N) Sede, Institución (1:N) Ficha, Programa (1:N) Ficha, Ficha (1:N) Aprendiz, Instructor (N:M) Ficha (a través de InstructorFicha), Ficha (1:N) Actividad, Actividad (1:N) Entrega, Aprendiz (1:N) Entrega, Ficha (1:N) Asistencia, Asistencia (1:N) DetalleAsistencia, Aprendiz (1:N) AlertaRiesgo, y User (1:N) AuditLog.</p>
+<div class="diagram-box">[Figura 2: Diagrama Entidad-Relación completo del esquema GSS con 22 modelos y sus relaciones]</div>
+<p class="figure-title">Figura 2</p>
+<p class="figure-note">Nota. Diagrama conceptual del modelo relacional mostrando entidades agrupadas por dominio funcional.</p>
+
+<h2>4.2 Diccionario de Datos: Gestión Institucional</h2>
+
+<p class="table-title">Tabla 4</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: instituciones (Modelo Institucion)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador único de la institución.</td></tr>
+        <tr><td>nit</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL, UNIQUE</td><td>Número de Identificación Tributaria de la entidad.</td></tr>
+        <tr><td>nombre</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Razón social completa de la institución educativa.</td></tr>
+        <tr><td>municipio</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Municipio donde se ubica la institución.</td></tr>
+        <tr><td>departamento</td><td>VARCHAR(191)</td><td>—</td><td>DEFAULT 'Magdalena'</td><td>Departamento geográfico.</td></tr>
+        <tr><td>direccion</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Dirección física de la sede principal.</td></tr>
+        <tr><td>telefono</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Teléfono de contacto institucional.</td></tr>
+        <tr><td>email</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Correo electrónico institucional.</td></tr>
+        <tr><td>rector</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Nombre del rector o representante legal.</td></tr>
+        <tr><td>estado</td><td>ENUM(Estado)</td><td>—</td><td>DEFAULT 'ACTIVO'</td><td>Estado de la institución (ACTIVO, INACTIVO).</td></tr>
+        <tr><td>creadoEn</td><td>DATETIME</td><td>—</td><td>DEFAULT NOW()</td><td>Fecha y hora de creación del registro.</td></tr>
+        <tr><td>actualizadoEn</td><td>DATETIME</td><td>—</td><td>@updatedAt</td><td>Última fecha de modificación automática.</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 5</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: sedes (Modelo Sede)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador único de la sede.</td></tr>
+        <tr><td>nombre</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Nombre de la sede educativa.</td></tr>
+        <tr><td>institucionId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Referencia a la institución propietaria (Institucion.id). Eliminación en cascada.</td></tr>
+        <tr><td>direccion</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Dirección física de la sede.</td></tr>
+        <tr><td>barrio</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Barrio donde se ubica la sede.</td></tr>
+        <tr><td>municipio</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Municipio de la sede.</td></tr>
+        <tr><td>esPrincipal</td><td>BOOLEAN</td><td>—</td><td>DEFAULT FALSE</td><td>Indica si es la sede principal de la institución.</td></tr>
+        <tr><td>coordinador</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Nombre del coordinador de la sede.</td></tr>
+        <tr><td>telefono</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Teléfono de contacto de la sede.</td></tr>
+        <tr><td>estado</td><td>ENUM(Estado)</td><td>—</td><td>DEFAULT 'ACTIVO'</td><td>Estado de la sede.</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 6</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: programas (Modelo Programa)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador del programa técnico.</td></tr>
+        <tr><td>codigo</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL, UNIQUE</td><td>Código oficial del programa SENA.</td></tr>
+        <tr><td>nombre</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Denominación del programa (ej. Técnico en Programación de Software).</td></tr>
+        <tr><td>nivelFormacion</td><td>ENUM</td><td>—</td><td>DEFAULT 'TECNICO'</td><td>Nivel del programa (TECNICO, TECNOLOGO, OPERARIO).</td></tr>
+        <tr><td>estado</td><td>ENUM(Estado)</td><td>—</td><td>DEFAULT 'ACTIVO'</td><td>Estado del programa.</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 7</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: fichas (Modelo Ficha)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador de la ficha.</td></tr>
+        <tr><td>codigo</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL, UNIQUE</td><td>Código numérico de la ficha SENA (ej. 2987654).</td></tr>
+        <tr><td>programaId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Programa técnico asignado (Programa.id).</td></tr>
+        <tr><td>institucionId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Institución educativa vinculada (Institucion.id).</td></tr>
+        <tr><td>sedeId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Sede donde se imparte la formación (Sede.id).</td></tr>
+        <tr><td>fechaInicio</td><td>DATETIME</td><td>—</td><td>NOT NULL</td><td>Fecha de inicio de la formación.</td></tr>
+        <tr><td>fechaFin</td><td>DATETIME</td><td>—</td><td>NOT NULL</td><td>Fecha de finalización prevista.</td></tr>
+        <tr><td>jornada</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Jornada de la ficha (Mañana, Tarde, Nocturna).</td></tr>
+        <tr><td>estado</td><td>ENUM(Estado)</td><td>—</td><td>DEFAULT 'ACTIVO'</td><td>Estado operativo de la ficha.</td></tr>
+    </tbody>
+</table>
+
+<h2>4.3 Diccionario de Datos: Actores</h2>
+
+<p class="table-title">Tabla 8</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: aprendices (Modelo Aprendiz)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador del aprendiz.</td></tr>
+        <tr><td>tipoDocumento</td><td>ENUM</td><td>—</td><td>DEFAULT 'CC'</td><td>Tipo de documento (CC, TI, CE, PP).</td></tr>
+        <tr><td>numeroDocumento</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL, UNIQUE</td><td>Número del documento de identidad.</td></tr>
+        <tr><td>nombres</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Nombres del aprendiz.</td></tr>
+        <tr><td>apellidos</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Apellidos del aprendiz.</td></tr>
+        <tr><td>fechaNacimiento</td><td>DATETIME</td><td>—</td><td>NULL</td><td>Fecha de nacimiento.</td></tr>
+        <tr><td>genero</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Género del aprendiz.</td></tr>
+        <tr><td>telefono</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Teléfono de contacto.</td></tr>
+        <tr><td>emailPersonal</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Correo electrónico personal.</td></tr>
+        <tr><td>emailSena</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Correo electrónico institucional SENA.</td></tr>
+        <tr><td>direccion</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Dirección de residencia.</td></tr>
+        <tr><td>fichaId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Ficha asignada (Ficha.id).</td></tr>
+        <tr><td>estado</td><td>ENUM</td><td>—</td><td>DEFAULT 'EN_FORMACION'</td><td>Estado formativo (EN_FORMACION, EGRESADO, RETIRADO, APLAZADO, CANCELADO).</td></tr>
+        <tr><td>nivelRiesgo</td><td>ENUM</td><td>—</td><td>DEFAULT 'BAJO'</td><td>Nivel de riesgo de deserción (BAJO, MEDIO, ALTO).</td></tr>
+        <tr><td>porcentajeAsistencia</td><td>FLOAT</td><td>—</td><td>DEFAULT 100.0</td><td>Porcentaje acumulado de asistencia.</td></tr>
+        <tr><td>promedioAcumulado</td><td>FLOAT</td><td>—</td><td>DEFAULT 0.0</td><td>Promedio numérico acumulado.</td></tr>
+        <tr><td>userId</td><td>VARCHAR(191)</td><td>FK</td><td>UNIQUE, NULL</td><td>Cuenta de usuario vinculada (User.id). Relación 1:1.</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 9</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: instructores (Modelo Instructor)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador del instructor.</td></tr>
+        <tr><td>tipoDocumento</td><td>ENUM</td><td>—</td><td>DEFAULT 'CC'</td><td>Tipo de documento de identidad.</td></tr>
+        <tr><td>numeroDocumento</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL, UNIQUE</td><td>Número del documento de identidad.</td></tr>
+        <tr><td>nombres</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Nombres del instructor.</td></tr>
+        <tr><td>apellidos</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Apellidos del instructor.</td></tr>
+        <tr><td>email</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL, UNIQUE</td><td>Correo electrónico institucional.</td></tr>
+        <tr><td>telefono</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Teléfono de contacto.</td></tr>
+        <tr><td>profesion</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Profesión o título del instructor.</td></tr>
+        <tr><td>userId</td><td>VARCHAR(191)</td><td>FK</td><td>UNIQUE, NULL</td><td>Cuenta de usuario vinculada (User.id). Relación 1:1.</td></tr>
+        <tr><td>estado</td><td>ENUM(Estado)</td><td>—</td><td>DEFAULT 'ACTIVO'</td><td>Estado operativo del instructor.</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 10</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: instructor_fichas (Modelo InstructorFicha)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador de la asignación.</td></tr>
+        <tr><td>instructorId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Instructor asignado (Instructor.id). Cascada.</td></tr>
+        <tr><td>fichaId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Ficha asignada (Ficha.id). Cascada.</td></tr>
+        <tr><td>asignadoEn</td><td>DATETIME</td><td>—</td><td>DEFAULT NOW()</td><td>Fecha de asignación.</td></tr>
+    </tbody>
+</table>
+<p class="table-note">Nota. La restricción @@unique([instructorId, fichaId]) impide asignar el mismo instructor a la misma ficha más de una vez.</p>
+
+<h2>4.4 Diccionario de Datos: Estructura Académica</h2>
+
+<p class="table-title">Tabla 11</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: competencias (Modelo Competencia)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador de la competencia.</td></tr>
+        <tr><td>codigo</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL, UNIQUE</td><td>Código oficial de la competencia según diseño curricular SENA.</td></tr>
+        <tr><td>nombre</td><td>TEXT</td><td>—</td><td>NOT NULL</td><td>Denominación completa de la competencia.</td></tr>
+        <tr><td>programaId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Programa técnico al que pertenece (Programa.id).</td></tr>
+        <tr><td>tipo</td><td>ENUM</td><td>—</td><td>DEFAULT 'TECNICA'</td><td>Tipo (TECNICA, TRANSVERSAL, BASICA).</td></tr>
+        <tr><td>duracionHoras</td><td>INT</td><td>—</td><td>NOT NULL</td><td>Duración en horas de la competencia.</td></tr>
+        <tr><td>estado</td><td>ENUM(Estado)</td><td>—</td><td>DEFAULT 'ACTIVO'</td><td>Estado de la competencia.</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 12</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: resultados_aprendizaje (Modelo ResultadoAprendizaje)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador del resultado de aprendizaje.</td></tr>
+        <tr><td>codigo</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Código del RAP.</td></tr>
+        <tr><td>nombre</td><td>TEXT</td><td>—</td><td>NOT NULL</td><td>Descripción del resultado de aprendizaje.</td></tr>
+        <tr><td>competenciaId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Competencia a la que pertenece (Competencia.id).</td></tr>
+        <tr><td>fase</td><td>ENUM</td><td>—</td><td>DEFAULT 'ANALISIS'</td><td>Fase del proyecto formativo (ANALISIS, PLANEACION, EJECUCION, EVALUACION).</td></tr>
+    </tbody>
+</table>
+
+<h2>4.5 Diccionario de Datos: Ejecución</h2>
+
+<p class="table-title">Tabla 13</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: actividades (Modelo Actividad)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador de la actividad.</td></tr>
+        <tr><td>fichaId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Ficha a la que se asigna la actividad (Ficha.id).</td></tr>
+        <tr><td>nombre</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Título descriptivo de la actividad.</td></tr>
+        <tr><td>descripcion</td><td>TEXT</td><td>—</td><td>NULL</td><td>Descripción detallada e instrucciones.</td></tr>
+        <tr><td>instrucciones</td><td>TEXT</td><td>—</td><td>NULL</td><td>Instrucciones adicionales para la evidencia.</td></tr>
+        <tr><td>tipo</td><td>ENUM</td><td>—</td><td>DEFAULT 'TALLER'</td><td>Tipo de actividad (TALLER, PROYECTO, FORO, QUIZ).</td></tr>
+        <tr><td>fechaInicio</td><td>DATETIME</td><td>—</td><td>DEFAULT NOW()</td><td>Fecha de publicación.</td></tr>
+        <tr><td>fechaVencimiento</td><td>DATETIME</td><td>—</td><td>NOT NULL</td><td>Fecha límite de entrega.</td></tr>
+        <tr><td>estado</td><td>ENUM</td><td>—</td><td>DEFAULT 'ACTIVA'</td><td>Estado (ACTIVA, CERRADA, BORRADOR, PUBLICADA).</td></tr>
+        <tr><td>instructorId</td><td>VARCHAR(191)</td><td>FK</td><td>NULL</td><td>Instructor autor (Instructor.id).</td></tr>
+        <tr><td>resultadoAprendizajeId</td><td>VARCHAR(191)</td><td>FK</td><td>NULL</td><td>RAP evaluado (ResultadoAprendizaje.id).</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 14</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: entregas (Modelo Entrega)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador de la entrega.</td></tr>
+        <tr><td>actividadId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Actividad asociada (Actividad.id).</td></tr>
+        <tr><td>aprendizId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Aprendiz autor de la entrega (Aprendiz.id).</td></tr>
+        <tr><td>fechaEntrega</td><td>DATETIME</td><td>—</td><td>DEFAULT NOW()</td><td>Fecha y hora de envío.</td></tr>
+        <tr><td>urlArchivo</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Ruta del archivo adjunto o URL externa.</td></tr>
+        <tr><td>comentario</td><td>TEXT</td><td>—</td><td>NULL</td><td>Comentario del aprendiz.</td></tr>
+        <tr><td>estado</td><td>ENUM</td><td>—</td><td>DEFAULT 'PENDIENTE'</td><td>Estado (PENDIENTE, CALIFICADA, TARDIA, APROBADA, NO_APROBADA).</td></tr>
+        <tr><td>calificacion</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Nota numérica asignada por el instructor.</td></tr>
+        <tr><td>retroalimentacion</td><td>TEXT</td><td>—</td><td>NULL</td><td>Observaciones cualitativas del instructor.</td></tr>
+        <tr><td>instructorId</td><td>VARCHAR(191)</td><td>FK</td><td>NULL</td><td>Instructor evaluador (Instructor.id).</td></tr>
+        <tr><td>fechaEvaluacion</td><td>DATETIME</td><td>—</td><td>NULL</td><td>Fecha y hora en que se evaluó.</td></tr>
+    </tbody>
+</table>
+<p class="table-note">Nota. La restricción @@unique([actividadId, aprendizId]) garantiza que un aprendiz solo pueda tener una entrega por actividad.</p>
+
+<p class="table-title">Tabla 15</p>
+<p class="table-subtitle">Diccionario de Datos — Tablas: asistencias y detalles_asistencia</p>
+<table>
+    <thead><tr><th>Campo (asistencias)</th><th>Tipo</th><th>Llave</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>Identificador del registro de asistencia.</td></tr>
+        <tr><td>fichaId</td><td>VARCHAR(191)</td><td>FK</td><td>Ficha evaluada (Ficha.id).</td></tr>
+        <tr><td>instructorId</td><td>VARCHAR(191)</td><td>FK</td><td>Instructor que tomó la asistencia (Instructor.id).</td></tr>
+        <tr><td>fecha</td><td>DATETIME</td><td>—</td><td>Fecha de la sesión formativa.</td></tr>
+        <tr><td>totalPresentes</td><td>INT</td><td>—</td><td>Conteo calculado de aprendices presentes.</td></tr>
+        <tr><td>totalFaltas</td><td>INT</td><td>—</td><td>Conteo calculado de fallas.</td></tr>
+        <tr><td>totalExcusas</td><td>INT</td><td>—</td><td>Conteo calculado de excusas.</td></tr>
+        <tr><td>estado</td><td>ENUM</td><td>—</td><td>Estado del registro (PENDIENTE, REGISTRADA).</td></tr>
+    </tbody>
+</table>
+<table>
+    <thead><tr><th>Campo (detalles_asistencia)</th><th>Tipo</th><th>Llave</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>Identificador del detalle.</td></tr>
+        <tr><td>asistenciaId</td><td>VARCHAR(191)</td><td>FK</td><td>Registro padre (Asistencia.id). Cascada.</td></tr>
+        <tr><td>aprendizId</td><td>VARCHAR(191)</td><td>FK</td><td>Aprendiz evaluado (Aprendiz.id). Cascada.</td></tr>
+        <tr><td>estado</td><td>ENUM</td><td>—</td><td>Estado individual (PRESENTE, FALLA, EXCUSA).</td></tr>
+        <tr><td>observaciones</td><td>VARCHAR(191)</td><td>—</td><td>Observaciones por aprendiz.</td></tr>
+    </tbody>
+</table>
+<p class="table-note">Nota. @@unique([fichaId, fecha]) en asistencias impide registrar la misma ficha dos veces en la misma fecha. @@unique([asistenciaId, aprendizId]) en detalles impide duplicar el estado de un aprendiz en la misma sesión.</p>
+
+<h2>4.6 Diccionario de Datos: Seguimiento y Riesgos</h2>
+
+<p class="table-title">Tabla 16</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: alertas_riesgo (Modelo AlertaRiesgo)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador de la alerta.</td></tr>
+        <tr><td>aprendizId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Aprendiz en riesgo (Aprendiz.id).</td></tr>
+        <tr><td>motivo</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Motivo de la alerta (ej. "Inasistencia reiterada").</td></tr>
+        <tr><td>nivel</td><td>ENUM</td><td>—</td><td>DEFAULT 'MEDIO'</td><td>Nivel de riesgo (BAJO, MEDIO, ALTO).</td></tr>
+        <tr><td>fechaDeteccion</td><td>DATETIME</td><td>—</td><td>DEFAULT NOW()</td><td>Fecha en que se detectó el riesgo.</td></tr>
+        <tr><td>gestionada</td><td>BOOLEAN</td><td>—</td><td>DEFAULT FALSE</td><td>Indica si la alerta ha sido gestionada (atendida).</td></tr>
+        <tr><td>observaciones</td><td>TEXT</td><td>—</td><td>NULL</td><td>Notas sobre la intervención realizada.</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 17</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: visitas_seguimiento (Modelo VisitaSeguimiento)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador de la visita.</td></tr>
+        <tr><td>institucionNombre</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Nombre de la institución visitada.</td></tr>
+        <tr><td>fecha</td><td>DATETIME</td><td>—</td><td>NOT NULL</td><td>Fecha de la visita.</td></tr>
+        <tr><td>responsable</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Nombre del responsable de la visita.</td></tr>
+        <tr><td>novedades</td><td>INT</td><td>—</td><td>DEFAULT 0</td><td>Número de novedades encontradas.</td></tr>
+        <tr><td>observaciones</td><td>TEXT</td><td>—</td><td>NULL</td><td>Resumen de la visita.</td></tr>
+        <tr><td>estado</td><td>ENUM</td><td>—</td><td>DEFAULT 'PROGRAMADA'</td><td>Estado (PROGRAMADA, REALIZADA, APLAZADA).</td></tr>
+    </tbody>
+</table>
+
+<h2>4.7 Diccionario de Datos: Administración y Seguridad</h2>
+
+<p class="table-title">Tabla 18</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: users (Modelo User)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador único de la cuenta.</td></tr>
+        <tr><td>nombre</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Nombre completo del usuario.</td></tr>
+        <tr><td>email</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL, UNIQUE</td><td>Correo electrónico para autenticación.</td></tr>
+        <tr><td>passwordHash</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Hash bcrypt de la contraseña (10 salt rounds).</td></tr>
+        <tr><td>rolId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Rol asignado al usuario (Rol.id).</td></tr>
+        <tr><td>institucionId</td><td>VARCHAR(191)</td><td>FK</td><td>NULL</td><td>Institución asociada para multi-tenancy (Institucion.id).</td></tr>
+        <tr><td>estado</td><td>ENUM(Estado)</td><td>—</td><td>DEFAULT 'ACTIVO'</td><td>Estado de la cuenta.</td></tr>
+        <tr><td>ultimoAcceso</td><td>DATETIME</td><td>—</td><td>NULL</td><td>Timestamp del último inicio de sesión.</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 19</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: audit_logs (Modelo AuditLog)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador del registro de auditoría.</td></tr>
+        <tr><td>userId</td><td>VARCHAR(191)</td><td>FK</td><td>NULL</td><td>Usuario ejecutor de la acción (User.id).</td></tr>
+        <tr><td>modulo</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Módulo afectado (ej. USUARIOS, ENTREGAS).</td></tr>
+        <tr><td>accion</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Tipo de acción (ej. CREAR_USUARIO, EVALUAR_ENTREGA).</td></tr>
+        <tr><td>detalle</td><td>TEXT</td><td>—</td><td>NOT NULL</td><td>Serialización JSON del evento con datos del antes/después.</td></tr>
+        <tr><td>ip</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>Dirección IP del solicitante.</td></tr>
+        <tr><td>fecha</td><td>DATETIME</td><td>—</td><td>DEFAULT NOW()</td><td>Timestamp del evento.</td></tr>
+    </tbody>
+</table>
+<p class="table-note">Nota. Los registros de auditoría son inmutables. No existe operación de UPDATE ni DELETE en este modelo; solo INSERT.</p>
+
+<p class="table-title">Tabla 20</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: notificaciones (Modelo Notificacion)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Llave</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK</td><td>NOT NULL, CUID</td><td>Identificador de la notificación.</td></tr>
+        <tr><td>userId</td><td>VARCHAR(191)</td><td>FK</td><td>NOT NULL</td><td>Usuario destinatario (User.id). Eliminación en cascada.</td></tr>
+        <tr><td>titulo</td><td>VARCHAR(191)</td><td>—</td><td>NOT NULL</td><td>Título de la notificación.</td></tr>
+        <tr><td>mensaje</td><td>TEXT</td><td>—</td><td>NOT NULL</td><td>Cuerpo descriptivo del mensaje.</td></tr>
+        <tr><td>leida</td><td>BOOLEAN</td><td>—</td><td>DEFAULT FALSE</td><td>Indica si el usuario ha leído la notificación.</td></tr>
+        <tr><td>tipo</td><td>VARCHAR(191)</td><td>—</td><td>DEFAULT 'INFO'</td><td>Categoría del mensaje (INFO, ALERTA, EVALUACION).</td></tr>
+        <tr><td>enlace</td><td>VARCHAR(191)</td><td>—</td><td>NULL</td><td>URL de destino al hacer clic (deep link).</td></tr>
+    </tbody>
+</table>
+
+<p class="table-title">Tabla 21</p>
+<p class="table-subtitle">Diccionario de Datos — Tabla: configuracion (Modelo Configuracion)</p>
+<table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+        <tr><td>id</td><td>VARCHAR(191)</td><td>PK, DEFAULT 'global'</td><td>Identificador singleton (solo existe un registro).</td></tr>
+        <tr><td>anioLectivo</td><td>INT</td><td>DEFAULT 2026</td><td>Año lectivo vigente.</td></tr>
+        <tr><td>trimestre</td><td>INT</td><td>DEFAULT 3</td><td>Trimestre académico activo.</td></tr>
+        <tr><td>regional</td><td>VARCHAR(191)</td><td>DEFAULT 'SENA Regional Magdalena'</td><td>Nombre de la regional.</td></tr>
+        <tr><td>ciudad</td><td>VARCHAR(191)</td><td>DEFAULT 'Santa Marta'</td><td>Ciudad sede del centro.</td></tr>
+        <tr><td>faltasRiesgoAlto</td><td>INT</td><td>DEFAULT 3</td><td>Umbral de fallas para activar riesgo ALTO.</td></tr>
+        <tr><td>asistenciaMinima</td><td>INT</td><td>DEFAULT 75</td><td>Porcentaje mínimo de asistencia requerido.</td></tr>
+        <tr><td>promedioMinimo</td><td>FLOAT</td><td>DEFAULT 3.0</td><td>Promedio mínimo para aprobación.</td></tr>
+        <tr><td>diasEntrega</td><td>INT</td><td>DEFAULT 7</td><td>Días por defecto para vencimiento de actividades.</td></tr>
+        <tr><td>duracionSesionHoras</td><td>INT</td><td>DEFAULT 8</td><td>Duración estándar de una sesión en horas.</td></tr>
+        <tr><td>intentosLogin</td><td>INT</td><td>DEFAULT 5</td><td>Intentos máximos de inicio de sesión.</td></tr>
+    </tbody>
+</table>
+
+<h2>4.8 Catálogo de Enumeraciones (ENUMs)</h2>
+<p class="table-title">Tabla 22</p>
+<p class="table-subtitle">Catálogo Completo de Enumeraciones del Sistema GSS</p>
+<table>
+    <thead><tr><th>Nombre del ENUM</th><th>Valores Válidos</th><th>Modelos que lo Utilizan</th></tr></thead>
+    <tbody>
+        <tr><td>Estado</td><td>ACTIVO, INACTIVO</td><td>Institucion, Sede, Programa, Ficha, Instructor</td></tr>
+        <tr><td>EstadoAprendiz</td><td>EN_FORMACION, EGRESADO, RETIRADO, APLAZADO, CANCELADO</td><td>Aprendiz</td></tr>
+        <tr><td>NivelRiesgo</td><td>BAJO, MEDIO, ALTO</td><td>Aprendiz, AlertaRiesgo</td></tr>
+        <tr><td>NivelFormacion</td><td>TECNICO, TECNOLOGO, OPERARIO</td><td>Programa</td></tr>
+        <tr><td>TipoDocumento</td><td>CC, TI, CE, PP</td><td>Aprendiz, Instructor, Docente</td></tr>
+        <tr><td>TipoCompetencia</td><td>TECNICA, TRANSVERSAL, BASICA</td><td>Competencia</td></tr>
+        <tr><td>FaseProyecto</td><td>ANALISIS, PLANEACION, EJECUCION, EVALUACION</td><td>ResultadoAprendizaje</td></tr>
+        <tr><td>TipoActividad</td><td>TALLER, PROYECTO, FORO, QUIZ</td><td>Actividad</td></tr>
+        <tr><td>EstadoActividad</td><td>ACTIVA, CERRADA, BORRADOR, PUBLICADA</td><td>Actividad</td></tr>
+        <tr><td>EstadoEntrega</td><td>PENDIENTE, CALIFICADA, TARDIA, APROBADA, NO_APROBADA</td><td>Entrega</td></tr>
+        <tr><td>EstadoAsistencia</td><td>PENDIENTE, REGISTRADA</td><td>Asistencia</td></tr>
+        <tr><td>EstadoAsistenciaAprendiz</td><td>PRESENTE, FALLA, EXCUSA</td><td>DetalleAsistencia</td></tr>
+        <tr><td>JuicioValorativo</td><td>APROBADO, DEFICIENTE, PENDIENTE</td><td>EvaluacionAprendiz</td></tr>
+        <tr><td>EstadoVisita</td><td>PROGRAMADA, REALIZADA, APLAZADA</td><td>VisitaSeguimiento</td></tr>
+    </tbody>
+</table>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 5 -->
+<!-- ============================================================== -->
+<h1>Capítulo 5. Lógica de Servidor y Server Actions</h1>
+
+<h2>5.1 Patrón de Implementación</h2>
+<p>Todas las Server Actions del sistema siguen un patrón arquitectónico uniforme con seis fases secuenciales: (1) Verificación de sesión mediante <code>getServerSession(authOptions)</code>, que extrae el JWT y confirma que el usuario esté autenticado activamente. (2) Normalización del rol del usuario (se convierte a mayúsculas y se mapea a uno de los seis roles canónicos del sistema). (3) Verificación de autorización (RBAC) mediante funciones jerárquicas que comparan el nivel del solicitante contra los requisitos de la acción. (4) Validación de los datos de entrada. (5) Ejecución de la operación de base de datos mediante Prisma. (6) Registro de auditoría en el AuditLog y revalidación de caché con <code>revalidatePath()</code>.</p>
+
+<h2>5.2 Especificación de Acciones Clave</h2>
+
+<h3>evaluarEntregaAction (entregas.actions.ts)</h3>
+<p>Esta acción permite al instructor calificar una evidencia entregada por un aprendiz. Recibe como parámetros el ID de la entrega, el estado de evaluación (APROBADA, NO_APROBADA o CALIFICADA), la calificación numérica y la retroalimentación textual. Internamente actualiza los campos <code>estado</code>, <code>calificacion</code>, <code>retroalimentacion</code> y <code>fechaEvaluacion</code> de la tabla <code>entregas</code>. Tras la actualización exitosa, invoca <code>crearNotificacionSistema()</code> para enviar una notificación automática al aprendiz con el resultado de la evaluación, incluyendo un <code>enlace</code> a la ruta <code>/actividades</code> para que el aprendiz pueda consultar el estado directamente al hacer clic en la notificación. Finalmente, ejecuta <code>revalidatePath('/entregas')</code> y <code>revalidatePath('/actividades')</code>.</p>
+
+<h3>guardarAsistenciaMasiva (asistencia.actions.ts)</h3>
+<p>Esta acción recibe un objeto con el ID de la ficha, el ID del instructor, la fecha de sesión y un array de detalles (uno por cada aprendiz con su estado: PRESENTE, FALLA o EXCUSA y observaciones). Internamente crea un registro padre en la tabla <code>asistencias</code> y múltiples registros hijos en <code>detalles_asistencia</code> dentro de una transacción de Prisma, calculando automáticamente los contadores <code>totalPresentes</code>, <code>totalFaltas</code> y <code>totalExcusas</code>.</p>
+
+<h3>createUser (user.actions.ts)</h3>
+<p>Esta acción crea una cuenta de usuario y automáticamente genera el perfil asociado según el rol. Tras crear el registro en la tabla <code>users</code>, evalúa el nombre del rol asignado: si contiene "APRENDIZ", crea un registro en la tabla <code>aprendices</code> vinculado al usuario; si contiene "INSTRUCTOR", crea un registro en la tabla <code>instructores</code>. Esto garantiza que todo usuario con rol operativo tenga su expediente funcional desde el momento de la creación de su cuenta.</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 6 -->
+<!-- ============================================================== -->
+<h1>Capítulo 6. Componentes de Frontend</h1>
+
+<h2>6.1 Sistema de Componentes</h2>
+<p>La interfaz se construye con componentes organizados en tres niveles de abstracción. El primer nivel (<code>/components/ui</code>) contiene las primitivas de interfaz basadas en Radix UI y estilizadas con Tailwind CSS: Button, Input, Dialog, Select, Badge, Tooltip. El segundo nivel (<code>/components/shared</code>) contiene componentes reutilizables de negocio como DataTable (tabla genérica con paginación y búsqueda) y modales genéricos. El tercer nivel (<code>/features</code>) contiene los componentes específicos de cada dominio funcional agrupados por subdirectorio.</p>
+
+<h2>6.2 Componente Sidebar (Navegación por Roles)</h2>
+<p>El componente <code>Sidebar.tsx</code> define cinco arrays de navegación diferentes (<code>navAprendiz</code>, <code>navInstructor</code>, <code>navCoordinador</code>, <code>navSubdirector</code>, <code>navAdmin</code>), cada uno con las secciones y módulos específicos autorizados para ese rol. Al renderizarse, el componente lee el rol del JWT del usuario activo mediante <code>useSession()</code>, selecciona el array correspondiente y aplica un segundo filtro mediante <code>canAccessRoute()</code> para eliminar cualquier elemento que no esté autorizado según la whitelist de permisos. Esto implementa una defensa en profundidad visual, donde el usuario nunca ve opciones de menú para las que no tiene acceso.</p>
+
+<h2>6.3 Sistema de Notificaciones en Tiempo Real</h2>
+<p>El componente <code>Header.tsx</code> implementa un mecanismo de polling que consulta las notificaciones no leídas del usuario cada 30 segundos mediante <code>getMisNotificacionesAction()</code>. El contador de notificaciones se muestra como una insignia roja sobre el icono de campana. Al hacer clic en una notificación, se invoca <code>marcarComoLeidaAction()</code> y, si la notificación contiene un campo <code>enlace</code>, se navega automáticamente a la ruta correspondiente mediante <code>router.push(enlace)</code>.</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 7 -->
+<!-- ============================================================== -->
+<h1>Capítulo 7. Guía de Instalación y Despliegue</h1>
+
+<h2>7.1 Requisitos de Entorno</h2>
+<p class="table-title">Tabla 23</p>
+<p class="table-subtitle">Requisitos de Software para el Despliegue de GSS</p>
+<table>
+    <thead><tr><th>Componente</th><th>Versión Mínima</th><th>Propósito</th></tr></thead>
+    <tbody>
+        <tr><td>Node.js</td><td>18.17.0</td><td>Entorno de ejecución del servidor Next.js.</td></tr>
+        <tr><td>npm</td><td>9.x</td><td>Gestor de paquetes para dependencias.</td></tr>
+        <tr><td>MySQL Server</td><td>8.0</td><td>Motor de base de datos relacional.</td></tr>
+        <tr><td>Git</td><td>2.30</td><td>Control de versiones para clonar el repositorio.</td></tr>
+    </tbody>
+</table>
+
+<h2>7.2 Variables de Entorno</h2>
+<p>El archivo <code>.env</code> o <code>.env.local</code> en la raíz del proyecto debe contener las siguientes variables obligatorias:</p>
+<pre>
+# Cadena de conexión a MySQL
+DATABASE_URL="mysql://usuario:contraseña@host:3306/nombre_base_datos"
+
+# Clave criptográfica para firmar JWT (generar con: openssl rand -base64 32)
+NEXTAUTH_SECRET="clave_secreta_aleatoria_de_minimo_32_caracteres"
+
+# URL base de la aplicación (ajustar según el dominio de producción)
+NEXTAUTH_URL="http://localhost:3000"
+</pre>
+
+<h2>7.3 Procedimiento de Instalación</h2>
+<ol>
+    <li>Clonar el repositorio del proyecto: <code>git clone [URL_DEL_REPOSITORIO] GSS</code></li>
+    <li>Ingresar al directorio del proyecto: <code>cd GSS</code></li>
+    <li>Instalar las dependencias de Node.js: <code>npm install</code></li>
+    <li>Configurar las variables de entorno en el archivo <code>.env.local</code> según la sección 7.2.</li>
+    <li>Ejecutar las migraciones de Prisma para crear el esquema en MySQL: <code>npx prisma migrate deploy</code></li>
+    <li>Generar el cliente tipado de Prisma: <code>npx prisma generate</code></li>
+    <li>(Opcional) Poblar la base de datos con datos iniciales (seed): <code>npx prisma db seed</code></li>
+    <li>Compilar la aplicación para producción: <code>npm run build</code></li>
+    <li>Iniciar el servidor de producción: <code>npm start</code></li>
+    <li>Verificar el acceso en el navegador: <code>http://localhost:3000</code></li>
+</ol>
+
+<h2>7.4 Políticas de Backup y Mantenimiento</h2>
+<p>Se recomienda implementar las siguientes políticas de mantenimiento para entornos de producción: (a) Backup diario de la base de datos MySQL mediante <code>mysqldump --single-transaction --routines --triggers nombre_bd > backup_$(date +%Y%m%d).sql</code>, automatizado mediante cron a las 02:00 AM. (b) Retención de backups de al menos 30 días en almacenamiento externo (NAS o nube). (c) Migración del directorio <code>/public/uploads</code> a almacenamiento en la nube (AWS S3, Google Cloud Storage o Azure Blob) para evitar pérdida de archivos en redespliegues. (d) Actualización periódica de dependencias de seguridad mediante <code>npm audit fix</code>. (e) Monitoreo de logs del servidor y del registro de auditoría (AuditLog) para detectar anomalías.</p>
+
+
+<!-- ============================================================== -->
+<!-- CAPÍTULO 8 -->
+<!-- ============================================================== -->
+<h1>Capítulo 8. Referencias</h1>
+<div class="reference-list">
+    <p>American Psychological Association. (2020). <i>Publication manual of the American Psychological Association</i> (7.ª ed.). American Psychological Association. https://doi.org/10.1037/0000165-000</p>
+    <p>IEEE Computer Society. (1998). <i>IEEE Standard for Software Test Documentation</i> (IEEE Std 829-1998). Institute of Electrical and Electronics Engineers.</p>
+    <p>IEEE Computer Society. (2001). <i>IEEE Standard for Software User Documentation</i> (IEEE Std 1063-2001). Institute of Electrical and Electronics Engineers.</p>
+    <p>MySQL AB. (2025). <i>MySQL 8.0 Reference Manual</i>. Oracle Corporation. https://dev.mysql.com/doc/refman/8.0/en/</p>
+    <p>Next.js. (2025). <i>Next.js Documentation: App Router, Server Components and Server Actions</i>. Vercel Inc. https://nextjs.org/docs</p>
+    <p>NextAuth.js. (2025). <i>NextAuth.js Documentation: Authentication for Next.js</i>. https://next-auth.js.org/</p>
+    <p>OWASP Foundation. (2021). <i>OWASP Top Ten Web Application Security Risks — 2021</i>. https://owasp.org/www-project-top-ten/</p>
+    <p>Prisma. (2025). <i>Prisma ORM Documentation: Data Modeling, Queries, Migrations and Client Generation</i>. Prisma Data Inc. https://www.prisma.io/docs</p>
+    <p>Servicio Nacional de Aprendizaje. (2023). <i>Lineamientos para la articulación de la Educación Media con la Formación Profesional Integral</i>. SENA. https://www.sena.edu.co</p>
+    <p>Zod. (2025). <i>Zod Documentation: TypeScript-first schema validation with static type inference</i>. https://zod.dev/</p>
+</div>
+
+</body>
+</html>

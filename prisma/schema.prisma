@@ -214,6 +214,7 @@ model Actividad {
   descripcion            String?               @db.Text
   instrucciones          String?               @db.Text
   tipo                   TipoActividad         @default(TALLER)
+  fechaInicio            DateTime              @default(now())
   fechaVencimiento       DateTime
   estado                 EstadoActividad       @default(ACTIVA)
   instructorId           String?

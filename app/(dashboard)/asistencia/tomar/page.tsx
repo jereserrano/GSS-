@@ -17,7 +17,8 @@ export default async function TomarAsistenciaPage() {
 
   const instructores = await prisma.instructor.findMany({
     where: { estado: "ACTIVO" },
-    orderBy: { apellidos: "asc" }
+    orderBy: { apellidos: "asc" },
+    select: { id: true, nombres: true, apellidos: true, userId: true }
   });
 
   return (

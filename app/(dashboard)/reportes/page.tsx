@@ -1,12 +1,14 @@
 import React from "react";
 import { ReportesPageClient } from "@/features/reportes/ReportesPageClient";
-import { getResumenReportes } from "@/actions/reportes.actions";
+import { getResumenReportes, getReportesListadosAction } from "@/actions/reportes.actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReportesPage() {
   const result = await getResumenReportes();
+  const resultListados = await getReportesListadosAction();
   const resumen = result.success ? result.data! : null;
+  const listados = resultListados.success ? resultListados.data! : null;
 
   return (
     <div className="page-container space-y-6 page-enter">
@@ -17,7 +19,10 @@ export default async function ReportesPage() {
         </p>
       </div>
 
-      <ReportesPageClient resumen={resumen ?? null} />
+      <ReportesPageClient 
+        resumen={resumen ?? null} 
+        listados={listados ?? { aprendices: [], alertas: [], asistencias: [] }} 
+      />
     </div>
   );
 }

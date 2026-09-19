@@ -392,3 +392,14 @@ El sistema **autenticaba correctamente** las credenciales (login â†’ redirect a 
 - Scope asistencia por instructor (PE-02) â€” CRÃTICO
 - Ownership en evaluaciÃ³n de entregas (PE-03) â€” CRÃTICO
 - Limpieza TypeScript (~106 errores en 25 archivos) â€” ALTA
+
+## V2.1.4 — Ajustes de UI, Listados y Correcciones
+**Fecha:** 18 de septiembre de 2026
+**Tag:** \2.1.4\
+
+### Descripción de los cambios:
+1. **Fechas en Actividades:** Se agregó el campo \echaInicio\ al modelo \Actividad\ en \schema.prisma\ y se integró a los formularios y tablas (Instructor y Aprendiz) para mejorar la visualización de cronogramas.
+2. **Asignación a Institución:** El modelo \User\ ahora procesa correctamente su \institucionId\. Se actualizó \UsuariosTable.tsx\ y el formulario de usuario para soportar la selección de institución, habilitando jerarquías multi-tenant.
+3. **Módulo de Reportes Visuales:** En lugar de solo permitir descargar CSV, se implementó una vista con pestañas (Tabs) dentro de \ReportesPageClient.tsx\ para visualizar los datos principales (Aprendices, Alertas de Riesgo y Asistencias) directamente en tablas UI interactivas pre-descarga.
+4. **Correcciones Técnicas:** Se agregó manejo de errores tipo try-catch atrapando códigos de violación de unicidad de Prisma (\P2002\) en el módulo de competencias para prevenir pantallas de error por constraints en base de datos.
+

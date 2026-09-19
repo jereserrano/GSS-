@@ -71,8 +71,15 @@ export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMas
 
     // Los Instructores solo pueden registrar asistencia en fichas que tienen asignadas
     if ((user as any).rol?.nombre?.toUpperCase() === "INSTRUCTOR") {
+      const instructorRecord = await prisma.instructor.findUnique({
+        where: { userId: user.id }
+      });
+      if (!instructorRecord) {
+        return { success: false, error: "No tienes un perfil de instructor asociado." };
+      }
+
       const asignacion = await prisma.instructorFicha.findFirst({
-        where: { instructorId: user.id, fichaId: data.fichaId },
+        where: { instructorId: instructorRecord.id, fichaId: data.fichaId },
       });
       if (!asignacion) {
         return { success: false, error: "No tienes permiso para registrar asistencia en esta ficha." };
@@ -191,11 +198,41 @@ export async function deleteAsistencia(id: string) {
   }
 }
 
-export async function exportAsistenciasXLSX() {
+export async function exportAsistenciasXLSX(fechaInicio?: string, fechaFin?: string, fichaId?: string) {
   try {
-    await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+
+    // Si es instructor, filtrar solo por sus propias asistencias
+    let instructorFiltroId: string | undefined;
+    const instructorRecord = await prisma.instructor.findUnique({ where: { userId: user.id } });
+    if (instructorRecord) {
+      instructorFiltroId = instructorRecord.id;
+    }
+
+    const whereClause: any = {
+      ...(instructorFiltroId ? { instructorId: instructorFiltroId } : {}),
+    };
+
+    if (fichaId) {
+      whereClause.fichaId = fichaId;
+    }
+    
+    if (fechaInicio || fechaFin) {
+      whereClause.fecha = {};
+      if (fechaInicio) {
+        const inicio = new Date(fechaInicio);
+        inicio.setHours(0, 0, 0, 0);
+        whereClause.fecha.gte = inicio;
+      }
+      if (fechaFin) {
+        const fin = new Date(fechaFin);
+        fin.setHours(23, 59, 59, 999);
+        whereClause.fecha.lte = fin;
+      }
+    }
 
     const asistencias = await AsistenciaRepository.findMany({
+      where: whereClause,
       orderBy: { fecha: "desc" },
       include: {
         ficha: {
@@ -206,21 +243,42 @@ export async function exportAsistenciasXLSX() {
           },
         },
         instructor: { select: { nombres: true, apellidos: true } },
+        detalles: {
+          include: {
+            aprendiz: { select: { nombres: true, apellidos: true, numeroDocumento: true, tipoDocumento: true } }
+          }
+        }
       },
     });
 
-    const rows = asistencias.map((a) => ({
-      "Fecha": a.fecha ? new Date(a.fecha).toLocaleDateString("es-CO") : "",
-      "Ficha": a.ficha?.codigo ?? "",
-      "Programa": a.ficha?.programa?.nombre ?? "",
-      "Instructor": `${a.instructor?.nombres ?? ""} ${a.instructor?.apellidos ?? ""}`.trim(),
-      "Tema / Observaciones": a.observaciones ?? "",
-      "Total Aprendices": a.ficha?._count?.aprendices ?? 0,
-      "Presentes": a.totalPresentes ?? 0,
-      "Faltas": a.totalFaltas ?? 0,
-      "Excusas": a.totalExcusas ?? 0,
-      "Estado": a.estado ?? "",
-    }));
+    const rows = asistencias.flatMap((a) => {
+      const baseRow = {
+        "Fecha": a.fecha ? new Date(a.fecha).toLocaleDateString("es-CO") : "",
+        "Ficha": a.ficha?.codigo ?? "",
+        "Programa": a.ficha?.programa?.nombre ?? "",
+        "Instructor": `${a.instructor?.nombres ?? ""} ${a.instructor?.apellidos ?? ""}`.trim(),
+        "Tema / Obs. General": a.observaciones ?? "",
+        "Estado Sesión": a.estado ?? "",
+      };
+
+      if (!a.detalles || a.detalles.length === 0) {
+        return [{
+          ...baseRow,
+          "Aprendiz": "Sin detalles",
+          "Documento": "",
+          "Estado Asistencia": "",
+          "Obs. Asistencia": "",
+        }];
+      }
+
+      return a.detalles.map(d => ({
+        ...baseRow,
+        "Aprendiz": `${d.aprendiz?.nombres ?? ""} ${d.aprendiz?.apellidos ?? ""}`.trim(),
+        "Documento": `${d.aprendiz?.tipoDocumento ?? ""} ${d.aprendiz?.numeroDocumento ?? ""}`.trim(),
+        "Estado Asistencia": d.estado ?? "",
+        "Obs. Asistencia": d.observaciones ?? "",
+      }));
+    });
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();

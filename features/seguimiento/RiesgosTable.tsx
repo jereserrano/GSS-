@@ -28,7 +28,7 @@ export function RiesgosTable({ initialData, aprendices }: RiesgosTableProps) {
   const [exporting, setExporting] = useState(false);
 
   const alertas = initialData?.data || [];
-  const alertasAltas = alertas.filter((a: any) => a.nivel === "ALTO" && a.estado !== "CERRADO").length;
+  const alertasAltas = alertas.filter((a: any) => a.nivel === "ALTO" && !a.gestionada).length;
 
   const handleEdit = (riesgo: any) => {
     setSelectedRiesgo(riesgo);
@@ -115,11 +115,9 @@ export function RiesgosTable({ initialData, aprendices }: RiesgosTableProps) {
       header: "Estado",
       render: (a) => (
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-          ${a.estado === 'DETECTADO' ? 'bg-danger-50 text-danger-700' : 
-            a.estado === 'EN_SEGUIMIENTO' ? 'bg-warning-50 text-warning-700' : 
-            'bg-success-50 text-success-700'}`}
+          ${!a.gestionada ? 'bg-danger-50 text-danger-700' : 'bg-success-50 text-success-700'}`}
         >
-          {a.estado ? a.estado.replace("_", " ").toLowerCase() : "detectado"}
+          {!a.gestionada ? "No Gestionada" : "Gestionada"}
         </span>
       )
     },

@@ -145,25 +145,168 @@ export function AprendizProfile({ aprendiz }: { aprendiz: Aprendiz }) {
           </TabsContent>
 
           <TabsContent active={activeTab === "asistencia"}>
-            <Card className="border-0 shadow-sm min-h-[400px]">
-              <CardContent className="flex items-center justify-center h-[400px]">
-                <p className="text-text-secondary">Módulo de asistencia en construcción</p>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-lg">Historial de Asistencia</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {aprendiz.detallesAsistencia && aprendiz.detallesAsistencia.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-surface text-text-secondary">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Fecha</th>
+                          <th className="px-4 py-3 font-medium">Instructor</th>
+                          <th className="px-4 py-3 font-medium">Estado</th>
+                          <th className="px-4 py-3 font-medium">Observación</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {aprendiz.detallesAsistencia.map((detalle: any) => (
+                          <tr key={detalle.id} className="hover:bg-surface/50">
+                            <td className="px-4 py-3 text-text-primary whitespace-nowrap">
+                              {formatDateShort(detalle.asistencia.fecha)}
+                            </td>
+                            <td className="px-4 py-3 text-text-secondary">
+                              {detalle.asistencia.instructor.nombres} {detalle.asistencia.instructor.apellidos}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                detalle.estado === 'PRESENTE' ? 'bg-verde-50 text-verde-700' :
+                                detalle.estado === 'FALLA' ? 'bg-danger-50 text-danger-700' :
+                                'bg-warning-50 text-warning-700'
+                              }`}>
+                                {detalle.estado}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-text-secondary truncate max-w-[200px]" title={detalle.observaciones || "Sin observaciones"}>
+                              {detalle.observaciones || "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 text-center text-text-secondary">
+                    <CalendarDays size={48} className="mb-4 opacity-20" />
+                    <p>No hay registros de asistencia para este aprendiz.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent active={activeTab === "evaluaciones"}>
-            <Card className="border-0 shadow-sm min-h-[400px]">
-              <CardContent className="flex items-center justify-center h-[400px]">
-                <p className="text-text-secondary">Módulo de evaluaciones en construcción</p>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-lg">Resultados Evaluados</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {aprendiz.evaluaciones && aprendiz.evaluaciones.length > 0 ? (
+                  <div className="divide-y divide-border">
+                    {aprendiz.evaluaciones.map((evaluacion: any) => (
+                      <div key={evaluacion.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface/50">
+                        <div>
+                          <p className="font-medium text-sm text-text-primary">
+                            {evaluacion.resultadoAprendizaje.nombre}
+                          </p>
+                          <p className="text-xs text-text-secondary mt-1">
+                            Fase: {evaluacion.resultadoAprendizaje.fase}
+                          </p>
+                        </div>
+                        <div className="shrink-0 flex flex-col items-end">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            evaluacion.juicio === 'APROBADO' ? 'bg-verde-50 text-verde-700 border border-verde-200' :
+                            evaluacion.juicio === 'DEFICIENTE' ? 'bg-danger-50 text-danger-700 border border-danger-200' :
+                            'bg-surface border border-border text-text-secondary'
+                          }`}>
+                            {evaluacion.juicio}
+                          </span>
+                          {evaluacion.fecha && (
+                            <span className="text-xs text-text-secondary mt-1">
+                              {formatDateShort(evaluacion.fecha)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 text-center text-text-secondary">
+                    <Target size={48} className="mb-4 opacity-20" />
+                    <p>El aprendiz aún no tiene juicios valorativos asignados.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent active={activeTab === "seguimiento"}>
-            <Card className="border-0 shadow-sm min-h-[400px]">
-              <CardContent className="flex items-center justify-center h-[400px]">
-                <p className="text-text-secondary">Línea de tiempo de seguimiento en construcción</p>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-lg">Línea de Tiempo Reciente</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {(() => {
+                  const timelineItems = [
+                    ...(aprendiz.alertas || []).map((a: any) => ({
+                      type: 'alerta',
+                      date: new Date(a.fechaDeteccion),
+                      title: 'Alerta de Riesgo',
+                      desc: a.motivo,
+                      color: a.nivel === 'ALTO' ? 'text-danger-600 bg-danger-50' : 'text-warning-600 bg-warning-50'
+                    })),
+                    ...(aprendiz.entregas || []).map((e: any) => ({
+                      type: 'entrega',
+                      date: new Date(e.creadoEn),
+                      title: 'Entrega de Actividad',
+                      desc: e.actividad.nombre,
+                      color: 'text-primary bg-primary-50'
+                    })),
+                    ...(aprendiz.detallesAsistencia || [])
+                      .filter((d: any) => d.estado === 'FALLA')
+                      .map((d: any) => ({
+                        type: 'falla',
+                        date: new Date(d.asistencia.fecha),
+                        title: 'Inasistencia Registrada',
+                        desc: d.observaciones || 'Sin justificación',
+                        color: 'text-danger-600 bg-danger-50'
+                      }))
+                  ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 15);
+
+                  if (timelineItems.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-text-secondary">
+                        <Activity size={48} className="mb-4 opacity-20" />
+                        <p>No hay eventos recientes en el seguimiento del aprendiz.</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="relative border-l border-border ml-3 space-y-6">
+                      {timelineItems.map((item, idx) => (
+                        <div key={idx} className="relative pl-6">
+                          <div className={`absolute -left-[13px] top-1 h-6 w-6 rounded-full border-4 border-white flex items-center justify-center ${item.color}`}>
+                            <div className="h-2 w-2 rounded-full bg-current"></div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-text-secondary font-medium">
+                              {formatDateShort(item.date.toISOString())}
+                            </p>
+                            <h4 className="text-sm font-semibold text-text-primary mt-1">
+                              {item.title}
+                            </h4>
+                            <p className="text-sm text-text-secondary mt-1">
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>

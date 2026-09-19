@@ -12,7 +12,7 @@ export function Footer() {
         {/* Identidad del Sistema y Contexto */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left gap-1">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-900 tracking-wide text-sm">GSS</span>
+            <img src="/logo.png" alt="GSS Logo" className="h-6 object-contain" />
             <span className="text-slate-300">|</span>
             <span className="text-slate-700 font-medium">
               Sistema de Información para el Seguimiento del Proceso de Integración con la Media Técnica

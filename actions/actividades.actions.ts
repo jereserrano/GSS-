@@ -51,6 +51,9 @@ export async function getActividadesAction(filtros: any = {}) {
       fichaFiltro = userContext.aprendiz.fichaId;
     }
 
+    // Si es Instructor, solo ve las actividades que él mismo ha creado
+    const isInstructor = rolNombre === "INSTRUCTOR";
+
     const where: any = {
       ...(filtros.busqueda ? {
         OR: [
@@ -60,6 +63,7 @@ export async function getActividadesAction(filtros: any = {}) {
       } : {}),
       ...(fichaFiltro ? { fichaId: fichaFiltro } : {}),
       ...(isAprendiz ? { estado: { in: ["ACTIVA", "PUBLICADA"] } } : {}),
+      ...(isInstructor && userContext?.instructor?.id ? { instructorId: userContext.instructor.id } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([
@@ -151,7 +155,8 @@ export async function createActividad(data: z.infer<typeof actividadSchema>) {
               ap.userId,
               `Nueva actividad: ${data.nombre}`,
               `Se ha publicado la actividad "${data.nombre}". Fecha límite de entrega: ${fechaVenceFormatted}.`,
-              "INFO"
+              "INFO",
+              "/actividades"  // ← enlace para el aprendiz
             );
           }
         }

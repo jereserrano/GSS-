@@ -103,7 +103,7 @@ export function Header() {
     .toUpperCase();
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-30 shadow-xs md:px-6">
+    <header className="h-16 bg-white/50 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-4 sticky top-0 z-30 shadow-sm md:px-6 transition-all duration-300">
       
       {/* Izquierda: Identidad Contextual y Buscador Global */}
       <div className="flex-1 flex items-center gap-4">
@@ -111,7 +111,7 @@ export function Header() {
         <div className="w-10 md:hidden" />
         
         <div className="hidden lg:flex items-center gap-2 pr-3 border-r border-slate-200 text-xs text-slate-500">
-          <span className="font-bold text-[#39A900] text-sm tracking-wide">GSS</span>
+          <img src="/logo.png" alt="GSS" className="h-6 object-contain" />
           <span className="text-slate-300">|</span>
           <span className="font-medium text-slate-600 truncate max-w-[280px]">
             Seguimiento Media Técnica

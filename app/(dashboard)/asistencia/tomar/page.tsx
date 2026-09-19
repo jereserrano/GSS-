@@ -1,10 +1,32 @@
 import React from "react";
 import { TomaAsistenciaForm } from "@/features/ejecucion/TomaAsistenciaForm";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export default async function TomarAsistenciaPage() {
+  const session = await getServerSession(authOptions);
+  let instructorId: string | null = null;
+  let instructorActual: any = null;
+
+  if (session?.user?.email) {
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { rol: true, instructor: true }
+    });
+    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
+      instructorId = user.instructor.id;
+      instructorActual = user.instructor;
+    }
+  }
+
+  // Si es Instructor, solo carga SUS fichas con SUS aprendices
+  // Si es Admin/Coordinador, carga todo
   const fichas = await prisma.ficha.findMany({
-    where: { estado: "ACTIVO" },
+    where: {
+      estado: "ACTIVO",
+      ...(instructorId ? { instructores: { some: { instructorId } } } : {})
+    },
     include: {
       programa: true,
       aprendices: {
@@ -31,7 +53,11 @@ export default async function TomarAsistenciaPage() {
       </div>
 
       <div className="bg-surface rounded-xl border border-border shadow-sm p-6">
-        <TomaAsistenciaForm fichas={fichas as any} instructores={instructores as any} />
+        <TomaAsistenciaForm 
+          fichas={fichas as any} 
+          instructores={instructores as any}
+          instructorPreseleccionado={instructorActual}
+        />
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, Cell
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -32,33 +32,47 @@ export function TrendChart() {
       </CardHeader>
       <CardContent className="flex-1 min-h-[300px] pt-4">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={asistenciaData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-            <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} dy={10} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} domain={[50, 100]} />
+          <AreaChart data={asistenciaData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorAsistencia" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#003F8C" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#003F8C" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorEntregas" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#39A900" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#39A900" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
+            <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12, fontWeight: 500 }} dy={10} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12, fontWeight: 500 }} domain={[50, 100]} />
             <Tooltip 
-              contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.05)' }}
-              itemStyle={{ fontSize: '12px', fontWeight: 500 }}
+              contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(4px)' }}
+              itemStyle={{ fontSize: '12px', fontWeight: 600 }}
+              labelStyle={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}
             />
-            <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-            <Line 
+            <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 500, paddingTop: '10px' }} />
+            <Area 
               type="monotone" 
               name="Asistencia Promedio %"
               dataKey="asistencia" 
               stroke="#003F8C" 
-              strokeWidth={2.5}
-              dot={{ r: 3.5, strokeWidth: 1.5 }}
-              activeDot={{ r: 5 }}
+              strokeWidth={3}
+              fillOpacity={1}
+              fill="url(#colorAsistencia)"
+              activeDot={{ r: 6, strokeWidth: 0, fill: "#003F8C" }}
             />
-            <Line 
+            <Area 
               type="monotone" 
               name="Entregas a Tiempo %"
               dataKey="entregas" 
               stroke="#39A900" 
-              strokeWidth={2.5}
-              dot={{ r: 3.5, strokeWidth: 1.5 }}
+              strokeWidth={3}
+              fillOpacity={1}
+              fill="url(#colorEntregas)"
+              activeDot={{ r: 6, strokeWidth: 0, fill: "#39A900" }}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>

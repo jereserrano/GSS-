@@ -190,7 +190,8 @@ export async function createEntrega(data: z.infer<typeof entregaSchema>) {
           instructorUserId,
           `Nueva evidencia entregada: ${actividad.nombre}`,
           `El aprendiz ${entrega.aprendiz.nombres} ${entrega.aprendiz.apellidos} ha enviado su evidencia para "${actividad.nombre}".`,
-          "INFO"
+          "INFO",
+          "/entregas"  // ← el instructor va directamente a sus entregas pendientes
         );
       }
     } catch (notifErr) {
@@ -301,7 +302,7 @@ export async function evaluarEntregaAction(
           `Tu entrega ha sido evaluada: ${entrega.actividad.nombre}`,
           `Resultado: ${estadoEtiqueta}. Retroalimentación del instructor: ${evaluacionData.retroalimentacion || "Sin comentarios."}`,
           evaluacionData.estado === "APROBADA" ? "EXITO" : "ALERTA",
-          "/actividades"
+          "/entregas"  // ← el aprendiz va a ver sus entregas y resultado
         );
       } catch (notifErr) {
         console.error("Error enviando notificación al aprendiz:", notifErr);

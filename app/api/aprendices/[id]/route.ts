@@ -20,6 +20,12 @@ export async function GET(
         entregas: { include: { actividad: true }, orderBy: { creadoEn: "desc" }, take: 10 },
         evaluaciones: { include: { resultadoAprendizaje: true } },
         alertas: { orderBy: { fechaDeteccion: "desc" }, take: 5 },
+        detallesAsistencia: { 
+          include: { 
+            asistencia: { include: { instructor: true } } 
+          }, 
+          orderBy: { asistencia: { fecha: "desc" } } 
+        },
       },
     });
 

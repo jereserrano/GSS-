@@ -1,6 +1,6 @@
 {
   "name": "gss-media-tecnica",
-  "version": "0.1.0",
+  "version": "2.1.5",
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
@@ -31,7 +31,6 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -47,17 +46,20 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.6.0",
     "@tailwindcss/postcss": "^4.1.0",
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.4",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.21",
+    "bcryptjs": "^3.0.3",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.3.0",
     "postcss": "^8.5.3",
     "prisma": "^6.0.0",
     "tailwindcss": "^4.1.0",
+    "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
     "typescript": "^5.8.0"
   }

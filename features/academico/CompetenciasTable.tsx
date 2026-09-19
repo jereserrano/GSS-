@@ -17,9 +17,10 @@ import { useRouter } from "next/navigation";
 interface CompetenciasTableProps {
   initialData: any;
   programas: { id: string; codigo: string; nombre: string }[];
+  readOnly?: boolean;
 }
 
-export function CompetenciasTable({ initialData, programas }: CompetenciasTableProps) {
+export function CompetenciasTable({ initialData, programas, readOnly = false }: CompetenciasTableProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -124,11 +125,11 @@ export function CompetenciasTable({ initialData, programas }: CompetenciasTableP
       header: "Estado",
       render: (c) => <StatusBadge estado={c.estado} />
     },
-    {
+    ...(readOnly ? [] : [{
       key: "acciones",
       header: "Acciones",
-      align: "right",
-      render: (c) => (
+      align: "right" as const,
+      render: (c: any) => (
         <div className="flex justify-end gap-2">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(c)}>
             <Pencil size={16} className="text-text-secondary" />
@@ -138,7 +139,7 @@ export function CompetenciasTable({ initialData, programas }: CompetenciasTableP
           </Button>
         </div>
       ),
-    },
+    }])
   ];
 
   return (
@@ -156,24 +157,26 @@ export function CompetenciasTable({ initialData, programas }: CompetenciasTableP
           </div>
         </div>
         <div className="flex gap-2">
-          <UploadExcelDialog
-            title="Importar Competencias"
-            description="Sube un archivo Excel con los datos de las competencias. Usa la plantilla de ejemplo."
-            templateUrl="/plantilla_competencias.xlsx"
-            onUpload={async (json) => {
-              const result = await importCompetenciasMasivo(json);
-              if (result.success) {
-                router.refresh();
-              }
-              return result;
-            }}
-          />
-          <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
-            <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
-          </Button>
-          <Button onClick={handleCreate}>
-            <Plus size={16} className="mr-2" /> Nueva Competencia
-          </Button>
+          {!readOnly && (
+            <>
+              <UploadExcelDialog
+                title="Importar Competencias"
+                description="Sube un archivo Excel con las competencias y resultados de aprendizaje."
+                templateUrl="/plantilla_competencias.xlsx"
+                onUpload={async (json) => {
+                  const result = await importCompetenciasMasivo(json);
+                  if (result.success) router.refresh();
+                  return result;
+                }}
+              />
+              <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
+                <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
+              </Button>
+              <Button onClick={handleCreate}>
+                <Plus size={16} className="mr-2" /> Nueva Competencia
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

@@ -40,6 +40,7 @@ const navAprendiz: NavSection[] = [
       { icon: BookCheck, label: "Mis actividades", href: "/actividades" },
       { icon: FileSignature, label: "Mis entregas", href: "/entregas" },
       { icon: TrendingUp, label: "Mis resultados", href: "/resultados" },
+      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
       { icon: ClipboardList, label: "Ruta de aprendizaje", href: "/plan-formacion" },
     ],
   },
@@ -297,41 +298,41 @@ export function Sidebar() {
         onClick={closeMobile}
       />
 
-      {/* Sidebar contenedor: fondo blanco, borde suave institucional */}
+      {/* Sidebar contenedor: fondo oscuro suave, borde tenue */}
       <aside className={cn(
-        "sidebar bg-white border-r border-slate-200 text-slate-700 flex flex-col transition-all duration-300 z-40",
+        "sidebar border-r border-white/10 text-white/90 flex flex-col transition-all duration-300 z-40",
         collapsed && "md:w-[68px]",
         !collapsed && "md:w-[260px]",
         mobileOpen ? "translate-x-0 w-[260px]" : "-translate-x-full md:translate-x-0"
       )}>
         
         {/* Header del Sidebar */}
-        <div className="h-16 flex items-center px-4 shrink-0 border-b border-slate-100 bg-white sticky top-0 z-10 justify-between">
+        <div className="h-16 flex items-center px-4 shrink-0 border-b border-white/10 sticky top-0 z-10 justify-between">
           {!collapsed ? (
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="bg-[#39A900] text-white font-bold text-sm px-2 py-0.5 rounded-md tracking-wider">
-                GSS
+              <div className="flex items-center justify-center bg-white px-2 py-1 rounded-lg shadow-sm">
+                <img src="/logo.png" alt="GSS" className="h-7 object-contain" />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="font-bold text-xs text-slate-900 tracking-tight truncate leading-tight">
+                <span className="font-bold text-xs text-white tracking-tight truncate leading-tight">
                   Media Técnica
                 </span>
-                <span className="text-[10px] text-slate-500 font-medium truncate leading-tight">
+                <span className="text-[10px] text-white/70 font-medium truncate leading-tight">
                   Seguimiento Formativo
                 </span>
               </div>
             </div>
           ) : (
             <div className="w-full flex justify-center">
-              <span className="bg-[#39A900] text-white font-bold text-xs px-1.5 py-0.5 rounded-md">
-                GSS
-              </span>
+              <div className="bg-white px-1.5 py-1 rounded-lg shadow-sm flex items-center justify-center">
+                <img src="/logo.png" alt="GSS" className="h-5 object-contain" />
+              </div>
             </div>
           )}
           
           <button 
             onClick={toggleSidebar}
-            className="hidden md:flex p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="hidden md:flex p-1.5 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
             title={collapsed ? "Expandir navegación" : "Colapsar navegación"}
           >
             <ChevronLeft size={18} className={cn("transition-transform duration-200", collapsed && "rotate-180")} />
@@ -344,9 +345,9 @@ export function Sidebar() {
             <div key={sIdx} className="space-y-0.5">
               {section.title && (
                 collapsed ? (
-                  <hr className="my-2 border-slate-100 mx-2" />
+                  <hr className="my-2 border-white/10 mx-2" />
                 ) : (
-                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="px-3 pt-2 pb-1 text-[11px] font-bold text-white/90 uppercase tracking-wider">
                     {section.title}
                   </div>
                 )
@@ -367,15 +368,15 @@ export function Sidebar() {
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all duration-150 group",
                       isActive 
-                        ? "bg-[#f0fdf4] text-[#267000] font-semibold border-l-[3px] border-[#39A900] shadow-2xs" 
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                        ? "bg-white/15 text-white font-bold border-l-[3px] border-white shadow-2xs" 
+                        : "text-white hover:bg-white/10 hover:text-white font-medium"
                     )}
                   >
                     <Icon 
                       size={17} 
                       className={cn(
                         "shrink-0 transition-colors", 
-                        isActive ? "text-[#39A900]" : "text-slate-400 group-hover:text-slate-600"
+                        isActive ? "text-white" : "text-white/90 group-hover:text-white"
                       )} 
                     />
                     {!collapsed && (
@@ -389,23 +390,23 @@ export function Sidebar() {
         </div>
         
         {/* Footer del sidebar con rol activo */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/70 text-xs">
+        <div className="p-3 border-t border-white/10 bg-black/10 text-xs">
           {!collapsed ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Rol Activo</span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#267000] bg-[#f0fdf4] px-1.5 py-0.5 rounded border border-[#bbf7d0]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#39A900]"></span>
+                <span className="text-[10px] font-bold text-white/90 uppercase tracking-wider">Rol Activo</span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-white/15 px-1.5 py-0.5 rounded border border-white/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]"></span>
                   {rawRole || (status === "loading" ? "Cargando..." : "Invitado")}
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 truncate mt-0.5">
+              <p className="text-[10px] text-white/50 truncate mt-0.5">
                 Contexto académico SENA
               </p>
             </div>
           ) : (
             <div className="flex justify-center" title={`Modo: ${rawRole}`}>
-              <span className="w-2 h-2 rounded-full bg-[#39A900]"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]"></span>
             </div>
           )}
         </div>

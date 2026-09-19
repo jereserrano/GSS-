@@ -3,6 +3,7 @@
 import { UserRepository } from "@/repositories/user.repository";
 import { InstructorRepository } from "@/repositories/instructor.repository";
 import { TransactionRepository } from "@/repositories/transaction.repository";
+import { prisma } from "@/lib/prisma";
 
 import { instructorSchema } from "@/schemas";
 import { z } from "zod";
@@ -116,7 +117,7 @@ export async function updateInstructor(id: string, data: z.infer<typeof instruct
     const instructor = await InstructorRepository.update({
       where: { id },
       data: {
-        tipoDocumento: data.tipoDocumento,
+        tipoDocumento: data.tipoDocumento || "CC",
         numeroDocumento: data.numeroDocumento,
         nombres: data.nombres,
         apellidos: data.apellidos,
@@ -192,5 +193,55 @@ export async function exportInstructoresCSV() {
   } catch (error: any) {
     console.error("Error exporting instructores:", error);
     return { success: false, error: "Error al generar reporte de instructores" };
+  }
+}
+
+export async function getFichasInstructor(instructorId: string) {
+  try {
+    await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
+    const fichas = await prisma.ficha.findMany({
+      where: { estado: "ACTIVO" },
+      include: { programa: { select: { nombre: true } } },
+      orderBy: { codigo: "asc" }
+    });
+    const asignadas = await prisma.instructorFicha.findMany({
+      where: { instructorId },
+      select: { fichaId: true }
+    });
+    const asignadasIds = asignadas.map(a => a.fichaId);
+    return { success: true, fichas, asignadasIds };
+  } catch (error: any) {
+    console.error("Error fetching fichas instructor:", error);
+    return { success: false, error: error.message || "Error al obtener fichas" };
+  }
+}
+
+export async function assignFichasToInstructor(instructorId: string, fichaIds: string[]) {
+  try {
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
+    await prisma.$transaction(async (tx) => {
+      await tx.instructorFicha.deleteMany({
+        where: { instructorId }
+      });
+      if (fichaIds.length > 0) {
+        await tx.instructorFicha.createMany({
+          data: fichaIds.map(fichaId => ({
+            instructorId,
+            fichaId
+          }))
+        });
+      }
+    });
+    await logAudit({
+      userId: user.id,
+      modulo: "Instructores",
+      accion: "ACTUALIZAR",
+      detalle: `Se asignaron ${fichaIds.length} fichas al instructor.`,
+    });
+    revalidatePath("/instructores");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error assigning fichas:", error);
+    return { error: error.message || "Error al asignar fichas" };
   }
 }

@@ -83,10 +83,10 @@
 
     /* ─── Tokens semánticos de la aplicación ─── */
     /* Superficie y fondo: interfaz clara, limpia */
-    --bg-app:          #f8fafc;                    /* Fondo general claro de la app */
+    --bg-app:          #f1f5f9;                    /* Fondo general claro de la app (slate-100) */
     --bg-surface:      #ffffff;                    /* Cards, modales, tablas */
-    --bg-sidebar:      #ffffff;                    /* Sidebar institucional claro */
-    --bg-sidebar-hover: #f1f5f9;                   /* Hover suave en items de sidebar */
+    --bg-sidebar:      #2D8A00;                    /* Sidebar institucional verde intermedio suave */
+    --bg-sidebar-hover: #267000;                   /* Hover suave en items de sidebar */
     --bg-header:       #ffffff;                    /* Header superior */
 
     /* Bordes */
@@ -619,4 +619,18 @@
   .page-container {
     padding: 1rem;
   }
+}
+
+@layer utilities {
+  .fill-mode-both {
+    animation-fill-mode: both;
+  }
+  .bg-pattern-tech {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .delay-75 { animation-delay: 75ms; }
+  .delay-150 { animation-delay: 150ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-450 { animation-delay: 450ms; }
 }

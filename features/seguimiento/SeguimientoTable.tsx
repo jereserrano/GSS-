@@ -14,10 +14,11 @@ import { useRouter } from "next/navigation";
 
 interface SeguimientoTableProps {
   initialData: any;
-  instituciones: { id: string; nombre: string }[];
+  fichas: any[];
+  userRole?: string;
 }
 
-export function SeguimientoTable({ initialData, instituciones }: SeguimientoTableProps) {
+export function SeguimientoTable({ initialData, fichas, userRole = "ADMINISTRADOR" }: SeguimientoTableProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -69,18 +70,40 @@ export function SeguimientoTable({ initialData, instituciones }: SeguimientoTabl
 
   const columnas: ColumnaDef<any>[] = [
     {
+      key: "aprendiz",
+      header: "Aprendiz / Ficha",
+      render: (v) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-text-primary">
+            {v.aprendiz ? `${v.aprendiz.nombres} ${v.aprendiz.apellidos}` : 'No asignado'}
+          </span>
+          <span className="text-xs text-text-tertiary">
+            Ficha: {v.ficha?.codigo || 'N/A'} - {v.ficha?.programa?.nombre || 'N/A'}
+          </span>
+        </div>
+      )
+    },
+    {
       key: "institucion",
       header: "Institución Educativa",
       render: (v) => (
         <div className="flex flex-col">
-          <span className="font-semibold text-text-primary">{v.institucionNombre}</span>
+          <span className="font-semibold text-text-primary">{v.institucionNombre || 'N/A'}</span>
         </div>
       )
     },
     {
       key: "fecha",
-      header: "Fecha de Visita",
-      render: (v) => <span className="text-sm font-medium">{formatDateShort(v.fecha)}</span>
+      header: "Fecha y Hora",
+      render: (v) => {
+        const d = new Date(v.fecha);
+        return (
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">{d.toLocaleDateString("es-CO")}</span>
+            <span className="text-xs text-text-secondary">{d.toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+        );
+      }
     },
     {
       key: "responsable",
@@ -110,11 +133,11 @@ export function SeguimientoTable({ initialData, instituciones }: SeguimientoTabl
         </span>
       )
     },
-    {
+    ...(userRole !== "APRENDIZ" ? [{
       key: "acciones",
       header: "Acciones",
-      align: "right",
-      render: (v) => (
+      align: "right" as const,
+      render: (v: any) => (
         <div className="flex justify-end gap-2">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(v)}>
             <Pencil size={16} className="text-text-secondary" />
@@ -124,7 +147,7 @@ export function SeguimientoTable({ initialData, instituciones }: SeguimientoTabl
           </Button>
         </div>
       )
-    }
+    }] : [])
   ];
 
   return (
@@ -133,17 +156,21 @@ export function SeguimientoTable({ initialData, instituciones }: SeguimientoTabl
         <div className="flex flex-1 gap-2 max-w-lg">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
-            <Input placeholder="Buscar por institución..." value={busqueda}
+            <Input placeholder="Buscar por institución o responsable..." value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)} className="bg-surface pl-9" />
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
-            <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Reporte"}
-          </Button>
-          <Button onClick={handleCreate}>
-            <Plus size={16} className="mr-2" /> Programar Visita
-          </Button>
+          {userRole !== "APRENDIZ" && (
+            <>
+              <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
+                <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Reporte"}
+              </Button>
+              <Button onClick={handleCreate}>
+                <Plus size={16} className="mr-2" /> Programar Visita
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -152,7 +179,7 @@ export function SeguimientoTable({ initialData, instituciones }: SeguimientoTabl
       {dialogOpen && (
         <SeguimientoFormDialog
           seguimiento={selectedSeguimiento}
-          instituciones={instituciones}
+          fichas={fichas}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

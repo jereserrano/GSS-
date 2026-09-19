@@ -40,6 +40,10 @@ export interface Aprendiz extends AuditMetadata {
   ficha?: Ficha;
   institucion?: Institucion;
   sede?: Sede;
+  entregas?: any[];
+  evaluaciones?: any[];
+  alertas?: any[];
+  detallesAsistencia?: any[];
 }
 
 export interface FiltrosAprendiz {

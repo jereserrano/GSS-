@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
   Users, AlertTriangle, CalendarCheck, ClipboardList, 
-  Download, FileText, TrendingUp, Shield 
+  Download, TrendingUp, Shield, Filter
 } from "lucide-react";
 import { 
   generarReporteAprendicesCSV, 
@@ -16,6 +17,12 @@ import { toast } from "sonner";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DataTable } from "@/components/shared/DataTable";
+
+interface Ficha {
+  id: string;
+  codigo: string;
+  programa?: { nombre: string } | null;
+}
 
 interface ReportesPageClientProps {
   resumen: {
@@ -29,6 +36,7 @@ interface ReportesPageClientProps {
     alertas: any[];
     asistencias: any[];
   };
+  fichas: Ficha[];
 }
 
 const REPORTES = [
@@ -39,8 +47,9 @@ const REPORTES = [
     icono: Users,
     color: "text-sena-600",
     bg: "bg-sena-50",
-    accion: generarReporteAprendicesCSV,
+    accion: (filtros: any) => generarReporteAprendicesCSV(filtros),
     filename: "reporte_aprendices.csv",
+    usaFechas: false,
   },
   {
     id: "riesgos",
@@ -49,8 +58,9 @@ const REPORTES = [
     icono: AlertTriangle,
     color: "text-red-600",
     bg: "bg-red-50",
-    accion: generarReporteRiesgosCSV,
+    accion: (filtros: any) => generarReporteRiesgosCSV(filtros),
     filename: "reporte_alertas_riesgo.csv",
+    usaFechas: false,
   },
   {
     id: "asistencia",
@@ -59,8 +69,9 @@ const REPORTES = [
     icono: CalendarCheck,
     color: "text-green-600",
     bg: "bg-green-50",
-    accion: generarReporteAsistenciaCSV,
+    accion: (filtros: any) => generarReporteAsistenciaCSV(filtros),
     filename: "reporte_asistencia.csv",
+    usaFechas: true,
   },
   {
     id: "evaluaciones",
@@ -69,21 +80,28 @@ const REPORTES = [
     icono: Shield,
     color: "text-purple-600",
     bg: "bg-purple-50",
-    accion: generarReporteEvaluacionesCSV,
+    accion: (filtros: any) => generarReporteEvaluacionesCSV(filtros),
     filename: "reporte_evaluaciones.csv",
+    usaFechas: false,
   },
 ];
 
-export function ReportesPageClient({ resumen, listados }: ReportesPageClientProps) {
+export function ReportesPageClient({ resumen, listados, fichas }: ReportesPageClientProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [fichaSeleccionada, setFichaSeleccionada] = useState<string>("all");
+  const [fechaInicio, setFechaInicio] = useState<string>("");
+  const [fechaFin, setFechaFin] = useState<string>("");
 
   const handleDescargar = async (reporte: typeof REPORTES[number]) => {
     setLoadingId(reporte.id);
     try {
-      const result = await reporte.accion();
+      const filtros = {
+        fichaId: fichaSeleccionada,
+        ...(reporte.usaFechas ? { fechaInicio, fechaFin } : {})
+      };
+      const result = await reporte.accion(filtros);
       if (!result.success || !result.csv) throw new Error(result.error || "Error generando reporte");
 
-      // Crear y descargar el archivo CSV
       const blob = new Blob(["\uFEFF" + result.csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -126,6 +144,60 @@ export function ReportesPageClient({ resumen, listados }: ReportesPageClientProp
         ))}
       </div>
 
+      {/* Filtros de Exportación */}
+      <div className="card-institucional p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Filter size={16} className="text-sena-600" />
+          <h2 className="text-sm font-semibold text-text-primary">Filtros de Exportación</h2>
+          <span className="text-xs text-text-secondary">(Se aplican al descargar cualquier reporte)</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Selector de Ficha */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-text-secondary">Ficha</label>
+            <select
+              value={fichaSeleccionada}
+              onChange={(e) => setFichaSeleccionada(e.target.value)}
+              className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sena-500"
+            >
+              <option value="all">Todas las fichas</option>
+              {fichas.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.codigo}{f.programa?.nombre ? ` — ${f.programa.nombre}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Fecha Inicio (solo para Asistencia) */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-text-secondary">
+              Fecha de Inicio <span className="text-[10px] italic">(solo asistencia)</span>
+            </label>
+            <Input
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="h-9 bg-white text-sm"
+            />
+          </div>
+
+          {/* Fecha Fin */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-text-secondary">
+              Fecha de Fin <span className="text-[10px] italic">(solo asistencia)</span>
+            </label>
+            <Input
+              type="date"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="h-9 bg-white text-sm"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Reportes */}
       <div>
         <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
@@ -142,9 +214,17 @@ export function ReportesPageClient({ resumen, listados }: ReportesPageClientProp
                 <div>
                   <h3 className="font-semibold text-text-primary">{r.titulo}</h3>
                   <span className="text-[11px] text-text-secondary font-mono bg-slate-100 px-1.5 py-0.5 rounded">CSV</span>
+                  {r.usaFechas && (fechaInicio || fechaFin) && (
+                    <span className="ml-1 text-[10px] text-green-600 font-medium">· con rango de fechas</span>
+                  )}
                 </div>
               </div>
               <p className="text-sm text-text-secondary leading-relaxed flex-1">{r.descripcion}</p>
+              {fichaSeleccionada !== "all" && (
+                <p className="text-xs text-sena-700 bg-sena-50 px-2 py-1 rounded font-medium">
+                  📋 Ficha: {fichas.find(f => f.id === fichaSeleccionada)?.codigo ?? fichaSeleccionada}
+                </p>
+              )}
               <Button
                 onClick={() => handleDescargar(r)}
                 disabled={loadingId === r.id}
@@ -161,8 +241,6 @@ export function ReportesPageClient({ resumen, listados }: ReportesPageClientProp
               </Button>
             </div>
           ))}
-
-
         </div>
       </div>
 

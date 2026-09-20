@@ -13,6 +13,7 @@ import { CompetenciaFormDialog } from "./CompetenciaFormDialog";
 import { UploadExcelDialog } from "@/components/ui/UploadExcelDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface CompetenciasTableProps {
   initialData: any;
@@ -22,6 +23,9 @@ interface CompetenciasTableProps {
 
 export function CompetenciasTable({ initialData, programas, readOnly = false }: CompetenciasTableProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const userRole = ((session?.user as any)?.role ?? "").toUpperCase();
+  const canManage = !readOnly && (userRole === "ADMINISTRADOR" || userRole === "COORDINADOR");
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   
@@ -129,7 +133,7 @@ export function CompetenciasTable({ initialData, programas, readOnly = false }: 
       header: "Estado",
       render: (c) => <StatusBadge estado={c.estado} />
     },
-    ...(readOnly ? [] : [{
+    ...(canManage ? [{
       key: "acciones",
       header: "Acciones",
       align: "right" as const,
@@ -143,7 +147,7 @@ export function CompetenciasTable({ initialData, programas, readOnly = false }: 
           </Button>
         </div>
       ),
-    }])
+    }] : [])
   ];
 
   return (
@@ -161,7 +165,7 @@ export function CompetenciasTable({ initialData, programas, readOnly = false }: 
           </div>
         </div>
         <div className="flex gap-2">
-          {!readOnly && (
+          {canManage && (
             <>
               <UploadExcelDialog
                 title="Importar Competencias"

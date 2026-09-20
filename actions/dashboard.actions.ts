@@ -85,7 +85,7 @@ export async function getDashboardKpis() {
             totalAprendices: totalActividades, // Para aprendiz: total actividades
             totalInstituciones: misEntregas.length, // Total evidencias entregadas
             totalFichas: aprobadas, // Evidencias aprobadas
-            asistenciaPromedio: Number(userContext.aprendiz.porcentajeAsistencia || 100),
+            asistenciaPromedio: Number(Number(userContext.aprendiz.porcentajeAsistencia || 100).toFixed(1)),
           },
           labels: {
             kpi1: { title: "Actividades de Ficha", sub: "Asignadas a tu grupo" },
@@ -113,18 +113,23 @@ export async function getDashboardKpis() {
       });
       const fichasIds = asignaciones.map(a => a.fichaId);
 
-      const [totalAprendices, totalFichas, asistenciaStats, aprendicesRiesgo, proximosCierres] = await Promise.all([
-        prisma.aprendiz.count({
-          where: { fichaId: { in: fichasIds.length > 0 ? fichasIds : undefined }, estado: "EN_FORMACION" }
-        }),
-        fichasIds.length > 0 ? fichasIds.length : prisma.ficha.count({ where: { estado: "ACTIVO" } }),
-        prisma.aprendiz.aggregate({
+      const [totalAprendices, totalFichas, totalActividades, asistenciaStats, aprendicesRiesgo, proximosCierres] = await Promise.all([
+        fichasIds.length > 0 ? prisma.aprendiz.count({
+          where: { fichaId: { in: fichasIds }, estado: "EN_FORMACION" }
+        }) : Promise.resolve(0),
+        fichasIds.length > 0 ? prisma.ficha.count({
+          where: { id: { in: fichasIds }, estado: "ACTIVO" }
+        }) : Promise.resolve(0),
+        fichasIds.length > 0 ? prisma.actividad.count({
+          where: { fichaId: { in: fichasIds }, estado: { in: ["ACTIVA", "PUBLICADA"] } }
+        }) : Promise.resolve(0),
+        fichasIds.length > 0 ? prisma.aprendiz.aggregate({
           _avg: { porcentajeAsistencia: true },
-          where: { fichaId: { in: fichasIds.length > 0 ? fichasIds : undefined }, estado: "EN_FORMACION" }
-        }),
-        prisma.aprendiz.findMany({
+          where: { fichaId: { in: fichasIds }, estado: "EN_FORMACION" }
+        }) : Promise.resolve({ _avg: { porcentajeAsistencia: null } }),
+        fichasIds.length > 0 ? prisma.aprendiz.findMany({
           where: {
-            fichaId: { in: fichasIds.length > 0 ? fichasIds : undefined },
+            fichaId: { in: fichasIds },
             nivelRiesgo: { in: ["ALTO", "MEDIO"] },
             estado: "EN_FORMACION"
           },
@@ -133,16 +138,16 @@ export async function getDashboardKpis() {
             ficha: { select: { codigo: true, institucion: { select: { nombre: true } } } }
           },
           orderBy: { porcentajeAsistencia: "asc" }
-        }),
-        prisma.actividad.findMany({
+        }) : Promise.resolve([]),
+        fichasIds.length > 0 ? prisma.actividad.findMany({
           where: {
-            fichaId: { in: fichasIds.length > 0 ? fichasIds : undefined },
+            fichaId: { in: fichasIds },
             fechaVencimiento: { gte: new Date() }
           },
           take: 5,
           include: { ficha: { select: { codigo: true } } },
           orderBy: { fechaVencimiento: "asc" }
-        })
+        }) : Promise.resolve([])
       ]);
 
       const topRiesgos = aprendicesRiesgo.map(a => ({
@@ -158,13 +163,13 @@ export async function getDashboardKpis() {
           kpis: {
             totalAprendices,
             totalInstituciones: totalFichas,
-            totalFichas,
+            totalFichas: totalActividades,
             asistenciaPromedio: Number((asistenciaStats._avg.porcentajeAsistencia || 0).toFixed(1)),
           },
           labels: {
             kpi1: { title: "Mis Aprendices", sub: "En formación activa" },
             kpi2: { title: "Fichas Asignadas", sub: "Grupos a mi cargo" },
-            kpi3: { title: "Total Fichas", sub: "Grupos formativos" },
+            kpi3: { title: "Actividades en Curso", sub: "Guías y talleres activos" },
             kpi4: { title: "Asistencia Promedio", sub: "De mis grupos" },
           },
           proximosCierres: proximosCierres.map(a => ({
@@ -174,6 +179,28 @@ export async function getDashboardKpis() {
             ficha: `Ficha ${a.ficha.codigo}`,
           })),
           aprendicesRiesgo: topRiesgos as unknown as Aprendiz[]
+        }
+      };
+    } else if (isInstructor) {
+      // Fallback for instructor without instructor record
+      return {
+        ok: true,
+        rol: "INSTRUCTOR",
+        data: {
+          kpis: {
+            totalAprendices: 0,
+            totalInstituciones: 0,
+            totalFichas: 0,
+            asistenciaPromedio: 0,
+          },
+          labels: {
+            kpi1: { title: "Mis Aprendices", sub: "En formación activa" },
+            kpi2: { title: "Fichas Asignadas", sub: "Grupos a mi cargo" },
+            kpi3: { title: "Actividades en Curso", sub: "Guías y talleres activos" },
+            kpi4: { title: "Asistencia Promedio", sub: "De mis grupos" },
+          },
+          proximosCierres: [],
+          aprendicesRiesgo: []
         }
       };
     }
@@ -266,6 +293,12 @@ export async function getDashboardKpis() {
           totalInstituciones: totalInstitucionesActivas,
           totalFichas: totalFichasActivas,
           asistenciaPromedio: Number(asistenciaPromedio.toFixed(1)),
+        },
+        labels: {
+          kpi1: { title: "Total Aprendices", sub: "Matriculados en el sistema" },
+          kpi2: { title: "Instituciones", sub: "Colegios articulados" },
+          kpi3: { title: "Fichas Activas", sub: "Grupos en formación" },
+          kpi4: { title: "Asistencia Global", sub: "Promedio general registrado" },
         },
         proximosCierres,
         aprendicesRiesgo: topRiesgos as unknown as Aprendiz[]

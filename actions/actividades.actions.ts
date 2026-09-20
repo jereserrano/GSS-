@@ -52,7 +52,12 @@ export async function getActividadesAction(filtros: any = {}) {
     }
 
     // Si es Instructor, solo ve las actividades que él mismo ha creado
-    const isInstructor = rolNombre === "INSTRUCTOR";
+    const isInstructor = rolNombre.includes("INSTRUCT");
+
+    if (isInstructor && !userContext?.instructor?.id) {
+      // Si es instructor pero no tiene registro, retornar lista vacía
+      return { success: true, data: paginatedResponse([], 0, pagina, tamano) };
+    }
 
     const where: any = {
       ...(filtros.busqueda ? {
@@ -63,7 +68,7 @@ export async function getActividadesAction(filtros: any = {}) {
       } : {}),
       ...(fichaFiltro ? { fichaId: fichaFiltro } : {}),
       ...(isAprendiz ? { estado: { in: ["ACTIVA", "PUBLICADA"] } } : {}),
-      ...(isInstructor && userContext?.instructor?.id ? { instructorId: userContext.instructor.id } : {}),
+      ...(isInstructor ? { instructorId: userContext.instructor.id } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([

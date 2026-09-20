@@ -7,6 +7,8 @@ import {
   BookCheck, FileSignature, CheckCheck, Clock, GraduationCap, Award
 } from "lucide-react";
 
+import Link from "next/link";
+
 // Mapeo dinámico de íconos ampliado para contexto académico
 const IconMap: Record<string, React.ElementType> = {
   Users,
@@ -26,8 +28,8 @@ const IconMap: Record<string, React.ElementType> = {
 export function KpiCard({ kpi }: { kpi: KpiData }) {
   const Icon = IconMap[kpi.icono] || Users;
 
-  return (
-    <Card className="border border-slate-200 shadow-sm bg-white rounded-2xl overflow-hidden hover:border-[#39A900] transition-all duration-300 group hover:bg-[#39A900] hover:-translate-y-1 hover:shadow-lg cursor-pointer">
+  const content = (
+    <Card className="border border-slate-200 shadow-sm bg-white rounded-2xl overflow-hidden hover:border-[#39A900] transition-all duration-300 group hover:bg-[#39A900] hover:-translate-y-1 hover:shadow-lg cursor-pointer h-full">
       <CardContent className="p-5 flex flex-col justify-between h-full">
         <div className="flex justify-between items-start gap-2">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight group-hover:text-white/90 transition-colors">
@@ -62,4 +64,14 @@ export function KpiCard({ kpi }: { kpi: KpiData }) {
       </CardContent>
     </Card>
   );
+
+  if (kpi.enlace) {
+    return (
+      <Link href={kpi.enlace} className="block h-full">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }

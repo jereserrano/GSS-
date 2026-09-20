@@ -35,7 +35,7 @@ const ESTADOS_APRENDIZ = [
 const selectClass =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
 
-export function AprendizFormDialog({ aprendiz, fichas, onClose }: AprendizFormDialogProps) {
+export function AprendizFormDialog({ aprendiz, fichas, fichaIdFijo, onClose, onSuccess }: AprendizFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!aprendiz;
 
@@ -55,7 +55,7 @@ export function AprendizFormDialog({ aprendiz, fichas, onClose }: AprendizFormDi
       fechaNacimiento:  formData.get("fechaNacimiento") as string,
       genero:           formData.get("genero") as string,
       direccion:        formData.get("direccion") as string,
-      fichaId:          formData.get("fichaId") as string,
+      fichaId:          fichaIdFijo || (formData.get("fichaId") as string),
       estado:           formData.get("estado") as string,
       nivelRiesgo:      formData.get("nivelRiesgo") as string,
     };
@@ -70,6 +70,7 @@ export function AprendizFormDialog({ aprendiz, fichas, onClose }: AprendizFormDi
         if (res.error) throw new Error(res.error);
         toast.success("Aprendiz registrado correctamente");
       }
+      onSuccess?.();
       onClose();
     } catch (error: any) {
       toast.error(error.message || "Ocurrió un error");
@@ -107,7 +108,7 @@ export function AprendizFormDialog({ aprendiz, fichas, onClose }: AprendizFormDi
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-5 flex-1">
+        <form id="aprendiz-form" onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-5 flex-1">
           {/* Sección: Identificación */}
           <div>
             <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
@@ -189,16 +190,19 @@ export function AprendizFormDialog({ aprendiz, fichas, onClose }: AprendizFormDi
             <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
               Formación y Seguimiento
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="sm:col-span-1 space-y-1.5">
-                <label className="text-sm font-medium text-text-primary">Ficha *</label>
-                <select name="fichaId" defaultValue={aprendiz?.fichaId || ""} required className={selectClass}>
-                  <option value="">Seleccione ficha</option>
-                  {fichas.map(f => (
-                    <option key={f.id} value={f.id}>Ficha {f.codigo}</option>
-                  ))}
-                </select>
-              </div>
+            <div className={`grid grid-cols-1 ${fichaIdFijo ? "sm:grid-cols-2" : "sm:grid-cols-3"} gap-4`}>
+              {!fichaIdFijo && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-text-primary">Ficha *</label>
+                  <select name="fichaId" defaultValue={aprendiz?.fichaId || ""} required className={selectClass}>
+                    <option value="">Seleccione ficha</option>
+                    {fichas.map(f => (
+                      <option key={f.id} value={f.id}>Ficha {f.codigo}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {fichaIdFijo && <input type="hidden" name="fichaId" value={fichaIdFijo} />}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-text-primary">Estado</label>
                 <select name="estado" defaultValue={aprendiz?.estado || "EN_FORMACION"} className={selectClass}>

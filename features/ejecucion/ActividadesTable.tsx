@@ -11,19 +11,22 @@ import { formatDateShort } from "@/lib/utils";
 import { deleteActividad, exportActividadesCSV } from "@/actions/actividades.actions";
 import { ActividadFormDialog } from "./ActividadFormDialog";
 import { EntregaFormDialog } from "./EntregaFormDialog";
+import { ActividadDetalleDialog } from "./ActividadDetalleDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 interface ActividadesTableProps {
   initialData: any;
   fichas: { id: string; codigo: string; programa: { nombre: string } }[];
+  fichaIdFijo?: string;
 }
 
-export function ActividadesTable({ initialData, fichas }: ActividadesTableProps) {
+export function ActividadesTable({ initialData, fichas, fichaIdFijo }: ActividadesTableProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const userRole = ((session?.user as any)?.role ?? "").toUpperCase();
   const isAprendiz = userRole.includes("APRENDIZ");
+  const canManage = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR" || userRole.includes("INSTRUCTOR");
 
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -32,9 +35,22 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
   const [selectedActividad, setSelectedActividad] = useState<any>(null);
   const [entregaDialogOpen, setEntregaDialogOpen] = useState(false);
   const [actividadParaEntregar, setActividadParaEntregar] = useState<any>(null);
+  
+  const [detalleOpen, setDetalleOpen] = useState(false);
+  const [actividadParaDetalle, setActividadParaDetalle] = useState<any>(null);
+  
   const [exporting, setExporting] = useState(false);
 
   const actividades = initialData?.data || [];
+
+  const filteredActividades = React.useMemo(() => {
+    if (!busqueda.trim()) return actividades;
+    const lowerBusqueda = busqueda.toLowerCase();
+    return actividades.filter((a: any) => 
+      a.nombre?.toLowerCase().includes(lowerBusqueda) || 
+      a.ficha?.codigo?.toLowerCase().includes(lowerBusqueda)
+    );
+  }, [busqueda, actividades]);
 
   const handleEdit = (actividad: any) => {
     setSelectedActividad(actividad);
@@ -99,8 +115,11 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
       key: "nombre",
       header: "Actividad",
       render: (a) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-text-primary line-clamp-1" title={a.nombre}>{a.nombre}</span>
+        <div 
+          className="flex flex-col cursor-pointer group" 
+          onClick={() => { setActividadParaDetalle(a); setDetalleOpen(true); }}
+        >
+          <span className="font-semibold text-text-primary group-hover:text-primary group-hover:underline line-clamp-1" title={a.nombre}>{a.nombre}</span>
           <span className="text-xs text-text-secondary capitalize">{a.tipo?.toLowerCase()}</span>
         </div>
       )
@@ -180,9 +199,12 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
       key: "nombre",
       header: "Actividad",
       render: (a) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-text-primary line-clamp-1" title={a.nombre}>{a.nombre}</span>
-          <span className="text-xs text-text-secondary capitalize">{a.tipo.toLowerCase()}</span>
+        <div 
+          className="flex flex-col cursor-pointer group"
+          onClick={() => { setActividadParaDetalle(a); setDetalleOpen(true); }}
+        >
+          <span className="font-semibold text-text-primary group-hover:text-primary group-hover:underline line-clamp-1" title={a.nombre}>{a.nombre}</span>
+          <span className="text-xs text-text-secondary capitalize">{a.tipo?.toLowerCase()}</span>
         </div>
       )
     },
@@ -253,11 +275,11 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
         );
       }
     },
-    {
+    ...(canManage ? [{
       key: "acciones",
       header: "Acciones",
-      align: "right",
-      render: (a) => (
+      align: "right" as const,
+      render: (a: any) => (
         <div className="flex justify-end gap-2">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(a)}>
             <Pencil size={16} className="text-text-secondary" />
@@ -267,8 +289,13 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
           </Button>
         </div>
       ),
-    },
+    }] : []),
   ];
+
+  let columnasVisibles = columnas;
+  if (fichaIdFijo) {
+    columnasVisibles = columnasVisibles.filter(c => c.key !== "ficha");
+  }
 
   return (
     <div className="space-y-4">
@@ -287,21 +314,21 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
         
         <div className="flex gap-2">
           {!isAprendiz && (
-            <>
-              <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
-                <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
-              </Button>
-              <Button onClick={handleCreate}>
-                <Plus size={16} className="mr-2" /> Nueva Actividad
-              </Button>
-            </>
+            <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
+              <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
+            </Button>
+          )}
+          {canManage && (
+            <Button onClick={handleCreate}>
+              <Plus size={16} className="mr-2" /> Nueva Actividad
+            </Button>
           )}
         </div>
       </div>
 
       <DataTable 
-        data={actividades} 
-        columnas={columnas} 
+        data={filteredActividades} 
+        columnas={columnasVisibles} 
         isLoading={loading} 
       />
 
@@ -310,6 +337,7 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
         <ActividadFormDialog 
           actividad={selectedActividad}
           fichas={fichas}
+          fichaIdFijo={fichaIdFijo}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />
@@ -327,6 +355,14 @@ export function ActividadesTable({ initialData, fichas }: ActividadesTableProps)
           aprendices={[]}
           onClose={() => setEntregaDialogOpen(false)}
           onSuccess={() => router.refresh()}
+        />
+      )}
+
+      {/* Dialog de detalle de la actividad */}
+      {detalleOpen && actividadParaDetalle && (
+        <ActividadDetalleDialog
+          actividad={actividadParaDetalle}
+          onClose={() => setDetalleOpen(false)}
         />
       )}
     </div>

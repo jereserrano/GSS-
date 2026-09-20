@@ -148,4 +148,5 @@ export interface KpiData {
   };
   icono:     string;      /* Nombre del ícono Lucide */
   color:     string;      /* Clase de color Tailwind */
+  enlace?:   string;      /* Ruta de navegación al hacer click */
 }

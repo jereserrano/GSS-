@@ -16,7 +16,8 @@ export function AsignarFichasDialog({ instructor, onClose, onSuccess }: AsignarF
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fichas, setFichas] = useState<any[]>([]);
-  const [selectedFichas, setSelectedFichas] = useState<Set<string>>(new Set());
+  // selectedFichas will be a map of fichaId -> rolFicha
+  const [selectedFichas, setSelectedFichas] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     async function loadFichas() {
@@ -24,7 +25,11 @@ export function AsignarFichasDialog({ instructor, onClose, onSuccess }: AsignarF
         const res = await getFichasInstructor(instructor.id);
         if (res.success) {
           setFichas(res.fichas || []);
-          setSelectedFichas(new Set(res.asignadasIds || []));
+          const initMap = new Map<string, string>();
+          (res.asignadas || []).forEach((a: any) => {
+            initMap.set(a.fichaId, a.rolFicha || "LIDER_TECNICO");
+          });
+          setSelectedFichas(initMap);
         } else {
           toast.error(res.error || "Error al cargar las fichas");
         }
@@ -38,16 +43,31 @@ export function AsignarFichasDialog({ instructor, onClose, onSuccess }: AsignarF
   }, [instructor.id]);
 
   const handleToggle = (id: string) => {
-    const next = new Set(selectedFichas);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    const next = new Map(selectedFichas);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.set(id, "LIDER_TECNICO"); // Default role
+    }
     setSelectedFichas(next);
+  };
+
+  const handleRoleChange = (id: string, newRole: string) => {
+    const next = new Map(selectedFichas);
+    if (next.has(id)) {
+      next.set(id, newRole);
+      setSelectedFichas(next);
+    }
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await assignFichasToInstructor(instructor.id, Array.from(selectedFichas));
+      const asignaciones = Array.from(selectedFichas.entries()).map(([fichaId, rolFicha]) => ({
+        fichaId,
+        rolFicha,
+      }));
+      const res = await assignFichasToInstructor(instructor.id, asignaciones);
       if (res.error) throw new Error(res.error);
       toast.success("Fichas asignadas correctamente");
       onSuccess();
@@ -95,31 +115,46 @@ export function AsignarFichasDialog({ instructor, onClose, onSuccess }: AsignarF
           ) : (
             <div className="grid gap-2">
               {fichas.map((f) => (
-                <label
+                <div
                   key={f.id}
-                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${
                     selectedFichas.has(f.id) 
                       ? 'bg-sena-50/50 border-sena-200' 
                       : 'bg-white hover:bg-gray-50'
                   }`}
                 >
-                  <div className="pt-0.5">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-sena-600 rounded border-gray-300 focus:ring-sena-500"
-                      checked={selectedFichas.has(f.id)}
-                      onChange={() => handleToggle(f.id)}
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-text-primary">
-                      Ficha {f.codigo}
-                    </span>
-                    <span className="text-xs text-text-secondary">
-                      {f.programa?.nombre}
-                    </span>
-                  </div>
-                </label>
+                  <label className="flex items-start gap-3 cursor-pointer flex-1">
+                    <div className="pt-0.5">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 text-sena-600 rounded border-gray-300 focus:ring-sena-500"
+                        checked={selectedFichas.has(f.id)}
+                        onChange={() => handleToggle(f.id)}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-text-primary">
+                        Ficha {f.codigo}
+                      </span>
+                      <span className="text-xs text-text-secondary">
+                        {f.programa?.nombre}
+                      </span>
+                    </div>
+                  </label>
+                  
+                  {selectedFichas.has(f.id) && (
+                    <div className="pl-7 sm:pl-0">
+                      <select
+                        value={selectedFichas.get(f.id) || "LIDER_TECNICO"}
+                        onChange={(e) => handleRoleChange(f.id, e.target.value)}
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      >
+                        <option value="LIDER_TECNICO">Líder Técnico</option>
+                        <option value="TRANSVERSAL">Transversal</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}

@@ -10,6 +10,7 @@ import { X, ClipboardList } from "lucide-react";
 interface ActividadFormDialogProps {
   actividad?: any;
   fichas: { id: string; codigo: string; programa: { nombre: string } }[];
+  fichaIdFijo?: string;
   onClose: () => void;
   onSuccess?: () => void | Promise<void>;
 }
@@ -24,7 +25,7 @@ const TIPOS_ACT = [
   { value: "EVALUACION", label: "Evaluación" },
 ];
 
-export function ActividadFormDialog({ actividad, fichas, onClose, onSuccess }: ActividadFormDialogProps) {
+export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, onSuccess }: ActividadFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!actividad;
 
@@ -136,15 +137,18 @@ export function ActividadFormDialog({ actividad, fichas, onClose, onSuccess }: A
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">Ficha Asignada *</label>
-            <select name="fichaId" defaultValue={actividad?.fichaId || ""} required className={selectClass}>
-              <option value="" disabled>Seleccione una ficha</option>
-              {fichas.map(f => (
-                <option key={f.id} value={f.id}>{f.codigo} - {f.programa.nombre}</option>
-              ))}
-            </select>
-          </div>
+          {!fichaIdFijo && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text-primary">Ficha Asignada *</label>
+              <select name="fichaId" defaultValue={actividad?.fichaId || ""} required className={selectClass}>
+                <option value="" disabled>Seleccione una ficha</option>
+                {fichas.map(f => (
+                  <option key={f.id} value={f.id}>{f.codigo} - {f.programa.nombre}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {fichaIdFijo && <input type="hidden" name="fichaId" value={fichaIdFijo} />}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">

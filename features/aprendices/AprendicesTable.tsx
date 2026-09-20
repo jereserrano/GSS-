@@ -24,9 +24,10 @@ interface Ficha {
 interface AprendicesTableProps {
   initialData: any;
   fichas: Ficha[];
+  fichaIdFijo?: string;
 }
 
-export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
+export function AprendicesTable({ initialData, fichas, fichaIdFijo }: AprendicesTableProps) {
   const router = useRouter();
   const [data, setData] = useState<PaginatedResponse<Aprendiz> | null>(initialData);
   const [loading, setLoading] = useState(!initialData);
@@ -45,7 +46,7 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
     busqueda: "",
     estado: undefined,
     nivelRiesgo: undefined,
-    fichaId: fichas.length === 1 ? fichas[0].id : undefined
+    fichaId: fichaIdFijo || (fichas.length === 1 ? fichas[0].id : undefined)
   });
 
   const cargarDatos = async () => {
@@ -130,7 +131,7 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
     }
   };
 
-  const columnas: ColumnaDef<Aprendiz>[] = [
+  const baseColumnas: ColumnaDef<Aprendiz>[] = [
     {
       key: "documento",
       header: "Documento",
@@ -151,8 +152,11 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
           <span className="text-xs text-text-secondary">{a.emailSena || a.emailPersonal}</span>
         </div>
       )
-    },
-    {
+    }
+  ];
+
+  if (!fichaIdFijo) {
+    baseColumnas.push({
       key: "ficha",
       header: "Formación",
       render: (a) => (
@@ -163,7 +167,10 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
           </span>
         </div>
       )
-    },
+    });
+  }
+
+  baseColumnas.push(
     {
       key: "estado",
       header: "Estado",
@@ -200,7 +207,9 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
         </div>
       )
     }
-  ];
+  );
+
+  const columnas = baseColumnas;
 
   return (
     <>
@@ -274,7 +283,7 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
               </select>
             </div>
 
-            {fichas.length > 1 && (
+            {!fichaIdFijo && fichas.length > 1 && (
               <div className="flex flex-col gap-1.5 w-full sm:w-auto min-w-[200px]">
                 <label className="text-xs font-medium text-text-secondary">Ficha</label>
                 <select 
@@ -333,6 +342,7 @@ export function AprendicesTable({ initialData, fichas }: AprendicesTableProps) {
         <AprendizFormDialog
           aprendiz={selectedAprendiz}
           fichas={fichas}
+          fichaIdFijo={fichaIdFijo}
           onClose={handleCloseDialog}
         />
       )}

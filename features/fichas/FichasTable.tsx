@@ -24,7 +24,7 @@ interface FichasTableProps {
 export function FichasTable({ initialData, programas, instituciones, sedes }: FichasTableProps) {
   const { data: session } = useSession();
   const userRole = ((session?.user as any)?.role || "").toUpperCase();
-  const canManage = userRole === "ADMINISTRADOR" || userRole.includes("ADMIN") || userRole.includes("COORD");
+  const canManage = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR" || userRole === "COORDINADOR_SEDE";
 
   const [data, setData] = useState<PaginatedResponse<any> | null>(initialData);
   const [loading, setLoading] = useState(!initialData);

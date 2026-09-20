@@ -49,8 +49,13 @@ export async function getFichasAction(filtros: {
         include: { rol: true, instructor: true, aprendiz: true }
       });
       const roleUpper = userRecord?.rol?.nombre?.toUpperCase() || "";
-      if (roleUpper.includes("INSTRUCT") && userRecord?.instructor?.id) {
-        instructorIdFilter = userRecord.instructor.id;
+      if (roleUpper.includes("INSTRUCT")) {
+        if (userRecord?.instructor?.id) {
+          instructorIdFilter = userRecord.instructor.id;
+        } else {
+          // Si es instructor pero no tiene registro de instructor, no debe ver nada
+          return { success: true, data: paginatedResponse([], 0, pagina, tamano) };
+        }
       } else if (roleUpper.includes("APRENDIZ") && userRecord?.aprendiz?.fichaId) {
         aprendizFichaId = userRecord.aprendiz.fichaId;
       }
@@ -73,12 +78,6 @@ export async function getFichasAction(filtros: {
       ...(aprendizFichaId ? { id: aprendizFichaId } : {}),
     };
 
-    console.log("=== DEBUG GET FICHAS ===");
-    console.log("Session Email:", session?.user?.email);
-    console.log("Role:", session?.user?.role);
-    console.log("Aprendiz Ficha ID:", aprendizFichaId);
-    console.log("Where:", JSON.stringify(where));
-    console.log("========================");
 
     const [data, total] = await TransactionRepository.$transaction([
       FichaRepository.findMany({

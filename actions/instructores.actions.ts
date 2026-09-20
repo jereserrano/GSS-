@@ -206,28 +206,28 @@ export async function getFichasInstructor(instructorId: string) {
     });
     const asignadas = await prisma.instructorFicha.findMany({
       where: { instructorId },
-      select: { fichaId: true }
+      select: { fichaId: true, rolFicha: true }
     });
-    const asignadasIds = asignadas.map(a => a.fichaId);
-    return { success: true, fichas, asignadasIds };
+    return { success: true, fichas, asignadas };
   } catch (error: any) {
     console.error("Error fetching fichas instructor:", error);
     return { success: false, error: error.message || "Error al obtener fichas" };
   }
 }
 
-export async function assignFichasToInstructor(instructorId: string, fichaIds: string[]) {
+export async function assignFichasToInstructor(instructorId: string, asignaciones: { fichaId: string; rolFicha: string }[]) {
   try {
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     await prisma.$transaction(async (tx) => {
       await tx.instructorFicha.deleteMany({
         where: { instructorId }
       });
-      if (fichaIds.length > 0) {
+      if (asignaciones.length > 0) {
         await tx.instructorFicha.createMany({
-          data: fichaIds.map(fichaId => ({
+          data: asignaciones.map(a => ({
             instructorId,
-            fichaId
+            fichaId: a.fichaId,
+            rolFicha: a.rolFicha || "LIDER_TECNICO"
           }))
         });
       }
@@ -236,7 +236,7 @@ export async function assignFichasToInstructor(instructorId: string, fichaIds: s
       userId: user.id,
       modulo: "Instructores",
       accion: "ACTUALIZAR",
-      detalle: `Se asignaron ${fichaIds.length} fichas al instructor.`,
+      detalle: `Se asignaron ${asignaciones.length} fichas al instructor.`,
     });
     revalidatePath("/instructores");
     return { success: true };

@@ -8,7 +8,7 @@ async function main() {
   const passwordHash = bcrypt.hashSync('123456', 10);
 
   // Asegurar roles
-  const rolesNames = ['INSTRUCTOR', 'APRENDIZ', 'APOYO_ADMINISTRATIVO', 'COORDINADOR'];
+  const rolesNames = ['INSTRUCTOR', 'APRENDIZ', 'APOYO_COORDINACION', 'COORDINADOR'];
   const rolesIds = {};
   for (const name of rolesNames) {
     const rol = await prisma.rol.upsert({
@@ -96,12 +96,12 @@ async function main() {
   // 3. Luis (Apoyo Coordinador)
   await prisma.user.upsert({
     where: { email: 'Luis@sena.edu.co' },
-    update: { passwordHash, rolId: rolesIds['APOYO_ADMINISTRATIVO'] },
+    update: { passwordHash, rolId: rolesIds['APOYO_COORDINACION'] },
     create: {
       nombre: 'Luis (Apoyo)',
       email: 'Luis@sena.edu.co',
       passwordHash,
-      rolId: rolesIds['APOYO_ADMINISTRATIVO'],
+      rolId: rolesIds['APOYO_COORDINACION'],
       estado: 'ACTIVO'
     }
   });

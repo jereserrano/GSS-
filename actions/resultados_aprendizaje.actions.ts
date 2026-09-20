@@ -36,6 +36,17 @@ export async function getResultadosAprendizajeAction(filtros: any = {}) {
         ]
       } : {}),
       ...(filtros.competenciaId ? { competenciaId: filtros.competenciaId } : {}),
+      ...(filtros.fichaId ? {
+        competencia: {
+          programas: {
+            some: {
+              fichas: {
+                some: { id: filtros.fichaId }
+              }
+            }
+          }
+        }
+      } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([

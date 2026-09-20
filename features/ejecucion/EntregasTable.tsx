@@ -10,6 +10,7 @@ import type { ColumnaDef } from "@/types/common.types";
 import { formatDateShort } from "@/lib/utils";
 import { deleteEntrega, exportEntregasCSV } from "@/actions/entregas.actions";
 import { EntregaFormDialog } from "./EntregaFormDialog";
+import { EntregaDetalleDialog } from "./EntregaDetalleDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -17,18 +18,24 @@ interface EntregasTableProps {
   initialData: any;
   actividades: { id: string; nombre: string }[];
   aprendices: { id: string; nombres: string; apellidos: string; numeroDocumento: string }[];
+  fichaIdFijo?: string;
 }
 
-export function EntregasTable({ initialData, actividades, aprendices }: EntregasTableProps) {
+export function EntregasTable({ initialData, actividades, aprendices, fichaIdFijo }: EntregasTableProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const userRole = ((session?.user as any)?.role ?? "").toUpperCase();
   const isAprendiz = userRole.includes("APRENDIZ");
+  const canManage = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR" || userRole.includes("INSTRUCTOR");
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEntrega, setSelectedEntrega] = useState<any>(null);
+  
+  const [detalleOpen, setDetalleOpen] = useState(false);
+  const [entregaParaDetalle, setEntregaParaDetalle] = useState<any>(null);
+  
   const [exporting, setExporting] = useState(false);
 
   const entregas = initialData?.data || [];
@@ -96,18 +103,13 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
       key: "actividad",
       header: "Actividad / Evidencia",
       render: (e) => (
-        <div className="flex flex-col max-w-xs">
-          <span className="text-sm font-medium line-clamp-1" title={e.actividad?.nombre}>{e.actividad?.nombre}</span>
+        <div className="flex flex-col max-w-xs cursor-pointer group" onClick={() => { setEntregaParaDetalle(e); setDetalleOpen(true); }}>
+          <span className="text-sm font-medium line-clamp-1 group-hover:text-primary group-hover:underline" title={e.actividad?.nombre}>{e.actividad?.nombre}</span>
           <div className="flex items-center gap-2 mt-0.5">
             {e.urlArchivo ? (
-              <a 
-                href={e.urlArchivo} 
-                target="_blank" 
-                rel="noreferrer" 
-                className="text-xs text-[#003F8C] hover:underline font-medium"
-              >
-                Ver evidencia ↗
-              </a>
+              <span className="text-xs text-[#003F8C] font-medium">
+                Ver detalle y evidencia ↗
+              </span>
             ) : (
               <span className="text-xs text-slate-400">Sin archivo adjunto</span>
             )}
@@ -167,11 +169,11 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
         );
       }
     },
-    {
+    ...(canManage || isAprendiz ? [{
       key: "acciones",
       header: "Acciones",
-      align: "right",
-      render: (e) =>
+      align: "right" as const,
+      render: (e: any) =>
         isAprendiz ? (
           <div className="flex justify-end gap-2">
             {e.estado !== "APROBADA" && (
@@ -180,7 +182,7 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
               </Button>
             )}
           </div>
-        ) : (
+        ) : canManage ? (
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="icon" onClick={() => handleEdit(e)}>
               <Pencil size={16} className="text-text-secondary" />
@@ -189,8 +191,8 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
               <Trash2 size={16} className="text-red-500" />
             </Button>
           </div>
-        ),
-    }
+        ) : null,
+    }] : [])
   ];
 
   return (
@@ -210,14 +212,14 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
         
         <div className="flex gap-2">
           {!isAprendiz && (
-            <>
-              <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
-                <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
-              </Button>
-              <Button onClick={handleCreate}>
-                <Plus size={16} className="mr-2" /> Registrar Entrega
-              </Button>
-            </>
+            <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
+              <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
+            </Button>
+          )}
+          {canManage && (
+            <Button onClick={handleCreate}>
+              <Plus size={16} className="mr-2" /> Registrar Entrega
+            </Button>
           )}
         </div>
       </div>
@@ -233,8 +235,16 @@ export function EntregasTable({ initialData, actividades, aprendices }: Entregas
           entrega={selectedEntrega}
           actividades={actividades}
           aprendices={aprendices}
+          fichaIdFijo={fichaIdFijo}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
+        />
+      )}
+
+      {detalleOpen && entregaParaDetalle && (
+        <EntregaDetalleDialog
+          entrega={entregaParaDetalle}
+          onClose={() => setDetalleOpen(false)}
         />
       )}
     </div>

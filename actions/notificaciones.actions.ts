@@ -19,7 +19,7 @@ async function getSessionUserId() {
 
 export async function getMisNotificacionesAction() {
   try {
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR", "APRENDIZ"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION", "APCOORDINADOR", "INSTRUCTOR", "APRENDIZ"]);
 
     const notificaciones = await NotificacionRepository.findMany({
       where: { userId: user.id },
@@ -34,7 +34,7 @@ export async function getMisNotificacionesAction() {
 
 export async function marcarComoLeidaAction(id: string) {
   try {
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR", "APRENDIZ"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION", "APCOORDINADOR", "INSTRUCTOR", "APRENDIZ"]);
 
     // Verificar propiedad
     const notif = await NotificacionRepository.findUnique({ where: { id } });
@@ -54,7 +54,7 @@ export async function marcarComoLeidaAction(id: string) {
 
 export async function marcarTodasComoLeidasAction() {
   try {
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR", "APRENDIZ"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION", "APCOORDINADOR", "INSTRUCTOR", "APRENDIZ"]);
 
     await NotificacionRepository.updateMany({
       where: { userId: user.id, leida: false },

@@ -30,20 +30,23 @@ export default async function DashboardPage() {
       subtitulo: labels?.kpi1?.sub ?? (isAprendiz ? "¿Cuántas actividades tengo?" : "¿A cuántos aprendices acompaño?"),
       icono: isAprendiz ? "BookCheck" : "Users",
       color: "bg-[#39A900]",
+      enlace: isAprendiz ? "/actividades" : "/aprendices",
     },
     {
-      titulo: labels?.kpi2?.title ?? (isAprendiz ? "Entregas Realizadas" : "Mis Fichas / Grupos"),
+      titulo: labels?.kpi2?.title ?? (isAprendiz ? "Entregas Realizadas" : (isInstructor ? "Fichas Asignadas" : "Instituciones")),
       valor: kpisData ? kpisData.totalInstituciones.toString() : "0",
-      subtitulo: labels?.kpi2?.sub ?? (isAprendiz ? "¿Cuántas evidencias he enviado?" : "¿En cuántos grupos oriento formación?"),
+      subtitulo: labels?.kpi2?.sub ?? (isAprendiz ? "¿Cuántas evidencias he enviado?" : (isInstructor ? "Grupos a mi cargo" : "Colegios articulados")),
       icono: isAprendiz ? "FileSignature" : (isInstructor ? "Target" : "Building2"),
       color: "bg-[#39A900]",
+      enlace: isAprendiz ? "/entregas" : (isInstructor ? "/fichas" : "/instituciones"),
     },
     {
-      titulo: labels?.kpi3?.title ?? (isAprendiz ? "Evidencias Aprobadas" : "Actividades en Curso"),
+      titulo: labels?.kpi3?.title ?? (isAprendiz ? "Evidencias Aprobadas" : (isInstructor ? "Actividades en Curso" : "Fichas Activas")),
       valor: kpisData ? kpisData.totalFichas.toString() : "0",
-      subtitulo: labels?.kpi3?.sub ?? (isAprendiz ? "Resultados de aprendizaje cumplidos" : "Guías y talleres activos"),
+      subtitulo: labels?.kpi3?.sub ?? (isAprendiz ? "Resultados de aprendizaje cumplidos" : (isInstructor ? "Guías y talleres activos" : "Grupos en formación")),
       icono: isAprendiz ? "CheckCheck" : "Target",
       color: "bg-[#39A900]",
+      enlace: isAprendiz ? "/resultados" : (isInstructor ? "/actividades" : "/fichas"),
     },
     {
       titulo: labels?.kpi4?.title ?? (isAprendiz ? "Promedio Asistencia" : "Asistencia Global"),
@@ -51,6 +54,7 @@ export default async function DashboardPage() {
       subtitulo: labels?.kpi4?.sub ?? (isAprendiz ? "Mi asistencia a sesiones" : "Promedio general registrado"),
       icono: "TrendingUp",
       color: "bg-[#39A900]",
+      enlace: "/asistencia",
     },
   ];
 

@@ -11,6 +11,7 @@ interface AsistenciaFormDialogProps {
   asistencia?: any;
   fichas: { id: string; codigo: string; programa: { nombre: string } }[];
   instructores: { id: string; nombres: string; apellidos: string }[];
+  fichaIdFijo?: string;
   onClose: () => void;
   onSuccess?: () => void | Promise<void>;
 }
@@ -25,7 +26,7 @@ const ESTADOS = [
   { value: "CANCELADA", label: "Cancelada" },
 ];
 
-export function AsistenciaFormDialog({ asistencia, fichas, instructores, onClose, onSuccess }: AsistenciaFormDialogProps) {
+export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaIdFijo, onClose, onSuccess }: AsistenciaFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!asistencia;
 
@@ -90,15 +91,18 @@ export function AsistenciaFormDialog({ asistencia, fichas, instructores, onClose
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">Ficha / Grupo *</label>
-            <select name="fichaId" defaultValue={asistencia?.fichaId || ""} required className={selectClass} disabled={isEditing}>
-              <option value="" disabled>Seleccione una ficha</option>
-              {fichas.map(f => (
-                <option key={f.id} value={f.id}>{f.codigo} - {f.programa.nombre}</option>
-              ))}
-            </select>
-          </div>
+          {!fichaIdFijo && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text-primary">Ficha / Grupo *</label>
+              <select name="fichaId" defaultValue={asistencia?.fichaId || ""} required className={selectClass} disabled={isEditing}>
+                <option value="" disabled>Seleccione una ficha</option>
+                {fichas.map(f => (
+                  <option key={f.id} value={f.id}>{f.codigo} - {f.programa.nombre}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {fichaIdFijo && <input type="hidden" name="fichaId" value={fichaIdFijo} />}
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-text-primary">Instructor Asignado *</label>

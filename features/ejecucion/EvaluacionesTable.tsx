@@ -19,17 +19,19 @@ interface EvaluacionesTableProps {
   aprendices: { id: string; nombres: string; apellidos: string; numeroDocumento: string; fichaId?: string; ficha: { id?: string; codigo: string } }[];
   fichas: { id: string; codigo: string; programa: { nombre: string } }[];
   rapIdFijo?: string;
+  fichaIdFijo?: string;
 }
 
-export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapIdFijo }: EvaluacionesTableProps) {
+export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapIdFijo, fichaIdFijo }: EvaluacionesTableProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [exporting, setExporting] = useState(false);
   
   const { data: session } = useSession();
-  const userRole = (session?.user as any)?.role || "INSTRUCTOR";
+  const userRole = ((session?.user as any)?.role ?? "").toUpperCase();
   const canDelete = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR";
+  const canManage = canDelete || userRole.includes("INSTRUCTOR");
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvaluacion, setSelectedEvaluacion] = useState<any>(null);
@@ -130,11 +132,11 @@ export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapId
       header: "Fecha de Evaluación",
       render: (e) => <span className="text-sm">{e.fecha ? formatDateShort(e.fecha) : "—"}</span>
     },
-    {
+    ...(canManage ? [{
       key: "acciones",
       header: "Acciones",
-      align: "right",
-      render: (e) => (
+      align: "right" as const,
+      render: (e: any) => (
         <div className="flex justify-end gap-2">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(e)}>
             <Pencil size={16} className="text-text-secondary" />
@@ -146,11 +148,15 @@ export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapId
           )}
         </div>
       ),
-    }
+    }] : [])
   ];
 
   // Si estamos en la vista de un RAP específico, ocultamos la columna de RAP
-  const columnasVisibles = rapIdFijo ? columnas.filter(c => c.key !== "rap") : columnas;
+  let columnasVisibles = rapIdFijo ? columnas.filter(c => c.key !== "rap") : columnas;
+  // Si estamos filtrados por Ficha, ocultar columna Ficha
+  if (fichaIdFijo) {
+    columnasVisibles = columnasVisibles.filter(c => c.key !== "ficha");
+  }
 
   return (
     <div className="space-y-4">
@@ -171,9 +177,11 @@ export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapId
           <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
             <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
           </Button>
-          <Button onClick={handleCreate}>
-            <Plus size={16} className="mr-2" /> Registrar Juicio
-          </Button>
+          {canManage && (
+            <Button onClick={handleCreate}>
+              <Plus size={16} className="mr-2" /> Registrar Juicio
+            </Button>
+          )}
         </div>
       </div>
 
@@ -190,6 +198,7 @@ export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapId
           aprendices={aprendices}
           fichas={fichas}
           rapIdFijo={rapIdFijo}
+          fichaIdFijo={fichaIdFijo}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

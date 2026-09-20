@@ -1,9 +1,10 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Award, Target, BarChart3, CheckCircle, XCircle, Clock } from "lucide-react";
+import { TrendingUp, Award, Target, BarChart3, CheckCircle, XCircle, Clock, BookOpen, Users, FolderOpen } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import Link from "next/link";
 
 export default async function ResultadosPage() {
   const session = await getServerSession(authOptions);
@@ -139,148 +140,84 @@ export default async function ResultadosPage() {
   }
 
   // ==========================================
-  // VISTA INSTRUCTOR / ADMIN
+  // VISTA INSTRUCTOR / ADMIN (PROGRAMAS)
   // ==========================================
   
-  let instructorFichaIds: string[] = [];
+  let instructorId: string | null = null;
   if (isInstructor && user?.instructor) {
-    const fichas = await prisma.ficha.findMany({
-      where: { instructores: { some: { instructorId: user.instructor.id } } },
-      select: { id: true }
-    });
-    instructorFichaIds = fichas.map(f => f.id);
+    instructorId = user.instructor.id;
   }
 
-  const baseWhere = isInstructor ? { aprendiz: { fichaId: { in: instructorFichaIds } } } : {};
+  const fichasFiltro = {
+    estado: "ACTIVO" as const,
+    ...(instructorId ? { instructores: { some: { instructorId } } } : {})
+  };
 
-  const [totalAprendices, aprobados, pendientes, deficientes] = await Promise.all([
-    prisma.evaluacionAprendiz.count({ where: baseWhere }),
-    prisma.evaluacionAprendiz.count({ where: { ...baseWhere, juicio: "APROBADO" } }),
-    prisma.evaluacionAprendiz.count({ where: { ...baseWhere, juicio: "PENDIENTE" } }),
-    prisma.evaluacionAprendiz.count({ where: { ...baseWhere, juicio: "DEFICIENTE" } }),
-  ]);
-
-  const tasaAprobacion = totalAprendices > 0
-    ? ((aprobados / totalAprendices) * 100).toFixed(1)
-    : "0.0";
-
-  // Datos por competencia para visualización
-  const competencias = await prisma.competencia.findMany({
-    where: { 
-      estado: "ACTIVO",
-      ...(isInstructor ? { programa: { fichas: { some: { id: { in: instructorFichaIds } } } } } : {})
+  const programas = await prisma.programa.findMany({
+    where: {
+      fichas: { some: fichasFiltro }
     },
     include: {
-      resultadosAprendizaje: {
-        include: {
-          evaluaciones: {
-            where: baseWhere
-          },
-        },
-      },
+      fichas: {
+        where: fichasFiltro,
+        include: { _count: { select: { aprendices: { where: { estado: "EN_FORMACION" } } } } }
+      }
     },
-    take: 8,
-    orderBy: { nombre: "asc" },
-  });
-
-  const competenciasData = competencias.map((c) => {
-    const evals = c.resultadosAprendizaje.flatMap((r) => r.evaluaciones);
-    const aprobadosC = evals.filter((e) => e.juicio === "APROBADO").length;
-    const total = evals.length;
-    const pct = total > 0 ? Math.round((aprobadosC / total) * 100) : 0;
-    return { nombre: c.nombre.length > 40 ? c.nombre.substring(0, 40) + "…" : c.nombre, pct, total };
+    orderBy: { nombre: "asc" }
   });
 
   return (
     <div className="page-container space-y-6 page-enter">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Resultados Académicos</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Resultados Académicos - Seleccionar Programa</h1>
         <p className="text-text-secondary mt-1">
-          Consolidado de rendimiento por competencia y Resultados de Aprendizaje.
+          Selecciona un programa de formación para ver los KPIs y consolidado de rendimiento por competencia de cada ficha.
         </p>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          {
-            label: "Tasa de Aprobación Global",
-            valor: `${tasaAprobacion}%`,
-            sub: `${aprobados} de ${totalAprendices} evaluaciones`,
-            icono: Award,
-            color: "text-success-600 bg-success-50",
-          },
-          {
-            label: "Evaluaciones Pendientes",
-            valor: pendientes.toLocaleString("es-CO"),
-            sub: "Sin calificar aún",
-            icono: Target,
-            color: "text-warning-600 bg-warning-50",
-          },
-          {
-            label: "Evaluaciones Deficientes",
-            valor: deficientes.toLocaleString("es-CO"),
-            sub: "Requieren refuerzo",
-            icono: TrendingUp,
-            color: deficientes > 0 ? "text-danger-600 bg-danger-50" : "text-success-600 bg-success-50",
-          },
-        ].map((stat, idx) => {
-          const Icon = stat.icono;
-          return (
-            <Card key={idx} className="border-0 shadow-sm">
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className={`p-3 rounded-xl ${stat.color}`}>
-                  <Icon size={24} />
-                </div>
-                <div>
-                  <p className="text-sm text-text-secondary font-medium">{stat.label}</p>
-                  <p className="text-2xl font-bold mt-0.5">{stat.valor}</p>
-                  <p className="text-xs text-text-secondary mt-0.5">{stat.sub}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {programas.length === 0 ? (
+        <div className="py-16 flex flex-col items-center justify-center text-center">
+          <BookOpen size={40} className="text-slate-300 mb-3" />
+          <p className="text-slate-500 font-medium">No hay Programas disponibles</p>
+          <p className="text-sm text-slate-400 mt-1">No tienes grupos activos asignados a ningún programa en este momento.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {programas.map((prog) => {
+            const numFichas = prog.fichas.length;
+            const numAprendices = prog.fichas.reduce((acc, f) => acc + f._count.aprendices, 0);
 
-      {/* Tabla de resultados por competencia */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="flex flex-row items-center gap-2 pb-2">
-          <BarChart3 size={20} className="text-sena-500" />
-          <CardTitle className="text-lg">Resultados por Competencia</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {competenciasData.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-text-secondary italic text-sm">
-              No hay evaluaciones registradas aún.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {competenciasData.map((c, i) => (
-                <div key={i} className="space-y-1">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-text-primary font-medium truncate max-w-[70%]">{c.nombre}</span>
-                    <span className="text-text-secondary text-xs">{c.pct}% aprobación</span>
+            return (
+              <Link key={prog.id} href={`/resultados/programa/${prog.id}`}>
+                <div className="group bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer flex flex-col gap-4 h-full">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="p-2 bg-indigo-50 rounded-lg shrink-0">
+                      <BookOpen size={20} className="text-indigo-600" />
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide shrink-0 bg-slate-100 text-slate-600">
+                      {prog.nivelFormacion}
+                    </span>
                   </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        c.pct >= 70
-                          ? "bg-success-500"
-                          : c.pct >= 50
-                          ? "bg-warning-500"
-                          : "bg-danger-500"
-                      }`}
-                      style={{ width: `${c.pct}%` }}
-                    />
+
+                  <div className="flex-1">
+                    <p className="text-xs font-mono text-slate-400 mb-0.5">{prog.codigo}</p>
+                    <h3 className="font-semibold text-text-primary text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2" title={prog.nombre}>
+                      {prog.nombre}
+                    </h3>
                   </div>
-                  <p className="text-xs text-text-secondary">{c.total} evaluaciones totales</p>
+
+                  <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                      <span className="flex items-center gap-1.5"><FolderOpen size={14} /> {numFichas} ficha{numFichas !== 1 ? "s" : ""}</span>
+                      <span className="flex items-center gap-1.5"><Users size={14} /> {numAprendices} aprendiz{numAprendices !== 1 ? "es" : ""}</span>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

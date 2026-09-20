@@ -7,20 +7,14 @@ import { ArrowLeft, Award, Users, CheckCircle, XCircle, Clock } from "lucide-rea
 import { EvaluacionesTable } from "@/features/ejecucion/EvaluacionesTable";
 import { getEvaluacionesAction } from "@/actions/evaluaciones.actions";
 
-export default async function RapEvaluacionesPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: rapId } = await params;
+export default async function EvaluacionFichaRapPage({ params }: { params: Promise<{ rapId: string, fichaId: string }> }) {
+  const { rapId, fichaId } = await params;
   const session = await getServerSession(authOptions);
-  let instructorId: string | null = null;
 
-  if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { rol: true, instructor: true }
-    });
-    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
-      instructorId = user.instructor.id;
-    }
-  }
+  const ficha = await prisma.ficha.findUnique({
+    where: { id: fichaId },
+    select: { id: true, codigo: true, programa: { select: { nombre: true } } }
+  });
 
   const rap = await prisma.resultadoAprendizaje.findUnique({
     where: { id: rapId },
@@ -29,16 +23,16 @@ export default async function RapEvaluacionesPage({ params }: { params: Promise<
         select: {
           nombre: true,
           tipo: true,
-          programa: { select: { nombre: true, codigo: true } }
+          programas: { select: { nombre: true, codigo: true } }
         }
       }
     }
   });
 
-  if (!rap) {
+  if (!rap || !ficha) {
     return (
       <div className="page-container space-y-6 page-enter">
-        <p className="text-red-500">RAP no encontrado.</p>
+        <p className="text-red-500">Recurso no encontrado.</p>
         <Link href="/evaluaciones" className="text-primary hover:underline flex items-center gap-2">
           <ArrowLeft size={16} /> Volver
         </Link>
@@ -46,17 +40,7 @@ export default async function RapEvaluacionesPage({ params }: { params: Promise<
     );
   }
 
-  // Fichas del instructor para filtrar aprendices
-  const fichas = await prisma.ficha.findMany({
-    where: {
-      estado: "ACTIVO",
-      ...(instructorId ? { instructores: { some: { instructorId } } } : {})
-    },
-    select: { id: true, codigo: true, programa: { select: { nombre: true } } }
-  });
-  const fichaIds = fichas.map(f => f.id);
-
-  // Aprendices de esas fichas
+  // Aprendices de esta ficha únicamente
   const aprendices = await prisma.aprendiz.findMany({
     select: {
       id: true, nombres: true, apellidos: true, numeroDocumento: true,
@@ -64,44 +48,41 @@ export default async function RapEvaluacionesPage({ params }: { params: Promise<
     },
     where: {
       estado: "EN_FORMACION",
-      ...(instructorId ? { fichaId: { in: fichaIds } } : {})
+      fichaId: fichaId
     },
     orderBy: { apellidos: "asc" }
   });
 
-  // RAPs disponibles para el formulario de nuevo juicio
   const rapsDisponibles = await prisma.resultadoAprendizaje.findMany({
     select: { id: true, codigo: true, nombre: true },
-    where: instructorId ? {
-      competencia: { programa: { fichas: { some: { id: { in: fichaIds } } } } }
-    } : {},
-    orderBy: { codigo: "asc" }
+    where: { id: rapId }, // Only this RAP is available since the page is scoped to it
   });
 
-  // Evaluaciones filtradas solo de este RAP (y del instructor)
-  const result = await getEvaluacionesAction({ rapId, instructorFichaIds: fichaIds });
+  // Evaluaciones filtradas solo de este RAP y de esta ficha
+  const result = await getEvaluacionesAction({ rapId, instructorFichaIds: [fichaId] });
   const initialData = result.success ? result.data : null;
 
-  // Conteos para el resumen
+  // Conteos
   const evals = await prisma.evaluacionAprendiz.findMany({
     where: {
       resultadoAprendizajeId: rapId,
-      ...(instructorId ? { aprendiz: { fichaId: { in: fichaIds } } } : {})
+      aprendiz: { fichaId: fichaId }
     },
     select: { juicio: true }
   });
 
   const total = evals.length;
+  const totalFicha = aprendices.length;
   const aprobados = evals.filter(e => e.juicio === "APROBADO").length;
   const deficientes = evals.filter(e => e.juicio === "DEFICIENTE").length;
   const pendientes = evals.filter(e => e.juicio === "PENDIENTE").length;
-  const pctAprobados = total > 0 ? Math.round((aprobados / total) * 100) : 0;
+  const pctAprobados = totalFicha > 0 ? Math.round((aprobados / totalFicha) * 100) : 0;
 
   return (
     <div className="page-container space-y-6 page-enter">
       {/* Back nav */}
-      <Link href="/evaluaciones" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary transition-colors">
-        <ArrowLeft size={16} /> Volver a Resultados de Aprendizaje
+      <Link href={`/evaluaciones/ficha/${ficha.id}`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary transition-colors">
+        <ArrowLeft size={16} /> Volver a RAPs de la Ficha {ficha.codigo}
       </Link>
 
       {/* Header del RAP */}
@@ -115,17 +96,20 @@ export default async function RapEvaluacionesPage({ params }: { params: Promise<
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
               rap.competencia?.tipo === "TECNICA" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"
             }`}>{rap.competencia?.tipo?.toLowerCase()}</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase bg-green-50 text-green-700 ml-auto md:ml-2">
+              Ficha {ficha.codigo}
+            </span>
           </div>
           <h1 className="text-xl font-bold text-text-primary">{rap.nombre}</h1>
           <p className="text-sm text-text-secondary mt-1">
-            {rap.competencia?.nombre} · Programa: {rap.competencia?.programa?.nombre} ({rap.competencia?.programa?.codigo})
+            {rap.competencia?.nombre}
           </p>
         </div>
 
         {/* Stats resumen */}
         <div className="flex flex-wrap gap-4 shrink-0">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-primary"><Users size={20} />{total}</div>
+            <div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-primary"><Users size={20} />{total} / {totalFicha}</div>
             <p className="text-xs text-slate-400 mt-0.5">evaluados</p>
           </div>
           <div className="text-center">
@@ -146,7 +130,7 @@ export default async function RapEvaluacionesPage({ params }: { params: Promise<
       {/* Barra de progreso */}
       <div className="bg-white border border-slate-200 rounded-xl px-6 py-4">
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-slate-600 font-medium">Progreso de aprobación</span>
+          <span className="text-slate-600 font-medium">Progreso de aprobación de la Ficha</span>
           <span className="font-bold text-primary">{pctAprobados}%</span>
         </div>
         <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
@@ -157,13 +141,14 @@ export default async function RapEvaluacionesPage({ params }: { params: Promise<
         </div>
       </div>
 
-      {/* Tabla de evaluaciones filtrada por este RAP */}
+      {/* Tabla de evaluaciones filtrada por este RAP y Ficha */}
       <EvaluacionesTable
         initialData={initialData}
         raps={rapsDisponibles as any}
         aprendices={aprendices as any}
-        fichas={fichas}
+        fichas={[ficha] as any}
         rapIdFijo={rapId}
+        fichaIdFijo={fichaId}
       />
     </div>
   );

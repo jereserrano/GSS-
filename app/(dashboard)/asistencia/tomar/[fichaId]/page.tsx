@@ -3,8 +3,11 @@ import { TomaAsistenciaForm } from "@/features/ejecucion/TomaAsistenciaForm";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
-export default async function TomarAsistenciaPage() {
+export default async function TomarAsistenciaFichaPage({ params }: { params: Promise<{ fichaId: string }> }) {
+  const { fichaId } = await params;
   const session = await getServerSession(authOptions);
   let instructorId: string | null = null;
   let instructorActual: any = null;
@@ -20,22 +23,27 @@ export default async function TomarAsistenciaPage() {
     }
   }
 
-  // Si es Instructor, solo carga SUS fichas con SUS aprendices
-  // Si es Admin/Coordinador, carga todo
-  const fichas = await prisma.ficha.findMany({
-    where: {
-      estado: "ACTIVO",
-      ...(instructorId ? { instructores: { some: { instructorId } } } : {})
-    },
+  const ficha = await prisma.ficha.findUnique({
+    where: { id: fichaId },
     include: {
       programa: true,
       aprendices: {
         where: { estado: "EN_FORMACION" },
         orderBy: { apellidos: "asc" }
       }
-    },
-    orderBy: { codigo: "asc" }
+    }
   });
+
+  if (!ficha) {
+    return (
+      <div className="page-container space-y-6 page-enter">
+        <p className="text-red-500">Ficha no encontrada.</p>
+        <Link href="/asistencia" className="text-primary hover:underline flex items-center gap-2">
+          <ArrowLeft size={16} /> Volver
+        </Link>
+      </div>
+    );
+  }
 
   const instructores = await prisma.instructor.findMany({
     where: { estado: "ACTIVO" },
@@ -45,18 +53,23 @@ export default async function TomarAsistenciaPage() {
 
   return (
     <div className="page-container space-y-6 page-enter max-w-5xl mx-auto">
+      <Link href={`/asistencia/ficha/${ficha.id}`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary transition-colors">
+        <ArrowLeft size={16} /> Volver a Asistencia Ficha {ficha.codigo}
+      </Link>
+
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Toma de Asistencia (Modo Lista)</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Toma de Asistencia</h1>
         <p className="text-text-secondary mt-1">
-          Seleccione una ficha para desplegar el listado de aprendices y registrar la asistencia de forma masiva.
+          Registre la asistencia para los aprendices de la ficha {ficha.codigo}.
         </p>
       </div>
 
       <div className="bg-surface rounded-xl border border-border shadow-sm p-6">
         <TomaAsistenciaForm 
-          fichas={fichas as any} 
+          fichas={[ficha] as any} 
           instructores={instructores as any}
           instructorPreseleccionado={instructorActual}
+          fichaIdFijo={ficha.id}
         />
       </div>
     </div>

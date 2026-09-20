@@ -35,6 +35,7 @@ interface EvaluacionFormDialogProps {
   aprendices: Aprendiz[];
   fichas: Ficha[];
   rapIdFijo?: string;
+  fichaIdFijo?: string;
   onClose: () => void;
   onSuccess?: () => void | Promise<void>;
 }
@@ -48,12 +49,12 @@ const JUICIOS = [
   { value: "DEFICIENTE", label: "D (Deficiente)" },
 ];
 
-export function EvaluacionFormDialog({ evaluacion, raps, aprendices, fichas, rapIdFijo, onClose, onSuccess }: EvaluacionFormDialogProps) {
+export function EvaluacionFormDialog({ evaluacion, raps, aprendices, fichas, rapIdFijo, fichaIdFijo, onClose, onSuccess }: EvaluacionFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!evaluacion;
 
   // Estado para el modo creación múltiple
-  const [fichaSeleccionada, setFichaSeleccionada] = useState(evaluacion ? (aprendices.find(a => a.id === evaluacion.aprendizId)?.fichaId || "") : "");
+  const [fichaSeleccionada, setFichaSeleccionada] = useState(fichaIdFijo || (evaluacion ? (aprendices.find(a => a.id === evaluacion.aprendizId)?.fichaId || "") : ""));
   const [aprendicesSeleccionados, setAprendicesSeleccionados] = useState<string[]>(
     evaluacion ? [evaluacion.aprendizId] : []
   );
@@ -159,7 +160,7 @@ export function EvaluacionFormDialog({ evaluacion, raps, aprendices, fichas, rap
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
 
           {/* PASO 1: Seleccionar Ficha */}
-          {!isEditing && (
+          {!isEditing && !fichaIdFijo && (
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-text-primary">
                 Ficha / Grupo <span className="text-text-secondary font-normal">(filtra los aprendices)</span>

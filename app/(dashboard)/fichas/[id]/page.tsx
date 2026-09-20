@@ -50,9 +50,9 @@ export default async function FichaDetailsPage({
       case "LIDER_TECNICO":
         return "Líder Técnico";
       case "TRANSVERSAL":
-        return "Transversal (Ej: Bilingüismo, Ética)";
+        return "Transversal";
       case "BASICA":
-        return "Básica (Matemáticas, etc.)";
+        return "Básica";
       default:
         return rolFicha;
     }

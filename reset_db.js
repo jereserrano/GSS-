@@ -42,9 +42,9 @@ async function main() {
   const rolesIds = {};
   roles.forEach(r => rolesIds[r.nombre] = r.id);
 
-  if (!rolesIds['APOYO_ADMINISTRATIVO']) {
-    const r = await prisma.rol.create({ data: { nombre: 'APOYO_ADMINISTRATIVO', descripcion: 'Apoyo Administrativo' }});
-    rolesIds['APOYO_ADMINISTRATIVO'] = r.id;
+  if (!rolesIds['APOYO_COORDINACION']) {
+    const r = await prisma.rol.create({ data: { nombre: 'APOYO_COORDINACION', descripcion: 'Apoyo Coordinacion' }});
+    rolesIds['APOYO_COORDINACION'] = r.id;
   }
   if (!rolesIds['COORDINADOR']) {
     const r = await prisma.rol.create({ data: { nombre: 'COORDINADOR', descripcion: 'Coordinador' }});
@@ -83,7 +83,7 @@ async function main() {
     { email: 'admin@sena.edu.co', pass: 'Admin2026#', rol: 'ADMINISTRADOR', nombre: 'Administrador' },
     { email: 'Isaias@sena.edu.co', pass: '123456', rol: 'INSTRUCTOR', nombre: 'Isaias (Instructor)' },
     { email: 'Ivan@sena.edu.co', pass: '123456', rol: 'APRENDIZ', nombre: 'Ivan (Aprendiz)' },
-    { email: 'Luis@sena.edu.co', pass: '123456', rol: 'APOYO_ADMINISTRATIVO', nombre: 'Luis (Apoyo Administrativo)' },
+    { email: 'Luis@sena.edu.co', pass: '123456', rol: 'APOYO_COORDINACION', nombre: 'Luis (Apoyo Coordinacion)' },
     { email: 'Julio@sena.edu.co', pass: '123456', rol: 'COORDINADOR', nombre: 'Julio (Coordinador Academico)' },
     { email: 'OtroInstructor1@sena.edu.co', pass: '123456', rol: 'INSTRUCTOR', nombre: 'Maria (Instructora)' },
     { email: 'OtroInstructor2@sena.edu.co', pass: '123456', rol: 'INSTRUCTOR', nombre: 'Carlos (Instructor)' }

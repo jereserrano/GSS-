@@ -1,110 +1,105 @@
 import React from "react";
-import { AprendicesTable } from "@/features/aprendices/AprendicesTable";
-import { getAprendicesAction } from "@/actions/aprendices.actions";
-import { getFichasAction } from "@/actions/fichas.actions";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import Link from "next/link";
-import { Users, Building2, MapPin, Calendar } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { BookOpen, Users, FolderOpen } from "lucide-react";
+import { redirect } from "next/navigation";
 
-export default async function AprendicesPage() {
+export default async function AprendicesProgramasPage() {
   const session = await getServerSession(authOptions);
-  let isInstructor = false;
+  let instructorId: string | null = null;
+  let userRole = "";
+  let isAprendiz = false;
 
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true }
+      include: { rol: true, instructor: true, aprendiz: true }
     });
-    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR") {
-      isInstructor = true;
+    userRole = user?.rol?.nombre?.toUpperCase() || "";
+    isAprendiz = userRole === "APRENDIZ";
+
+    if (userRole === "INSTRUCTOR" && user.instructor) {
+      instructorId = user.instructor.id;
+    }
+    
+    // Si es aprendiz, redirigimos automáticamente a su propia ficha
+    if (isAprendiz && user?.aprendiz?.fichaId) {
+      redirect(`/aprendices/ficha/${user.aprendiz.fichaId}`);
     }
   }
 
-  if (isInstructor) {
-    // Si es instructor, mostramos las fichas en forma de tarjetas
-    const resultFichas = await getFichasAction({ pagina: 1, tamano: 100 });
-    const misFichas = resultFichas.success ? resultFichas.data?.data || [] : [];
+  const fichasFiltro = {
+    estado: "ACTIVO" as const,
+    ...(instructorId ? { instructores: { some: { instructorId } } } : {})
+  };
 
-    return (
-      <div className="page-container space-y-6 page-enter">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Mis Fichas Asignadas</h1>
-          <p className="text-text-secondary mt-1">
-            Selecciona una ficha para gestionar y ver a sus aprendices.
-          </p>
-        </div>
-
-        {misFichas.length === 0 ? (
-          <div className="py-12 flex justify-center text-sm text-slate-500">
-            No tienes fichas asignadas actualmente.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {misFichas.map((f: any) => (
-              <Link key={f.id} href={`/aprendices/ficha/${f.id}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer border-t-4 border-t-primary/80 h-full flex flex-col group">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-bold flex justify-between items-center group-hover:text-primary transition-colors">
-                      Ficha {f.codigo}
-                    </CardTitle>
-                    <CardDescription className="line-clamp-2" title={f.programa?.nombre}>
-                      {f.programa?.nombre}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="mt-auto space-y-2 text-sm text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <Building2 size={16} className="text-slate-400" />
-                      <span className="truncate">{f.institucion?.nombre}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={16} className="text-slate-400" />
-                      <span className="truncate">{f.sede?.nombre}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100">
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                        <Users size={14} />
-                        <span>Ver Aprendices</span>
-                      </div>
-                      <span className="text-[10px] font-medium bg-slate-100 px-2 py-1 rounded text-slate-600">
-                        {f.estado}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Si no es instructor, mostramos la tabla global como estaba
-  const [initialResult, fichas] = await Promise.all([
-    getAprendicesAction({ pagina: 1, tamano: 10 }),
-    prisma.ficha.findMany({
-      where: { estado: "ACTIVO" },
-      select: { id: true, codigo: true },
-      orderBy: { codigo: "desc" },
-    }),
-  ]);
+  const programas = await prisma.programa.findMany({
+    where: {
+      fichas: { some: fichasFiltro }
+    },
+    include: {
+      fichas: {
+        where: fichasFiltro,
+        include: { _count: { select: { aprendices: { where: { estado: "EN_FORMACION" } } } } }
+      }
+    },
+    orderBy: { nombre: "asc" }
+  });
 
   return (
     <div className="page-container space-y-6 page-enter">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Aprendices</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Aprendices - Seleccionar Programa</h1>
         <p className="text-text-secondary mt-1">
-          Gestión y seguimiento de los estudiantes vinculados al programa de Media Técnica.
+          Selecciona un programa de formación para ver los grupos (fichas) y gestionar sus aprendices.
         </p>
       </div>
 
-      <AprendicesTable
-        initialData={initialResult.success ? initialResult.data : null}
-        fichas={fichas}
-      />
+      {programas.length === 0 ? (
+        <div className="py-16 flex flex-col items-center justify-center text-center">
+          <BookOpen size={40} className="text-slate-300 mb-3" />
+          <p className="text-slate-500 font-medium">No hay Programas disponibles</p>
+          <p className="text-sm text-slate-400 mt-1">No tienes grupos activos asignados a ningún programa en este momento.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {programas.map((prog) => {
+            const numFichas = prog.fichas.length;
+            const numAprendices = prog.fichas.reduce((acc, f) => acc + f._count.aprendices, 0);
+
+            return (
+              <Link key={prog.id} href={`/aprendices/programa/${prog.id}`}>
+                <div className="group bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer flex flex-col gap-4 h-full">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="p-2 bg-indigo-50 rounded-lg shrink-0">
+                      <BookOpen size={20} className="text-indigo-600" />
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide shrink-0 bg-slate-100 text-slate-600">
+                      {prog.nivelFormacion}
+                    </span>
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="text-xs font-mono text-slate-400 mb-0.5">{prog.codigo}</p>
+                    <h3 className="font-semibold text-text-primary text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2" title={prog.nombre}>
+                      {prog.nombre}
+                    </h3>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                      <span className="flex items-center gap-1.5"><FolderOpen size={14} /> {numFichas} ficha{numFichas !== 1 ? "s" : ""}</span>
+                      <span className="flex items-center gap-1.5"><Users size={14} /> {numAprendices} aprendiz{numAprendices !== 1 ? "es" : ""}</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

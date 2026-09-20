@@ -47,7 +47,6 @@ const navAprendiz: NavSection[] = [
   {
     title: "Recursos y Cuenta",
     items: [
-      { icon: FolderOpen, label: "Documentos", href: "/documentos" },
       { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
       { icon: User, label: "Perfil", href: "/usuarios" },
     ],
@@ -179,8 +178,8 @@ const navSubdirector: NavSection[] = [
   },
 ];
 
-// Menú para APOYO ADMINISTRATIVO
-const navApoyoAdministrativo: NavSection[] = [
+// Menú para APOYO COORDINACIÓN
+const navApoyoCoordinacion: NavSection[] = [
   {
     items: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -306,7 +305,7 @@ export function Sidebar() {
   const isAdmin = rawRole === "ADMINISTRADOR" || rawRole.includes("ADMIN");
   const isSubdirector = rawRole === "SUBDIRECTOR" || rawRole.includes("SUBDIR");
   const isCoordinador = !isAdmin && !isSubdirector && (rawRole.includes("COORD") || rawRole.includes("APCOORD"));
-  const isApoyoAdmin = rawRole === "APOYO_ADMINISTRATIVO" || rawRole.includes("APOYO");
+  const isApoyoAdmin = rawRole === "APOYO_COORDINACION" || rawRole.includes("APOYO");
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   const closeMobile = () => setMobileOpen(false);
@@ -325,7 +324,7 @@ export function Sidebar() {
     : isAprendiz
     ? navAprendiz
     : isApoyoAdmin
-    ? navApoyoAdministrativo
+    ? navApoyoCoordinacion
     : [];
 
   // Filtrar según permisos de ruta para no exponer opciones no autorizadas

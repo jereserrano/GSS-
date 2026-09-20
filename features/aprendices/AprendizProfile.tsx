@@ -83,6 +83,32 @@ export function AprendizProfile({ aprendiz }: { aprendiz: Aprendiz }) {
               <MapPin size={16} className="text-text-secondary shrink-0" />
               <p className="text-xs font-medium text-text-secondary">{aprendiz.sede?.nombre}</p>
             </div>
+
+            {/* Sección de Instructores (Líder y Transversales) */}
+            {aprendiz.ficha?.instructores && aprendiz.ficha.instructores.length > 0 && (
+              <div className="pt-4 mt-2 border-t border-border">
+                <p className="text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">Equipo de Instructores</p>
+                <div className="space-y-2">
+                  {aprendiz.ficha.instructores.map((asignacion: any) => (
+                    <div key={asignacion.id} className="flex flex-col p-2 bg-surface rounded-lg border border-border/50">
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs font-semibold text-text-primary">
+                          {asignacion.instructor.nombres} {asignacion.instructor.apellidos}
+                        </span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm tracking-wide ${
+                          asignacion.rolFicha === "LIDER_TECNICO" ? "bg-primary/10 text-primary" : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {asignacion.rolFicha === "LIDER_TECNICO" ? "LÍDER" : "TRANSVERSAL"}
+                        </span>
+                      </div>
+                      {asignacion.instructor.profesion && (
+                        <span className="text-[10px] text-text-secondary mt-0.5">{asignacion.instructor.profesion}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

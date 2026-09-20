@@ -11,15 +11,20 @@ import { deleteAsistencia } from "@/actions/asistencia.actions";
 import { AsistenciaFormDialog } from "./AsistenciaFormDialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface AsistenciasTableProps {
   initialData: any;
   fichas: { id: string; codigo: string; programa: { nombre: string } }[];
   instructores: { id: string; nombres: string; apellidos: string }[];
+  fichaIdFijo?: string;
 }
 
-export function AsistenciaTable({ initialData, fichas, instructores }: AsistenciasTableProps) {
+export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo }: AsistenciasTableProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const userRole = ((session?.user as any)?.role ?? "").toUpperCase();
+  const canManage = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR" || userRole.includes("INSTRUCTOR");
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   
@@ -168,11 +173,11 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
         </span>
       )
     },
-    {
+    ...(canManage ? [{
       key: "acciones",
       header: "Acciones",
-      align: "right",
-      render: (a) => (
+      align: "right" as const,
+      render: (a: any) => (
         <div className="flex justify-end gap-2">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(a)}>
             <Pencil size={16} className="text-text-secondary" />
@@ -182,8 +187,13 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
           </Button>
         </div>
       )
-    }
+    }] : [])
   ];
+
+  let columnasVisibles = columnas;
+  if (fichaIdFijo) {
+    columnasVisibles = columnasVisibles.filter(c => c.key !== "ficha");
+  }
 
   return (
     <div className="space-y-4">
@@ -204,15 +214,17 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
           <Button variant="outline" className="bg-surface" onClick={() => setModalExportar(true)} disabled={exporting}>
             <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Reporte"}
           </Button>
-          <Button onClick={() => router.push("/asistencia/tomar")}>
-            <Plus size={16} className="mr-2" /> Tomar Asistencia (Lista)
-          </Button>
+          {canManage && (
+            <Button onClick={() => router.push(fichaIdFijo ? `/asistencia/tomar/${fichaIdFijo}` : "/asistencia/tomar")}>
+              <Plus size={16} className="mr-2" /> Tomar Asistencia (Lista)
+            </Button>
+          )}
         </div>
       </div>
 
       <DataTable 
         data={asistencias} 
-        columnas={columnas} 
+        columnas={columnasVisibles} 
         isLoading={loading} 
       />
 
@@ -221,6 +233,7 @@ export function AsistenciaTable({ initialData, fichas, instructores }: Asistenci
           asistencia={selectedAsistencia}
           fichas={fichas}
           instructores={instructores}
+          fichaIdFijo={fichaIdFijo}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

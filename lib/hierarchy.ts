@@ -26,7 +26,7 @@ export enum HierarchyLevel {
   ADMINISTRADOR = 1,
   COORDINADOR = 2,
   COORDINADOR_SEDE = 3,
-  APOYO_ADMINISTRATIVO = 3,
+  APOYO_COORDINACION = 3,
   INSTRUCTOR = 4,
   APRENDIZ = 5,
   UNKNOWN = 99,
@@ -85,9 +85,9 @@ export function getHierarchyLevel(rolNombre: string | undefined | null): Hierarc
 
   const upper = rolNombre.toUpperCase().trim();
 
-  // 3 — Apoyo Administrativo / ApCoordinador (antes de ADMIN/COORD)
-  if (upper.includes("APOYO")) return HierarchyLevel.APOYO_ADMINISTRATIVO;
-  if (upper.includes("APCOORD")) return HierarchyLevel.APOYO_ADMINISTRATIVO;
+  // 3 — Apoyo Coordinación (antes de ADMIN/COORD)
+  if (upper.includes("APOYO")) return HierarchyLevel.APOYO_COORDINACION;
+  if (upper.includes("APCOORD")) return HierarchyLevel.APOYO_COORDINACION;
 
   // 3 — Coordinador de Sede (antes de COORD)
   if (upper.includes("SEDE")) return HierarchyLevel.COORDINADOR_SEDE;
@@ -116,8 +116,6 @@ export function getHierarchyLevel(rolNombre: string | undefined | null): Hierarc
  */
 function canRoleManageUsers(rolNombre: string): boolean {
   const upper = rolNombre.toUpperCase().trim();
-  // Apoyo administrativo NO puede gestionar usuarios
-  if (upper.includes("APOYO")) return false;
   // Instructor NO puede gestionar usuarios
   if (upper.includes("INSTRUCT")) return false;
   // Aprendiz NO puede gestionar usuarios

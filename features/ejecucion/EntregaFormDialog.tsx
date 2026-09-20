@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createEntrega, updateEntrega, evaluarEntregaAction } from "@/actions/entregas.actions";
 import { toast } from "sonner";
-import { X, UploadCloud } from "lucide-react";
+import { X, UploadCloud, CheckCircle2, Download, ExternalLink } from "lucide-react";
 
 interface EntregaFormDialogProps {
   entrega?: any;
   actividades: { id: string; nombre: string }[];
   aprendices: { id: string; nombres: string; apellidos: string; numeroDocumento: string }[];
+  fichaIdFijo?: string;
   onClose: () => void;
   onSuccess?: () => void | Promise<void>;
 }
@@ -27,7 +28,7 @@ const ESTADOS = [
   { value: "TARDIA", label: "Entrega Tardía" },
 ];
 
-export function EntregaFormDialog({ entrega, actividades, aprendices, onClose, onSuccess }: EntregaFormDialogProps) {
+export function EntregaFormDialog({ entrega, actividades, aprendices, fichaIdFijo, onClose, onSuccess }: EntregaFormDialogProps) {
   const { data: session } = useSession();
   const userRole = ((session?.user as any)?.role || "").toUpperCase();
   const isAprendiz = userRole.includes("APRENDIZ");
@@ -210,23 +211,40 @@ export function EntregaFormDialog({ entrega, actividades, aprendices, onClose, o
             </div>
 
             {uploadMode === "file" ? (
-              <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors">
+              <div className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors ${file ? 'border-green-400 bg-green-50' : 'border-slate-200 hover:bg-slate-50'}`}>
                 <Input
                   type="file"
                   className="hidden"
                   id="fileUpload"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                 />
-                <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center gap-2">
-                  <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full">
-                    <UploadCloud size={24} />
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-indigo-600 font-semibold">Haz clic para subir</span> o arrastra un archivo
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    {file ? file.name : entrega?.urlArchivo ? "Archivo actual subido. Selecciona otro para reemplazar." : "PDF, Word, Excel, ZIP (Max. 10MB)"}
-                  </p>
+                <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center gap-2 w-full">
+                  {file ? (
+                    <>
+                      <div className="p-3 bg-green-100 text-green-700 rounded-full">
+                        <CheckCircle2 size={32} />
+                      </div>
+                      <div className="text-lg font-bold text-green-700">
+                        Archivo cargado correctamente
+                      </div>
+                      <p className="text-sm font-semibold text-slate-700 break-all w-full px-4">
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-green-600 font-medium mt-1">Haz clic para cambiar el archivo</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full">
+                        <UploadCloud size={24} />
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-indigo-600 font-semibold">Haz clic para subir</span> o arrastra un archivo
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        {entrega?.urlArchivo ? "Evidencia actual subida. Selecciona otro archivo para reemplazarla." : "PDF, Word, Excel, ZIP (Max. 10MB)"}
+                      </p>
+                    </>
+                  )}
                 </label>
               </div>
             ) : (

@@ -30,10 +30,11 @@ interface Instructor {
   userId?: string;
 }
 
-export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccionado }: { 
+export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccionado, fichaIdFijo }: { 
   fichas: Ficha[], 
   instructores: Instructor[],
-  instructorPreseleccionado?: Instructor | null
+  instructorPreseleccionado?: Instructor | null,
+  fichaIdFijo?: string
 }) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -47,7 +48,7 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
     return isInstructor ? instructores.find(i => i.userId === currentUserId) : null;
   }, [instructorPreseleccionado, isInstructor, instructores, currentUserId]);
 
-  const [fichaId, setFichaId] = useState("");
+  const [fichaId, setFichaId] = useState(fichaIdFijo || "");
   const [instructorId, setInstructorId] = useState(instructorPreseleccionado?.id || currentInstructorRecord?.id || "");
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   
@@ -56,6 +57,19 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
       setInstructorId(currentInstructorRecord.id);
     }
   }, [currentInstructorRecord, instructorId]);
+  
+  useEffect(() => {
+    // If fichaIdFijo is provided, automatically load the students
+    if (fichaIdFijo) {
+      const ficha = fichas.find(f => f.id === fichaIdFijo);
+      if (ficha) {
+        const initial: Record<string, "PRESENTE" | "FALLA" | "EXCUSA"> = {};
+        ficha.aprendices.forEach(a => initial[a.id] = "PRESENTE");
+        setAsistencias(initial);
+        setObservaciones({});
+      }
+    }
+  }, [fichaIdFijo, fichas]);
   
   // Asistencias locales
   const [asistencias, setAsistencias] = useState<Record<string, "PRESENTE" | "FALLA" | "EXCUSA">>({});
@@ -125,12 +139,18 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">Ficha / Grupo</label>
-          <select value={fichaId} onChange={handleFichaChange} className={selectClass} required>
-            <option value="">Seleccione una ficha</option>
-            {fichas.map(f => (
-              <option key={f.id} value={f.id}>{f.codigo} - {f.programa.nombre}</option>
-            ))}
-          </select>
+          {fichaIdFijo ? (
+            <div className="flex h-10 w-full items-center rounded-md border border-input bg-sena-50 px-3 py-2 text-sm text-sena-800">
+              <span className="font-semibold">{fichas.find(f => f.id === fichaIdFijo)?.codigo}</span>
+            </div>
+          ) : (
+            <select value={fichaId} onChange={handleFichaChange} className={selectClass} required>
+              <option value="">Seleccione una ficha</option>
+              {fichas.map(f => (
+                <option key={f.id} value={f.id}>{f.codigo} - {f.programa.nombre}</option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">Instructor</label>

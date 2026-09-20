@@ -15,6 +15,7 @@ export async function GET(
             programa: { include: { competencias: { include: { resultadosAprendizaje: true } } } },
             institucion: true,
             sede: true,
+            instructores: { include: { instructor: true } },
           },
         },
         entregas: { include: { actividad: true }, orderBy: { creadoEn: "desc" }, take: 10 },

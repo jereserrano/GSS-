@@ -35,6 +35,7 @@ export async function requireRole(...roles: UserRole[]) {
   let normalizedRole: string = user.role;
   const roleUpper = (user.role || "").toUpperCase();
   if (roleUpper.includes("ADMIN")) normalizedRole = "ADMINISTRADOR";
+  else if (roleUpper.includes("APOYO")) normalizedRole = "APOYO_COORDINACION";
   else if (roleUpper.includes("COORD")) normalizedRole = "COORDINADOR";
   else if (roleUpper.includes("INSTRUC")) normalizedRole = "INSTRUCTOR";
 

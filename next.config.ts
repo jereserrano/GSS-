@@ -1,4 +1,11 @@
 import type { NextConfig } from "next";
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  reloadOnOnline: true,
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
@@ -6,15 +13,21 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+
   /* ── Configuración de Server Actions para permitir acceso desde LAN ── */
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', '192.168.40.6:3000', '0.0.0.0:3000'],
+      allowedOrigins: [
+        'localhost:3000',
+        '192.168.40.6:3000',
+        '0.0.0.0:3000',
+        '127.0.0.1:3000',
+      ],
     },
   },
 
   /* ── Permitir acceso desde la red local en modo desarrollo ── */
-  allowedDevOrigins: ['192.168.40.6:3000', 'http://192.168.40.6:3000'],
+  allowedDevOrigins: ['192.168.40.6', 'localhost', '127.0.0.1', '0.0.0.0'],
 
   /* ── Imágenes externas permitidas (logos institucionales) ── */
   images: {
@@ -41,4 +54,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

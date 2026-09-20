@@ -37,7 +37,7 @@ export async function getCompetenciasAction(filtros: any = {}) {
           { nombre: { contains: filtros.busqueda } },
         ]
       } : {}),
-      ...(filtros.programaId ? { programaId: filtros.programaId } : {}),
+      ...(filtros.programaId ? { programas: { some: { id: filtros.programaId } } } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([
@@ -46,7 +46,7 @@ export async function getCompetenciasAction(filtros: any = {}) {
         skip,
         take,
         include: {
-          programa: { select: { nombre: true, codigo: true } },
+          programas: { select: { nombre: true, codigo: true } },
           _count: {
             select: { resultadosAprendizaje: true }
           }
@@ -80,7 +80,9 @@ export async function createCompetencia(data: z.infer<typeof competenciaSchema>)
       data: {
         codigo: data.codigo,
         nombre: data.nombre,
-        programaId: data.programaId,
+        programas: {
+          connect: data.programasIds.map(id => ({ id }))
+        },
         tipo: data.tipo || "TECNICA",
         duracionHoras: Number(data.duracionHoras),
         estado: data.estado || "ACTIVO",
@@ -116,7 +118,9 @@ export async function updateCompetencia(id: string, data: z.infer<typeof compete
       data: {
         codigo: data.codigo,
         nombre: data.nombre,
-        programaId: data.programaId,
+        programas: {
+          set: data.programasIds.map(id => ({ id }))
+        },
         tipo: data.tipo,
         duracionHoras: Number(data.duracionHoras),
         estado: data.estado,
@@ -166,19 +170,19 @@ export async function exportCompetenciasCSV() {
     const competencias = await CompetenciaRepository.findMany({
       orderBy: { codigo: "asc" },
       include: {
-        programa: { select: { nombre: true, codigo: true } },
+        programas: { select: { nombre: true, codigo: true } },
         _count: {
           select: { resultadosAprendizaje: true }
         }
       },
     });
 
-    const header = "Código,Competencia,Programa,Tipo,Duración (horas),Resultados Asociados,Estado";
+    const header = "Código,Competencia,Programas,Tipo,Duración (horas),Resultados Asociados,Estado";
     const rows = competencias.map((c) =>
       [
         c.codigo,
         c.nombre,
-        c.programa?.nombre ?? "",
+        c.programas.map(p => p.nombre).join(" | "),
         c.tipo,
         c.duracionHoras,
         c._count.resultadosAprendizaje,

@@ -57,13 +57,23 @@ model Sede {
 }
 
 model Programa {
-  id              String          @id @default(cuid())
-  codigo          String          @unique
+  id              String             @id @default(cuid())
+  codigo          String             @unique
   nombre          String
-  nivelFormacion  NivelFormacion  @default(TECNICO)
-  estado          Estado          @default(ACTIVO)
-  creadoEn        DateTime        @default(now())
-  actualizadoEn   DateTime        @updatedAt
+  nivelFormacion  NivelFormacion     @default(TECNICO)
+  estado          Estado             @default(ACTIVO)
+  // Diseño Curricular
+  version         String?            // Versión del diseño curricular (ej: "3")
+  duracion        Int?               // Horas totales del programa
+  modalidad       ModalidadPrograma? // Presencial, Virtual, etc.
+  area            String?            // Área de conocimiento
+  areaDesempeno   String?            // Sector productivo
+  titulacion      String?            // Certificado/título que se otorga
+  descripcion     String?            @db.Text
+  perfilIngreso   String?            @db.Text
+  perfilEgresado  String?            @db.Text
+  creadoEn        DateTime           @default(now())
+  actualizadoEn   DateTime           @updatedAt
 
   competencias    Competencia[]
   fichas          Ficha[]
@@ -177,14 +187,13 @@ model Competencia {
   id            String   @id @default(cuid())
   codigo        String   @unique
   nombre        String   @db.Text
-  programaId    String
   tipo          TipoCompetencia @default(TECNICA)
   duracionHoras Int
   estado        Estado   @default(ACTIVO)
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 
-  programa           Programa              @relation(fields: [programaId], references: [id])
+  programas            Programa[]
   resultadosAprendizaje ResultadoAprendizaje[]
 
   @@map("competencias")
@@ -489,6 +498,13 @@ enum EstadoVisita {
   PROGRAMADA
   REALIZADA
   APLAZADA
+}
+
+enum ModalidadPrograma {
+  PRESENCIAL
+  VIRTUAL
+  DISTANCIA
+  COMBINADO
 }
 
 

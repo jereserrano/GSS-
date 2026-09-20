@@ -32,10 +32,12 @@ export function CompetenciaFormDialog({ competencia, programas, onClose, onSucce
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    const programasIds = formData.getAll("programasIds") as string[];
+
     const data = {
       codigo: formData.get("codigo") as string,
       nombre: formData.get("nombre") as string,
-      programaId: formData.get("programaId") as string,
+      programasIds,
       tipo: (formData.get("tipo") as string) || "TECNICA",
       duracionHoras: formData.get("duracionHoras") as string,
       estado: (formData.get("estado") as string) || "ACTIVO",
@@ -123,13 +125,24 @@ export function CompetenciaFormDialog({ competencia, programas, onClose, onSucce
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">Programa Asociado *</label>
-            <select name="programaId" defaultValue={competencia?.programaId || ""} required className={selectClass}>
-              <option value="" disabled>Seleccione un programa</option>
+            <label className="text-sm font-medium text-text-primary">Programas Asociados *</label>
+            <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto space-y-2 bg-background">
               {programas.map(p => (
-                <option key={p.id} value={p.id}>{p.codigo} - {p.nombre}</option>
+                <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                  <input 
+                    type="checkbox" 
+                    name="programasIds" 
+                    value={p.id} 
+                    defaultChecked={competencia?.programas?.some((cp: any) => cp.id === p.id)}
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 w-4 h-4"
+                  />
+                  <span className="text-sm text-gray-700">{p.codigo} - {p.nombre}</span>
+                </label>
               ))}
-            </select>
+              {programas.length === 0 && (
+                <p className="text-sm text-text-secondary text-center">No hay programas disponibles</p>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -36,6 +36,15 @@ export const programaSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
   nivelFormacion: z.enum(["TECNICO", "TECNOLOGO", "OPERARIO"]).optional(),
   estado: estadoEnum.optional(),
+  version: z.string().optional().nullable(),
+  duracion: z.coerce.number().int().positive().optional().nullable(),
+  modalidad: z.enum(["PRESENCIAL", "VIRTUAL", "DISTANCIA", "COMBINADO"]).optional().nullable(),
+  area: z.string().optional().nullable(),
+  areaDesempeno: z.string().optional().nullable(),
+  titulacion: z.string().optional().nullable(),
+  descripcion: z.string().optional().nullable(),
+  perfilIngreso: z.string().optional().nullable(),
+  perfilEgresado: z.string().optional().nullable(),
 });
 
 // Ficha
@@ -83,7 +92,7 @@ export const instructorSchema = z.object({
 export const competenciaSchema = z.object({
   codigo: z.string().min(1, "Código obligatorio"),
   nombre: z.string().min(1, "Nombre obligatorio"),
-  programaId: z.string().min(1, "Programa obligatorio"),
+  programasIds: z.array(z.string()).min(1, "Debe seleccionar al menos un programa"),
   tipo: z.enum(["TECNICA", "TRANSVERSAL", "BASICA"]).optional(),
   duracionHoras: z.number().or(z.string().transform(v => Number(v))),
   estado: estadoEnum.optional(),
@@ -217,7 +226,7 @@ export const importInstructoresSchema = z.array(z.object({
 export const importCompetenciasSchema = z.array(z.object({
   codigo: z.coerce.string().min(1),
   nombre: z.coerce.string().min(1),
-  codigoPrograma: z.coerce.string().min(1),
+  codigosProgramas: z.coerce.string().min(1),
   tipo: z.coerce.string().optional(),
   duracionHoras: z.coerce.number().or(z.coerce.string().transform(v => Number(v))).optional(),
 }));

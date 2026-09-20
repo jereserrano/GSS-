@@ -46,6 +46,28 @@ export const RUTAS_COORDINADOR = [
 // la restricción de acciones específicas se maneja en los Server Actions
 export const RUTAS_APCOORDINADOR = RUTAS_COORDINADOR;
 
+// Apoyo Administrativo: Acceso a módulos de gestión administrativa
+export const RUTAS_APOYO_ADMINISTRATIVO = [
+  ...RUTAS_COMUNES,
+  "/instituciones",
+  "/sedes",
+  "/programas",
+  "/fichas",
+  "/aprendices",
+  "/instructores",
+  "/competencias",
+  "/resultados-aprendizaje",
+  "/plan-formacion",
+  "/actividades",
+  "/asistencia",
+  "/evaluaciones",
+  "/resultados",
+  "/seguimiento",
+  "/riesgos",
+  "/reportes",
+  "/documentos"
+];
+
 export const RUTAS_INSTRUCTOR = [
   ...RUTAS_COMUNES,
   "/fichas",
@@ -114,6 +136,10 @@ export function canAccessRoute(role: string | undefined | null, pathname: string
 
   if (normalRole === "APRENDIZ" || normalRole.includes("APRENDIZ")) {
     return isAllowed(RUTAS_APRENDIZ);
+  }
+
+  if (normalRole === "APOYO_ADMINISTRATIVO" || normalRole.includes("APOYO")) {
+    return isAllowed(RUTAS_APOYO_ADMINISTRATIVO);
   }
 
   // Por defecto, si el rol no coincide con nada, denegar acceso.

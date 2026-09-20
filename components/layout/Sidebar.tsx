@@ -179,6 +179,58 @@ const navSubdirector: NavSection[] = [
   },
 ];
 
+// Menú para APOYO ADMINISTRATIVO
+const navApoyoAdministrativo: NavSection[] = [
+  {
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    ],
+  },
+  {
+    title: "Institucional",
+    items: [
+      { icon: Building2, label: "Instituciones", href: "/instituciones" },
+      { icon: MapPin, label: "Sedes", href: "/sedes" },
+      { icon: BookOpen, label: "Programas", href: "/programas" },
+      { icon: Users, label: "Fichas / Grupos", href: "/fichas" },
+    ],
+  },
+  {
+    title: "Actores",
+    items: [
+      { icon: GraduationCap, label: "Aprendices", href: "/aprendices" },
+      { icon: UserCheck, label: "Instructores", href: "/instructores" },
+    ],
+  },
+  {
+    title: "Académico",
+    items: [
+      { icon: Target, label: "Competencias", href: "/competencias" },
+      { icon: FileText, label: "Resultados de Aprendizaje", href: "/resultados-aprendizaje" },
+      { icon: ClipboardList, label: "Plan de Formación", href: "/plan-formacion" },
+    ],
+  },
+  {
+    title: "Ejecución",
+    items: [
+      { icon: BookCheck, label: "Actividades", href: "/actividades" },
+      { icon: CalendarCheck, label: "Asistencia", href: "/asistencia" },
+      { icon: FileCheck, label: "Evaluaciones", href: "/evaluaciones" },
+      { icon: TrendingUp, label: "Resultados", href: "/resultados" },
+    ],
+  },
+  {
+    title: "Seguimiento y Reportes",
+    items: [
+      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
+      { icon: AlertTriangle, label: "Riesgos", href: "/riesgos" },
+      { icon: PieChart, label: "Reportes", href: "/reportes" },
+      { icon: FolderOpen, label: "Documentos", href: "/documentos" },
+      { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
+    ],
+  },
+];
+
 // Menú EXCLUSIVO para ADMINISTRADOR DEL SISTEMA
 const navAdmin: NavSection[] = [
   {
@@ -254,6 +306,7 @@ export function Sidebar() {
   const isAdmin = rawRole === "ADMINISTRADOR" || rawRole.includes("ADMIN");
   const isSubdirector = rawRole === "SUBDIRECTOR" || rawRole.includes("SUBDIR");
   const isCoordinador = !isAdmin && !isSubdirector && (rawRole.includes("COORD") || rawRole.includes("APCOORD"));
+  const isApoyoAdmin = rawRole === "APOYO_ADMINISTRATIVO" || rawRole.includes("APOYO");
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   const closeMobile = () => setMobileOpen(false);
@@ -271,6 +324,8 @@ export function Sidebar() {
     ? navInstructor
     : isAprendiz
     ? navAprendiz
+    : isApoyoAdmin
+    ? navApoyoAdministrativo
     : [];
 
   // Filtrar según permisos de ruta para no exponer opciones no autorizadas

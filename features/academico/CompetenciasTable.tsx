@@ -95,9 +95,13 @@ export function CompetenciasTable({ initialData, programas, readOnly = false }: 
       )
     },
     {
-      key: "programa",
-      header: "Programa",
-      render: (c) => <span className="text-sm text-text-secondary">{c.programa.nombre}</span>
+      key: "programas",
+      header: "Programa(s)",
+      render: (c) => (
+        <span className="text-sm text-text-secondary block line-clamp-2" title={c.programas?.map((p: any) => p.nombre).join(" | ")}>
+          {c.programas?.map((p: any) => p.nombre).join(", ")}
+        </span>
+      )
     },
     {
       key: "tipo",

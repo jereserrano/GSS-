@@ -26,7 +26,7 @@ interface Rap {
   id: string;
   codigo: string;
   nombre: string;
-  competencia?: { programaId: string };
+  competencia?: any;
 }
 
 interface EvaluacionFormDialogProps {

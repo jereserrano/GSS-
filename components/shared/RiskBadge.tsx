@@ -11,10 +11,13 @@ export function RiskBadge({ nivel, className }: RiskBadgeProps) {
   const badgeClass = getRiskBadgeClass(nivel);
   
   // Mapeo de etiqueta para mostrar
-  const labelMap: Record<NivelRiesgo, string> = {
+  const labelMap: Record<string, string> = {
     bajo: "Riesgo Bajo",
     medio: "Riesgo Medio",
-    alto: "Riesgo Alto"
+    alto: "Riesgo Alto",
+    BAJO: "Riesgo Bajo",
+    MEDIO: "Riesgo Medio",
+    ALTO: "Riesgo Alto"
   };
 
   return (

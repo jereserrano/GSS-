@@ -131,20 +131,27 @@ export async function importCompetenciasMasivo(data: any) {
       const programasCache = new Map<string, string>();
       
       for (const row of parsed.data) {
-        const codigoProg = String(row.codigoPrograma);
-        if (!programasCache.has(codigoProg)) {
-          const prog = await tx.programa.findUnique({ where: { codigo: codigoProg } });
-          if (!prog) {
-            throw new Error(`El programa con código ${codigoProg} no existe.`);
+        const codigosProg = String(row.codigosProgramas).split(",").map(s => s.trim()).filter(Boolean);
+        const progIds = [];
+        
+        for (const codigoProg of codigosProg) {
+          if (!programasCache.has(codigoProg)) {
+            const prog = await tx.programa.findUnique({ where: { codigo: codigoProg } });
+            if (!prog) {
+              throw new Error(`El programa con código ${codigoProg} no existe.`);
+            }
+            programasCache.set(codigoProg, prog.id);
           }
-          programasCache.set(codigoProg, prog.id);
+          progIds.push(programasCache.get(codigoProg)!);
         }
 
         await tx.competencia.create({
           data: {
             codigo: String(row.codigo),
             nombre: String(row.nombre),
-            programaId: programasCache.get(codigoProg)!,
+            programas: {
+              connect: progIds.map(id => ({ id }))
+            },
             tipo: (row.tipo as any) || "TECNICA",
             duracionHoras: Number(row.duracionHoras) || 0,
           }

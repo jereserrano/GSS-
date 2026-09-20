@@ -37,9 +37,9 @@ export function InstructorFormDialog({ instructor, onClose, onSuccess }: Instruc
       nombres: formData.get("nombres") as string,
       apellidos: formData.get("apellidos") as string,
       email: formData.get("email") as string,
-      telefono: formData.get("telefono") as string,
-      profesion: formData.get("profesion") as string,
-      estado: formData.get("estado") as string,
+      telefono: (formData.get("telefono") as string) || undefined,
+      profesion: (formData.get("profesion") as string) || undefined,
+      estado: (formData.get("estado") as string) || undefined,
     };
 
     try {

@@ -1,4 +1,4 @@
-﻿-- CreateTable
+-- CreateTable
 CREATE TABLE `instituciones` (
     `id` VARCHAR(191) NOT NULL,
     `nit` VARCHAR(191) NOT NULL,

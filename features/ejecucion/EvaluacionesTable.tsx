@@ -15,7 +15,7 @@ import { useSession } from "next-auth/react";
 
 interface EvaluacionesTableProps {
   initialData: any;
-  raps: { id: string; codigo: string; nombre: string; competencia?: { programaId: string } }[];
+  raps: { id: string; codigo: string; nombre: string; competencia?: any }[];
   aprendices: { id: string; nombres: string; apellidos: string; numeroDocumento: string; fichaId?: string; ficha: { id?: string; codigo: string } }[];
   fichas: { id: string; codigo: string; programa: { nombre: string } }[];
   rapIdFijo?: string;

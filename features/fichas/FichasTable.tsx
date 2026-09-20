@@ -142,6 +142,15 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
       )
     },
     {
+      key: "jornada",
+      header: "Jornada",
+      render: (f) => (
+        <span className="text-sm font-medium text-text-primary">
+          {f.jornada || "No asignada"}
+        </span>
+      )
+    },
+    {
       key: "aprendices",
       header: "Aprendices",
       align: "center",

@@ -138,11 +138,14 @@ export function slugify(text: string): string {
  * Retorna la clase de badge correspondiente al nivel de riesgo.
  * IMPORTANTE: usar solo estas clases para mantener consistencia.
  */
-export function getRiskBadgeClass(nivel: "bajo" | "medio" | "alto"): string {
+export function getRiskBadgeClass(nivel: string): string {
   const mapa: Record<string, string> = {
     bajo:  "badge-riesgo-bajo",
     medio: "badge-riesgo-medio",
     alto:  "badge-riesgo-alto",
+    BAJO:  "badge-riesgo-bajo",
+    MEDIO: "badge-riesgo-medio",
+    ALTO:  "badge-riesgo-alto",
   };
   return mapa[nivel] ?? "badge-riesgo-bajo";
 }

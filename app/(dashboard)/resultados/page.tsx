@@ -37,9 +37,7 @@ export default async function ResultadosPage() {
       include: {
         resultadoAprendizaje: {
           include: {
-            competencia: {
-              include: { programa: true }
-            }
+            competencia: true
           }
         }
       },

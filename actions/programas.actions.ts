@@ -80,6 +80,15 @@ export async function createPrograma(data: z.infer<typeof programaSchema>) {
         nombre: data.nombre,
         nivelFormacion: data.nivelFormacion || "TECNICO",
         estado: data.estado || "ACTIVO",
+        version: data.version || null,
+        duracion: data.duracion ? Number(data.duracion) : null,
+        modalidad: (data.modalidad as any) || null,
+        area: data.area || null,
+        areaDesempeno: data.areaDesempeno || null,
+        titulacion: data.titulacion || null,
+        descripcion: data.descripcion || null,
+        perfilIngreso: data.perfilIngreso || null,
+        perfilEgresado: data.perfilEgresado || null,
       },
     });
 
@@ -110,6 +119,15 @@ export async function updatePrograma(id: string, data: z.infer<typeof programaSc
         nombre: data.nombre,
         nivelFormacion: data.nivelFormacion,
         estado: data.estado,
+        version: data.version || null,
+        duracion: data.duracion ? Number(data.duracion) : null,
+        modalidad: (data.modalidad as any) || null,
+        area: data.area || null,
+        areaDesempeno: data.areaDesempeno || null,
+        titulacion: data.titulacion || null,
+        descripcion: data.descripcion || null,
+        perfilIngreso: data.perfilIngreso || null,
+        perfilEgresado: data.perfilEgresado || null,
       },
     });
 

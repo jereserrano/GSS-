@@ -9,7 +9,9 @@ import { Search, Plus, Filter, Download, Pencil, Trash2 } from "lucide-react";
 import type { ColumnaDef, PaginatedResponse } from "@/types/common.types";
 import { getProgramasAction, deletePrograma, exportProgramasCSV } from "@/actions/programas.actions";
 import { ProgramaFormDialog } from "./ProgramaFormDialog";
+import { ProgramaDetailPanel } from "./ProgramaDetailPanel";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 interface ProgramasTableProps {
   initialData: any;
@@ -21,9 +23,14 @@ export function ProgramasTable({ initialData }: ProgramasTableProps) {
   const isFirstRender = useRef(true);
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [selectedPrograma, setSelectedPrograma] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  const { data: session } = useSession();
+  const role = (session?.user?.role ?? "").toUpperCase();
+  const canEdit = role === "ADMINISTRADOR" || role === "COORDINADOR";
 
   const [filtros, setFiltros] = useState({ pagina: 1, tamano: 10, busqueda: "" });
 
@@ -42,8 +49,18 @@ export function ProgramasTable({ initialData }: ProgramasTableProps) {
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
+    cargarDatos();
+  };
+
+  const handleCloseDetail = () => {
+    setDetailPanelOpen(false);
     setSelectedPrograma(null);
     cargarDatos();
+  };
+
+  const handleRowClick = (programa: any) => {
+    setSelectedPrograma(programa);
+    setDetailPanelOpen(true);
   };
 
   const handleExport = async () => {
@@ -115,8 +132,11 @@ export function ProgramasTable({ initialData }: ProgramasTableProps) {
       key: "estado",
       header: "Estado",
       render: (p) => <StatusBadge estado={p.estado?.toLowerCase()} />
-    },
-    {
+    }
+  ];
+
+  if (canEdit) {
+    columnas.push({
       key: "acciones",
       header: "",
       align: "right",
@@ -125,7 +145,7 @@ export function ProgramasTable({ initialData }: ProgramasTableProps) {
           <Button
             variant="ghost" size="icon"
             className="h-8 w-8 text-text-secondary hover:text-primary"
-            onClick={(e) => { e.stopPropagation(); setSelectedPrograma(p); setDialogOpen(true); }}
+            onClick={(e) => { e.stopPropagation(); setSelectedPrograma(p); setDialogOpen(true); setDetailPanelOpen(false); }}
           >
             <Pencil size={14} />
           </Button>
@@ -139,8 +159,8 @@ export function ProgramasTable({ initialData }: ProgramasTableProps) {
           </Button>
         </div>
       )
-    }
-  ];
+    });
+  }
 
   return (
     <>
@@ -164,13 +184,15 @@ export function ProgramasTable({ initialData }: ProgramasTableProps) {
             <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
               <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
             </Button>
-            <Button onClick={() => { setSelectedPrograma(null); setDialogOpen(true); }}>
-              <Plus size={16} className="mr-2" /> Nuevo Programa
-            </Button>
+            {canEdit && (
+              <Button onClick={() => { setSelectedPrograma(null); setDialogOpen(true); }}>
+                <Plus size={16} className="mr-2" /> Nuevo Programa
+              </Button>
+            )}
           </div>
         </div>
 
-        <DataTable data={data?.data || []} columnas={columnas} isLoading={loading} />
+        <DataTable data={data?.data || []} columnas={columnas} isLoading={loading} onRowClick={handleRowClick} />
 
         {!loading && data && data.totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 text-sm text-text-secondary px-2">
@@ -190,6 +212,16 @@ export function ProgramasTable({ initialData }: ProgramasTableProps) {
           </div>
         )}
       </div>
+
+      {detailPanelOpen && selectedPrograma && (
+        <ProgramaDetailPanel
+          programa={selectedPrograma}
+          onClose={handleCloseDetail}
+          onEdit={() => {
+            setDialogOpen(true);
+          }}
+        />
+      )}
 
       {dialogOpen && (
         <ProgramaFormDialog

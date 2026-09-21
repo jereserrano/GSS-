@@ -38,6 +38,19 @@ export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapId
 
   const evaluaciones = initialData?.data || [];
 
+  const filteredEvaluaciones = React.useMemo(() => {
+    if (!busqueda.trim()) return evaluaciones;
+    const lower = busqueda.toLowerCase();
+    return evaluaciones.filter((e: any) => 
+      e.aprendiz?.nombres?.toLowerCase().includes(lower) ||
+      e.aprendiz?.apellidos?.toLowerCase().includes(lower) ||
+      e.aprendiz?.numeroDocumento?.toLowerCase().includes(lower) ||
+      e.resultadoAprendizaje?.codigo?.toLowerCase().includes(lower) ||
+      e.resultadoAprendizaje?.nombre?.toLowerCase().includes(lower) ||
+      e.aprendiz?.ficha?.codigo?.toLowerCase().includes(lower)
+    );
+  }, [busqueda, evaluaciones]);
+
   const handleEdit = (evaluacion: any) => {
     setSelectedEvaluacion(evaluacion);
     setDialogOpen(true);
@@ -186,7 +199,7 @@ export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapId
       </div>
 
       <DataTable 
-        data={evaluaciones} 
+        data={filteredEvaluaciones} 
         columnas={columnasVisibles} 
         isLoading={loading} 
       />

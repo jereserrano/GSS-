@@ -136,6 +136,18 @@ export function AuditoriaTable({ initialData }: AuditoriaTableProps) {
   const [exporting, setExporting] = useState(false);
   const logs = initialData?.data || [];
 
+  const filteredLogs = React.useMemo(() => {
+    if (!busqueda.trim()) return logs;
+    const lower = busqueda.toLowerCase();
+    return logs.filter((log: any) => 
+      log.modulo?.toLowerCase().includes(lower) ||
+      log.user?.nombre?.toLowerCase().includes(lower) ||
+      log.user?.email?.toLowerCase().includes(lower) ||
+      log.accion?.toLowerCase().includes(lower) ||
+      log.detalle?.toLowerCase().includes(lower)
+    );
+  }, [busqueda, logs]);
+
   const handleExport = async () => {
     setExporting(true);
     try {
@@ -220,7 +232,7 @@ export function AuditoriaTable({ initialData }: AuditoriaTableProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 justify-between">
-        <div className="flex items-center gap-2 max-w-lg flex-1">
+        <div className="flex flex-1 gap-2 max-w-lg">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
             <Input
@@ -230,16 +242,15 @@ export function AuditoriaTable({ initialData }: AuditoriaTableProps) {
               className="bg-surface pl-9"
             />
           </div>
-          <Button variant="secondary" onClick={() => router.push(`?busqueda=${busqueda}`)}>
-            Buscar
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
+            <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
           </Button>
         </div>
-        <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>
-          <Download size={16} className="mr-2" /> {exporting ? "Exportando..." : "Exportar"}
-        </Button>
       </div>
 
-      <DataTable data={logs} columnas={columnas} isLoading={false} />
+      <DataTable data={filteredLogs} columnas={columnas} isLoading={false} />
 
       {initialData && initialData.total === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-text-secondary gap-3">

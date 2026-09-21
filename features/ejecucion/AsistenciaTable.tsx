@@ -38,6 +38,18 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
 
   const asistencias = initialData?.data || [];
 
+  const filteredAsistencias = React.useMemo(() => {
+    if (!busqueda.trim()) return asistencias;
+    const lower = busqueda.toLowerCase();
+    return asistencias.filter((a: any) => 
+      a.ficha?.codigo?.toLowerCase().includes(lower) ||
+      a.instructor?.nombres?.toLowerCase().includes(lower) ||
+      a.instructor?.apellidos?.toLowerCase().includes(lower) ||
+      a.tema?.toLowerCase().includes(lower) ||
+      a.estado?.toLowerCase().includes(lower)
+    );
+  }, [busqueda, asistencias]);
+
   const handleEdit = (asistencia: any) => {
     setSelectedAsistencia(asistencia);
     setDialogOpen(true);
@@ -223,7 +235,7 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
       </div>
 
       <DataTable 
-        data={asistencias} 
+        data={filteredAsistencias} 
         columnas={columnasVisibles} 
         isLoading={loading} 
       />

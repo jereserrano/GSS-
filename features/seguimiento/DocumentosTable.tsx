@@ -27,6 +27,16 @@ export function DocumentosTable({ initialData, instituciones }: DocumentosTableP
 
   const documentos = initialData?.data || [];
 
+  const filteredDocumentos = React.useMemo(() => {
+    if (!busqueda.trim()) return documentos;
+    const lower = busqueda.toLowerCase();
+    return documentos.filter((d: any) => 
+      d.nombre?.toLowerCase().includes(lower) ||
+      d.tipo?.toLowerCase().includes(lower) ||
+      d.institucion?.nombre?.toLowerCase().includes(lower)
+    );
+  }, [busqueda, documentos]);
+
   const handleEdit = (d: any) => { setSelectedDocumento(d); setDialogOpen(true); };
   const handleCreate = () => { setSelectedDocumento(null); setDialogOpen(true); };
 
@@ -148,7 +158,7 @@ export function DocumentosTable({ initialData, instituciones }: DocumentosTableP
         </div>
       </div>
 
-      <DataTable data={documentos} columnas={columnas} isLoading={loading} />
+      <DataTable data={filteredDocumentos} columnas={columnas} isLoading={loading} />
 
       {dialogOpen && (
         <DocumentoFormDialog

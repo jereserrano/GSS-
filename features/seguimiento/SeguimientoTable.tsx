@@ -28,6 +28,19 @@ export function SeguimientoTable({ initialData, fichas, userRole = "ADMINISTRADO
 
   const visitas = initialData?.data || [];
 
+  const filteredVisitas = React.useMemo(() => {
+    if (!busqueda.trim()) return visitas;
+    const lower = busqueda.toLowerCase();
+    return visitas.filter((v: any) => 
+      v.aprendiz?.nombres?.toLowerCase().includes(lower) ||
+      v.aprendiz?.apellidos?.toLowerCase().includes(lower) ||
+      v.ficha?.codigo?.toLowerCase().includes(lower) ||
+      v.institucionNombre?.toLowerCase().includes(lower) ||
+      v.responsable?.toLowerCase().includes(lower)
+    );
+  }, [busqueda, visitas]);
+
+
   const handleEdit = (s: any) => { setSelectedSeguimiento(s); setDialogOpen(true); };
   const handleCreate = () => { setSelectedSeguimiento(null); setDialogOpen(true); };
 
@@ -174,7 +187,7 @@ export function SeguimientoTable({ initialData, fichas, userRole = "ADMINISTRADO
         </div>
       </div>
 
-      <DataTable data={visitas} columnas={columnas} isLoading={loading} />
+      <DataTable data={filteredVisitas} columnas={columnas} isLoading={loading} />
 
       {dialogOpen && (
         <SeguimientoFormDialog

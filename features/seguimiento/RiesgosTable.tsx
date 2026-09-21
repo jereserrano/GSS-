@@ -30,6 +30,18 @@ export function RiesgosTable({ initialData, aprendices }: RiesgosTableProps) {
   const alertas = initialData?.data || [];
   const alertasAltas = alertas.filter((a: any) => a.nivel === "ALTO" && !a.gestionada).length;
 
+  const filteredAlertas = React.useMemo(() => {
+    if (!busqueda.trim()) return alertas;
+    const lower = busqueda.toLowerCase();
+    return alertas.filter((a: any) => 
+      a.aprendiz?.nombres?.toLowerCase().includes(lower) ||
+      a.aprendiz?.apellidos?.toLowerCase().includes(lower) ||
+      a.aprendiz?.numeroDocumento?.toLowerCase().includes(lower) ||
+      a.descripcion?.toLowerCase().includes(lower) ||
+      a.tipo?.toLowerCase().includes(lower)
+    );
+  }, [busqueda, alertas]);
+
   const handleEdit = (riesgo: any) => {
     setSelectedRiesgo(riesgo);
     setDialogOpen(true);
@@ -178,7 +190,7 @@ export function RiesgosTable({ initialData, aprendices }: RiesgosTableProps) {
         </div>
       )}
 
-      <DataTable data={alertas} columnas={columnas} isLoading={loading} />
+      <DataTable data={filteredAlertas} columnas={columnas} isLoading={loading} />
 
       {dialogOpen && (
         <RiesgoFormDialog 

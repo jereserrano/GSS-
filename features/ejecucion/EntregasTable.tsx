@@ -37,8 +37,18 @@ export function EntregasTable({ initialData, actividades, aprendices, fichaIdFij
   const [entregaParaDetalle, setEntregaParaDetalle] = useState<any>(null);
   
   const [exporting, setExporting] = useState(false);
-
   const entregas = initialData?.data || [];
+
+  const filteredEntregas = React.useMemo(() => {
+    if (!busqueda.trim()) return entregas;
+    const lower = busqueda.toLowerCase();
+    return entregas.filter((e: any) => 
+      e.aprendiz?.nombres?.toLowerCase().includes(lower) ||
+      e.aprendiz?.apellidos?.toLowerCase().includes(lower) ||
+      e.aprendiz?.numeroDocumento?.toLowerCase().includes(lower) ||
+      e.actividad?.nombre?.toLowerCase().includes(lower)
+    );
+  }, [busqueda, entregas]);
 
   const handleEdit = (entrega: any) => {
     setSelectedEntrega(entrega);
@@ -225,7 +235,7 @@ export function EntregasTable({ initialData, actividades, aprendices, fichaIdFij
       </div>
 
       <DataTable 
-        data={entregas} 
+        data={filteredEntregas} 
         columnas={columnas} 
         isLoading={loading} 
       />

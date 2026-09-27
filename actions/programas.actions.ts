@@ -8,6 +8,8 @@ import { programaSchema } from "@/schemas";
 import { z } from "zod";
 import { logAudit } from "@/lib/audit.service";
 import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
 
 async function getSessionUserId() {
@@ -34,14 +36,31 @@ export async function getProgramasAction(filtros: {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
-    const where: any = filtros.busqueda
-      ? {
-          OR: [
-            { nombre: { contains: filtros.busqueda } },
-            { codigo: { contains: filtros.busqueda } },
-          ],
-        }
-      : {};
+    const session = await getServerSession(authOptions);
+    let sedeIdFilter = null;
+    
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      if (userRecord?.rol === "APOYO_COORDINACION") {
+        if (!userRecord.sedeId) return { success: true, data: paginatedResponse([], 0, pagina, tamano) };
+        sedeIdFilter = userRecord.sedeId;
+      }
+    }
+
+    const where: any = {
+      ...(filtros.busqueda
+        ? {
+            OR: [
+              { nombre: { contains: filtros.busqueda } },
+              { codigo: { contains: filtros.busqueda } },
+            ],
+          }
+        : {}),
+      ...(sedeIdFilter ? { fichas: { some: { sedeId: sedeIdFilter } } } : {})
+    };
 
     const [data, total] = await TransactionRepository.$transaction([
       ProgramaRepository.findMany({
@@ -216,5 +235,39 @@ export async function getProgramaCompleto(programaId: string) {
   } catch (error: any) {
     console.error("Error fetching programa completo:", error);
     return { success: false, error: "Error al cargar la información del programa" };
+  }
+}
+
+export async function getProgramasConFichasAction() {
+  try {
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION"]);
+    const isApoyo = user.rol === "APOYO_COORDINACION";
+    const userSedeId = (user as any).sedeId;
+
+    // Si es Apoyo Coordinacion, filtramos para devolver solo los programas que tienen fichas en su sede,
+    // y para cada programa devolvemos SOLO las fichas de esa sede.
+    const programas = await ProgramaRepository.findMany({
+      where: isApoyo && userSedeId ? {
+        fichas: { some: { sedeId: userSedeId } }
+      } : {},
+      orderBy: { nombre: "asc" },
+      include: {
+        fichas: {
+          where: isApoyo && userSedeId ? { sedeId: userSedeId } : {},
+          include: {
+            institucion: { select: { nombre: true } },
+            sede: { select: { nombre: true, municipio: true } },
+            _count: { select: { aprendices: true } }
+          },
+          orderBy: { creadoEn: "desc" }
+        },
+        _count: { select: { competencias: true } }
+      }
+    });
+
+    return { success: true, data: programas };
+  } catch (error: any) {
+    console.error("Error fetching programas con fichas:", error);
+    return { success: false, error: "Error al cargar los programas y fichas" };
   }
 }

@@ -2,6 +2,7 @@
 
 import { EvaluacionAprendizRepository } from "@/repositories/evaluacionAprendiz.repository";
 import { TransactionRepository } from "@/repositories/transaction.repository";
+import { prisma } from "@/lib/prisma";
 
 import { evaluacionSchema } from "@/schemas";
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
@@ -77,6 +78,7 @@ export async function createEvaluacion(data: any) {
     const evaluacion = await EvaluacionAprendizRepository.create({
       data: {
         resultadoAprendizajeId: data.resultadoAprendizajeId,
+        criterioEvaluacionId: data.criterioEvaluacionId || null,
         aprendizId: data.aprendizId,
         juicio: data.juicio || "PENDIENTE",
         fecha: data.fechaEvaluacion ? new Date(data.fechaEvaluacion) : null,
@@ -183,5 +185,87 @@ export async function exportEvaluacionesCSV() {
   } catch (error: any) {
     console.error("Error exporting evaluaciones:", error);
     return { success: false, error: "Error al generar reporte de evaluaciones" };
+  }
+}
+
+export async function getSabanaNotasAction(fichaId: string) {
+  try {
+    const ficha = await prisma.ficha.findUnique({
+      where: { id: fichaId },
+      include: {
+        programa: {
+          include: {
+            competencias: {
+              include: {
+                resultadosAprendizaje: true
+              }
+            }
+          }
+        },
+        aprendices: {
+          include: {
+            evaluaciones: true
+          }
+        }
+      }
+    });
+
+    if (!ficha) return { success: false, error: "Ficha no encontrada" };
+
+    return { success: true, data: ficha };
+  } catch (error: any) {
+    console.error("Error fetching sabana:", error);
+    return { success: false, error: "Error al generar sábana de notas" };
+  }
+}
+
+export async function calificarMasivoAction(fichaId: string, raId: string, calificaciones: { aprendizId: string; nota: number }[]) {
+  try {
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    
+    if (!calificaciones || calificaciones.length === 0) {
+      return { success: false, error: "No hay calificaciones para guardar" };
+    }
+
+    await prisma.$transaction(
+      calificaciones.map((cal) => {
+        const juicio = cal.nota >= 3.5 ? "APROBADO" : "DEFICIENTE";
+        
+        return prisma.evaluacionAprendiz.upsert({
+          where: {
+            aprendizId_resultadoAprendizajeId: {
+              aprendizId: cal.aprendizId,
+              resultadoAprendizajeId: raId
+            }
+          },
+          update: {
+            nota: cal.nota,
+            juicio: juicio as any, // Cast to any to avoid type errors if DB schema hasn't fully synced type
+            fecha: new Date(),
+          },
+          create: {
+            aprendizId: cal.aprendizId,
+            resultadoAprendizajeId: raId,
+            nota: cal.nota,
+            juicio: juicio as any,
+            fecha: new Date(),
+          }
+        });
+      })
+    );
+
+    await logAudit({
+      userId: user.id,
+      modulo: "Evaluaciones",
+      accion: "CALIFICACION_MASIVA",
+      detalle: `Calificación masiva para RAP ID: ${raId} en Ficha ID: ${fichaId} (${calificaciones.length} aprendices)`,
+    });
+    
+    revalidatePath("/evaluaciones");
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error calificacion masiva:", error);
+    return { success: false, error: error.message || "Error al guardar calificaciones masivas" };
   }
 }

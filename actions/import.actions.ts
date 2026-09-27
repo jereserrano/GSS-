@@ -161,7 +161,12 @@ export async function importCompetenciasMasivo(data: any) {
       return count;
     });
 
-    await logAudit(user.id, "COMPETENCIAS", "IMPORT", `Importación masiva de ${result} competencias`);
+    await logAudit({
+      userId: user.id,
+      modulo: "Competencias",
+      accion: "IMPORTAR",
+      detalle: `Importación masiva de ${result} competencias`,
+    });
     revalidatePath("/competencias");
     return { success: true, count: result };
   } catch (error: any) {
@@ -180,7 +185,7 @@ export async function importResultadosMasivo(data: any) {
       return { success: false, error: "Estructura de datos inválida", issues: parsed.error.errors };
     }
 
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
 
     const result = await TransactionRepository.$transaction(async (tx) => {
       let count = 0;
@@ -209,7 +214,12 @@ export async function importResultadosMasivo(data: any) {
       return count;
     });
 
-    await logAudit(user.id, "RESULTADOS_APRENDIZAJE", "IMPORT", `Importación masiva de ${result} resultados de aprendizaje`);
+    await logAudit({
+      userId: user.id,
+      modulo: "Resultados de Aprendizaje",
+      accion: "IMPORTAR",
+      detalle: `Importación masiva de ${result} resultados de aprendizaje`,
+    });
     revalidatePath("/resultados-aprendizaje");
     return { success: true, count: result };
   } catch (error: any) {

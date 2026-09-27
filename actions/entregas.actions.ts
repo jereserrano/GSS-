@@ -38,11 +38,11 @@ export async function getEntregasAction(filtros: any = {}) {
     if (session?.user?.email) {
       userContext = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { rol: true, instructor: true, aprendiz: true }
+        include: { instructor: true, aprendiz: true }
       });
     }
 
-    const rolNombre = userContext?.rol?.nombre?.toUpperCase() || "";
+    const rolNombre = userContext?.rol?.toUpperCase() || "";
     let aprendizFiltro = filtros.aprendizId;
 
     // Si es Aprendiz, estrictamente restringido a sus propias entregas (Anti-IDOR)
@@ -107,7 +107,7 @@ export async function createEntrega(data: z.infer<typeof entregaSchema>) {
     
     // Obtener contexto de aprendiz si el rol es APRENDIZ
     let aprendizId = data.aprendizId;
-    const isAprendiz = user.rol.nombre.toUpperCase().includes("APRENDIZ");
+    const isAprendiz = user.rol.toUpperCase().includes("APRENDIZ");
     if (isAprendiz) {
       const aprendizRecord = await prisma.aprendiz.findUnique({
         where: { userId: user.id }

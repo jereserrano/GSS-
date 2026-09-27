@@ -7,10 +7,10 @@ import { useSession } from "next-auth/react";
 import { 
   LayoutDashboard, Building2, MapPin, BookOpen, 
   Users, UserCheck, GraduationCap, 
-  Target, FileText, ClipboardList, BookCheck, 
-  CalendarCheck, FileSignature, TrendingUp, AlertTriangle, 
+  Target, FileText, BookCheck, 
+  CalendarCheck, TrendingUp, 
   PieChart, FolderOpen, Bell, Settings, Shield,
-  Menu, ChevronLeft, FileCheck, Activity, Search, User
+  Menu, ChevronLeft, Activity, Search, User, Mail
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessRoute } from "@/lib/permissions";
@@ -37,18 +37,20 @@ const navAprendiz: NavSection[] = [
     title: "Mi Aprendizaje",
     items: [
       { icon: BookOpen, label: "Mi formación", href: "/fichas" },
-      { icon: BookCheck, label: "Mis actividades", href: "/actividades" },
-      { icon: FileSignature, label: "Mis entregas", href: "/entregas" },
-      { icon: TrendingUp, label: "Mis resultados", href: "/resultados" },
-      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
-      { icon: ClipboardList, label: "Ruta de aprendizaje", href: "/plan-formacion" },
+      { icon: BookCheck, label: "Mis Actividades", href: "/gestor-actividades" },
+      { icon: TrendingUp, label: "Mis Calificaciones", href: "/centro-calificaciones" },
+      { icon: Activity, label: "Seguimiento a Riesgos", href: "/seguimiento-riesgos" },
+      { icon: Target, label: "Mi Ruta de Aprendizaje", href: "/diseno-curricular" },
+      { icon: FileText, label: "Mis Excusas", href: "/mis-excusas" },
     ],
   },
   {
     title: "Recursos y Cuenta",
     items: [
+      { icon: Mail, label: "Mensajería", href: "/mensajes" },
       { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
       { icon: User, label: "Perfil", href: "/usuarios" },
+      { icon: Shield, label: "Seguridad (2FA)", href: "/seguridad" },
     ],
   },
 ];
@@ -65,29 +67,27 @@ const navInstructor: NavSection[] = [
     items: [
       { icon: Users, label: "Fichas / Grupos", href: "/fichas" },
       { icon: GraduationCap, label: "Aprendices", href: "/aprendices" },
-      { icon: Target, label: "Competencias", href: "/competencias" },
-      { icon: FileText, label: "Resultados de Aprendizaje", href: "/resultados-aprendizaje" },
-      { icon: ClipboardList, label: "Plan de Formación", href: "/plan-formacion" },
+      { icon: Target, label: "Diseño Curricular", href: "/diseno-curricular" },
     ],
   },
   {
     title: "Ejecución y Evaluación",
     items: [
-      { icon: BookCheck, label: "Actividades", href: "/actividades" },
-      { icon: FileSignature, label: "Entregas", href: "/entregas" },
+      { icon: BookCheck, label: "Gestor de Actividades", href: "/gestor-actividades" },
       { icon: CalendarCheck, label: "Asistencia", href: "/asistencia" },
-      { icon: FileCheck, label: "Evaluaciones", href: "/evaluaciones" },
-      { icon: TrendingUp, label: "Resultados", href: "/resultados" },
+      { icon: TrendingUp, label: "Centro de Calificaciones", href: "/centro-calificaciones" },
     ],
   },
   {
     title: "Acompañamiento",
     items: [
-      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
-      { icon: AlertTriangle, label: "Riesgos", href: "/riesgos" },
+      { icon: Activity, label: "Seguimiento a Riesgos", href: "/seguimiento-riesgos" },
       { icon: PieChart, label: "Reportes", href: "/reportes" },
       { icon: FolderOpen, label: "Documentos", href: "/documentos" },
+      { icon: FileText, label: "Gestor de Excusas", href: "/gestor-excusas" },
+      { icon: Mail, label: "Mensajería", href: "/mensajes" },
       { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
+      { icon: Shield, label: "Seguridad (2FA)", href: "/seguridad" },
     ],
   },
 ];
@@ -116,29 +116,37 @@ const navCoordinador: NavSection[] = [
   {
     title: "Académico",
     items: [
-      { icon: Target, label: "Competencias", href: "/competencias" },
-      { icon: FileText, label: "Resultados de Aprendizaje", href: "/resultados-aprendizaje" },
-      { icon: ClipboardList, label: "Plan de Formación", href: "/plan-formacion" },
+      { icon: Target, label: "Diseño Curricular", href: "/diseno-curricular" },
     ],
   },
   {
     title: "Ejecución",
     items: [
-      { icon: BookCheck, label: "Actividades", href: "/actividades" },
-      { icon: FileSignature, label: "Entregas", href: "/entregas" },
+      { icon: BookCheck, label: "Gestor de Actividades", href: "/gestor-actividades" },
       { icon: CalendarCheck, label: "Asistencia", href: "/asistencia" },
-      { icon: FileCheck, label: "Evaluaciones", href: "/evaluaciones" },
-      { icon: TrendingUp, label: "Resultados", href: "/resultados" },
-    ],
+      { icon: TrendingUp, label: "Centro de Calificaciones", href: "/centro-calificaciones" },
+      ],
   },
   {
     title: "Seguimiento y Reportes",
     items: [
-      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
-      { icon: AlertTriangle, label: "Riesgos", href: "/riesgos" },
+      { icon: Activity, label: "Seguimiento a Riesgos", href: "/seguimiento-riesgos" },
       { icon: PieChart, label: "Reportes", href: "/reportes" },
       { icon: FolderOpen, label: "Documentos", href: "/documentos" },
+      { icon: FileText, label: "Gestor de Excusas", href: "/gestor-excusas" },
+      { icon: Mail, label: "Mensajería", href: "/mensajes" },
+    ],
+  },
+  {
+    title: "Administración del Sistema",
+    items: [
+      { icon: Users, label: "Usuarios", href: "/usuarios" },
+      { icon: Shield, label: "Roles y Permisos", href: "/roles" },
+      { icon: Settings, label: "Configuración", href: "/configuracion" },
+      { icon: Search, label: "Auditoría", href: "/auditoria" },
+      { icon: Mail, label: "Mensajería", href: "/mensajes" },
       { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
+      { icon: Shield, label: "Seguridad (2FA)", href: "/seguridad" },
     ],
   },
 ];
@@ -169,11 +177,12 @@ const navSubdirector: NavSection[] = [
   {
     title: "Supervisión",
     items: [
-      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
-      { icon: AlertTriangle, label: "Riesgos", href: "/riesgos" },
+      { icon: Activity, label: "Seguimiento a Riesgos", href: "/seguimiento-riesgos" },
       { icon: PieChart, label: "Reportes", href: "/reportes" },
       { icon: FolderOpen, label: "Documentos", href: "/documentos" },
+      { icon: Mail, label: "Mensajería", href: "/mensajes" },
       { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
+      { icon: Shield, label: "Seguridad (2FA)", href: "/seguridad" },
     ],
   },
 ];
@@ -204,30 +213,35 @@ const navApoyoCoordinacion: NavSection[] = [
   {
     title: "Académico",
     items: [
-      { icon: Target, label: "Competencias", href: "/competencias" },
-      { icon: FileText, label: "Resultados de Aprendizaje", href: "/resultados-aprendizaje" },
-      { icon: ClipboardList, label: "Plan de Formación", href: "/plan-formacion" },
+      { icon: Target, label: "Diseño Curricular", href: "/diseno-curricular" },
     ],
   },
   {
     title: "Ejecución",
     items: [
-      { icon: BookCheck, label: "Actividades", href: "/actividades" },
+      { icon: BookCheck, label: "Gestor de Actividades", href: "/gestor-actividades" },
       { icon: CalendarCheck, label: "Asistencia", href: "/asistencia" },
-      { icon: FileCheck, label: "Evaluaciones", href: "/evaluaciones" },
-      { icon: TrendingUp, label: "Resultados", href: "/resultados" },
-    ],
+      { icon: TrendingUp, label: "Centro de Calificaciones", href: "/centro-calificaciones" },
+      ],
   },
   {
     title: "Seguimiento y Reportes",
     items: [
-      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
-      { icon: AlertTriangle, label: "Riesgos", href: "/riesgos" },
+      { icon: Activity, label: "Seguimiento a Riesgos", href: "/seguimiento-riesgos" },
       { icon: PieChart, label: "Reportes", href: "/reportes" },
       { icon: FolderOpen, label: "Documentos", href: "/documentos" },
-      { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
+      { icon: FileText, label: "Gestor de Excusas", href: "/gestor-excusas" },
+      { icon: Mail, label: "Mensajería", href: "/mensajes" },
     ],
   },
+  {
+    title: "Administración",
+    items: [
+      { icon: Users, label: "Usuarios", href: "/usuarios" },
+      { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
+      { icon: Shield, label: "Seguridad (2FA)", href: "/seguridad" },
+    ]
+  }
 ];
 
 // Menú EXCLUSIVO para ADMINISTRADOR DEL SISTEMA
@@ -256,38 +270,36 @@ const navAdmin: NavSection[] = [
   {
     title: "Académico",
     items: [
-      { icon: Target, label: "Competencias", href: "/competencias" },
-      { icon: FileText, label: "Resultados de Aprendizaje", href: "/resultados-aprendizaje" },
-      { icon: ClipboardList, label: "Plan de Formación", href: "/plan-formacion" },
+      { icon: Target, label: "Diseño Curricular", href: "/diseno-curricular" },
     ],
   },
   {
     title: "Ejecución",
     items: [
-      { icon: BookCheck, label: "Actividades", href: "/actividades" },
-      { icon: FileSignature, label: "Entregas", href: "/entregas" },
+      { icon: BookCheck, label: "Gestor de Actividades", href: "/gestor-actividades" },
       { icon: CalendarCheck, label: "Asistencia", href: "/asistencia" },
-      { icon: FileCheck, label: "Evaluaciones", href: "/evaluaciones" },
-      { icon: TrendingUp, label: "Resultados", href: "/resultados" },
-    ],
+      { icon: TrendingUp, label: "Centro de Calificaciones", href: "/centro-calificaciones" },
+      ],
   },
   {
     title: "Seguimiento y Reportes",
     items: [
-      { icon: Activity, label: "Seguimiento", href: "/seguimiento" },
-      { icon: AlertTriangle, label: "Riesgos", href: "/riesgos" },
+      { icon: Activity, label: "Seguimiento a Riesgos", href: "/seguimiento-riesgos" },
       { icon: PieChart, label: "Reportes", href: "/reportes" },
       { icon: FolderOpen, label: "Documentos", href: "/documentos" },
+      { icon: FileText, label: "Gestor de Excusas", href: "/gestor-excusas" },
     ],
   },
   {
     title: "Administración del Sistema",
     items: [
+      { icon: Mail, label: "Mensajería", href: "/mensajes" },
       { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
       { icon: Users, label: "Usuarios", href: "/usuarios" },
       { icon: Shield, label: "Roles y Permisos", href: "/roles" },
       { icon: Search, label: "Auditoría", href: "/auditoria" },
       { icon: Settings, label: "Configuración", href: "/configuracion" },
+      { icon: Shield, label: "Seguridad (2FA)", href: "/seguridad" },
     ],
   },
 ];
@@ -468,3 +480,4 @@ export function Sidebar() {
     </>
   );
 }
+

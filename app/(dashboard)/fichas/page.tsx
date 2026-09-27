@@ -3,20 +3,23 @@ import { FichasTable } from "@/features/fichas/FichasTable";
 import { getFichasAction } from "@/actions/fichas.actions";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { ExploradorProgramas } from "@/components/shared/ExploradorProgramas";
 
 export const dynamic = "force-dynamic";
 
 export default async function FichasPage() {
   const session = await getServerSession(authOptions);
 
+  let rolUpper = "";
+
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true, aprendiz: true }
+      include: { aprendiz: true }
     });
-    const rolUpper = user?.rol?.nombre?.toUpperCase() || "";
+    rolUpper = user?.rol?.toUpperCase() || "";
     if (rolUpper.includes("APRENDIZ") && user?.aprendiz?.fichaId) {
       redirect(`/fichas/${user.aprendiz.fichaId}`);
     }
@@ -49,6 +52,12 @@ export default async function FichasPage() {
           Administración de los grupos de formación vinculados a instituciones educativas.
         </p>
       </div>
+
+      {(rolUpper === "ADMINISTRADOR" || rolUpper === "COORDINADOR") && (
+        <div className="mb-8">
+          <ExploradorProgramas basePath="/fichas" moduloName="Fichas" />
+        </div>
+      )}
 
       <FichasTable
         initialData={initialResult.success ? initialResult.data : null}

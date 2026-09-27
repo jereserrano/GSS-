@@ -2,7 +2,7 @@ import React from "react";
 import { TomaAsistenciaForm } from "@/features/ejecucion/TomaAsistenciaForm";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
@@ -15,9 +15,9 @@ export default async function TomarAsistenciaFichaPage({ params }: { params: Pro
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true, instructor: true }
+      include: { instructor: true }
     });
-    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
+    if (user?.rol?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
       instructorId = user.instructor.id;
       instructorActual = user.instructor;
     }

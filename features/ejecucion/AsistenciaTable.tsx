@@ -36,6 +36,9 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
   const [fechaFin, setFechaFin] = useState("");
   const [fichaIdExportar, setFichaIdExportar] = useState("");
 
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedAsistenciaDetails, setSelectedAsistenciaDetails] = useState<any>(null);
+
   const asistencias = initialData?.data || [];
 
   const filteredAsistencias = React.useMemo(() => {
@@ -143,10 +146,10 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
         let faltas = 0;
         let excusas = 0;
         
-        if (a.registros) {
-          a.registros.forEach((r: any) => {
-            if (r.estado === "ASISTIO") asistieron++;
-            else if (r.estado === "FALTA") faltas++;
+        if (a.detalles) {
+          a.detalles.forEach((r: any) => {
+            if (r.estado === "PRESENTE") asistieron++;
+            else if (r.estado === "FALLA") faltas++;
             else if (r.estado === "EXCUSA") excusas++;
           });
         }
@@ -191,10 +194,10 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
       align: "right" as const,
       render: (a: any) => (
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(a)}>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(a); }}>
             <Pencil size={16} className="text-text-secondary" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)}>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(a.id); }}>
             <Trash2 size={16} className="text-red-500" />
           </Button>
         </div>
@@ -238,6 +241,10 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
         data={filteredAsistencias} 
         columnas={columnasVisibles} 
         isLoading={loading} 
+        onRowClick={(row) => {
+          setSelectedAsistenciaDetails(row);
+          setDetailsDialogOpen(true);
+        }}
       />
 
       {dialogOpen && (
@@ -305,6 +312,70 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
               </Button>
               <Button onClick={handleExport} disabled={exporting}>
                 {exporting ? "Descargando..." : "Descargar Reporte"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detailsDialogOpen && selectedAsistenciaDetails && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center px-6 py-4 border-b">
+              <div>
+                <h2 className="text-lg font-semibold text-text-primary">Detalle de Asistencia</h2>
+                <p className="text-xs text-text-secondary">
+                  {selectedAsistenciaDetails.ficha?.codigo} - {formatDateShort(selectedAsistenciaDetails.fecha)}
+                </p>
+              </div>
+              <button onClick={() => setDetailsDialogOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <table className="w-full text-left border-collapse text-sm whitespace-nowrap">
+                <thead className="bg-slate-50 text-slate-700">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold border-b">Aprendiz</th>
+                    <th className="px-4 py-3 font-semibold border-b text-center">Documento</th>
+                    <th className="px-4 py-3 font-semibold border-b text-center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {!selectedAsistenciaDetails.detalles || selectedAsistenciaDetails.detalles.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center text-slate-500 italic">No hay detalles registrados.</td>
+                    </tr>
+                  ) : (
+                    selectedAsistenciaDetails.detalles.map((detalle: any) => (
+                      <tr key={detalle.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-medium text-slate-800">
+                          {detalle.aprendiz?.nombres} {detalle.aprendiz?.apellidos}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 font-mono text-center">
+                          {detalle.aprendiz?.numeroDocumento}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold
+                            ${detalle.estado === 'PRESENTE' ? 'bg-success-100 text-success-800' : 
+                              detalle.estado === 'FALLA' ? 'bg-danger-100 text-danger-800' : 
+                              detalle.estado === 'EXCUSA' ? 'bg-warning-100 text-warning-800' :
+                              'bg-slate-100 text-slate-700'}`}
+                          >
+                            {detalle.estado}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50 rounded-b-xl shrink-0">
+              <Button onClick={() => setDetailsDialogOpen(false)}>
+                Cerrar
               </Button>
             </div>
           </div>

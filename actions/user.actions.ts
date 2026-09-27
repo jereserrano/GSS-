@@ -1,5 +1,4 @@
 "use server";
-import { RolRepository } from "@/repositories/rol.repository";
 import { UserRepository } from "@/repositories/user.repository";
 import { AuditLogRepository } from "@/repositories/auditLog.repository";
 
@@ -20,8 +19,19 @@ import { AuditLogRepository } from "@/repositories/auditLog.repository";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { canManageUser, getAssignableRoles, type CurrentUserCtx } from "@/lib/hierarchy";
+import { getRolesWithStats } from "./roles.actions";
+
+const STATIC_ROLES = {
+  ADMINISTRADOR: { id: "ADMINISTRADOR", nombre: "Administrador", descripcion: "Acceso total al sistema" },
+  INSTRUCTOR: { id: "INSTRUCTOR", nombre: "Instructor", descripcion: "Gestión de aprendices y calificaciones" },
+  APRENDIZ: { id: "APRENDIZ", nombre: "Aprendiz", descripcion: "Estudiante de la media técnica" },
+  SECRETARIO: { id: "SECRETARIO", nombre: "Secretario", descripcion: "Gestión administrativa" },
+  COORDINADOR_REGIONAL: { id: "COORDINADOR_REGIONAL", nombre: "Coordinador Regional", descripcion: "Gestión a nivel regional" },
+  SUBDIRECTOR_REGIONAL: { id: "SUBDIRECTOR_REGIONAL", nombre: "Subdirector Regional", descripcion: "Subdirección a nivel regional" },
+  COORDINADOR_SEDE: { id: "COORDINADOR_SEDE", nombre: "Coordinador de Sede", descripcion: "Gestión de la sede" },
+};
 
 // =============================================================================
 // HELPER INTERNO: Registro de Auditoría Inmutable
@@ -82,9 +92,6 @@ export async function getUsers() {
     }
 
     const users = await UserRepository.findMany({
-      include: {
-        rol: true,
-      },
       orderBy: {
         creadoEn: "desc",
       },
@@ -102,7 +109,7 @@ export async function getUsers() {
 
 export async function getRoles() {
   try {
-    return await RolRepository.findMany();
+    return Object.values(STATIC_ROLES);
   } catch (error) {
     console.error("Error fetching roles:", error);
     return [];
@@ -118,7 +125,7 @@ export async function getAssignableRolesBySession() {
     const currentUser = await getCurrentUserCtx();
     if (!currentUser) return { error: "No autenticado", roles: [] };
 
-    const allRoles = await RolRepository.findMany();
+    const allRoles = Object.values(STATIC_ROLES);
     const assignable = getAssignableRoles(currentUser.role, allRoles);
     return { roles: assignable };
   } catch (error) {
@@ -142,9 +149,9 @@ export async function createUser(data: any) {
     const { nombre, email, password, rolId } = data;
 
     // ── 2. Cargar el rol que se va a asignar ────────────────────────────────
-    const rolToAssign = await RolRepository.findUnique({ where: { id: rolId } });
+    const rolToAssign = STATIC_ROLES[rolId as keyof typeof STATIC_ROLES];
     if (!rolToAssign) {
-      return { error: "El rol seleccionado no existe." };
+      return { error: "El rol seleccionado no es válido." };
     }
 
     // ── 3. Validar jerarquía para la asignación del rol ─────────────────────
@@ -183,7 +190,7 @@ export async function createUser(data: any) {
         nombre, 
         email, 
         passwordHash, 
-        rolId,
+        rol: rolId as any,
         institucionId: data.institucionId || null 
       },
     });
@@ -260,7 +267,6 @@ export async function updateUser(id: string, data: any) {
     // ── 2. Cargar usuario objetivo DESDE LA BD ───────────────────────────────
     const targetUser = await UserRepository.findUnique({
       where: { id },
-      include: { rol: true },
     });
 
     if (!targetUser) {
@@ -269,7 +275,7 @@ export async function updateUser(id: string, data: any) {
 
     const targetCtx = {
       id: targetUser.id,
-      rolNombre: (targetUser as any).rol?.nombre ?? "",
+      rolNombre: targetUser.rol,
       estado: targetUser.estado,
     };
 
@@ -277,9 +283,9 @@ export async function updateUser(id: string, data: any) {
     const action = data.rolId ? "CAMBIAR_ROL" : "MODIFICAR_USUARIO";
     let newRolNombre: string | undefined;
 
-    if (data.rolId && data.rolId !== targetUser.rolId) {
-      const newRol = await RolRepository.findUnique({ where: { id: data.rolId } });
-      if (!newRol) return { error: "El nuevo rol seleccionado no existe." };
+    if (data.rolId && data.rolId !== targetUser.rol) {
+      const newRol = STATIC_ROLES[data.rolId as keyof typeof STATIC_ROLES];
+      if (!newRol) return { error: "El nuevo rol seleccionado no es válido." };
       newRolNombre = newRol.nombre;
     }
 
@@ -294,7 +300,7 @@ export async function updateUser(id: string, data: any) {
         accion: "INTENTO_MODIFICAR_USUARIO_RECHAZADO",
         detalle: {
           solicitante: { id: currentUser.id, rol: currentUser.role },
-          objetivo: { id: targetUser.id, rol: (targetUser as any).rol?.nombre },
+          objetivo: { id: targetUser.id, rol: targetUser.rol },
           accionIntentada: action,
           nuevoRol: newRolNombre,
           motivo: authCheck.reason,
@@ -313,7 +319,8 @@ export async function updateUser(id: string, data: any) {
 
     // ── 4. Construir datos de actualización ─────────────────────────────────
     const { nombre, email, password, rolId, estado, institucionId } = data;
-    let updateData: any = { nombre, email, rolId, estado };
+    let updateData: any = { nombre, email, estado };
+    if (rolId) updateData.rol = rolId as any;
     
     if (institucionId !== undefined) {
       updateData.institucionId = institucionId || null;
@@ -341,7 +348,7 @@ export async function updateUser(id: string, data: any) {
           nombre: { anterior: targetUser.nombre, nuevo: nombre },
           email: { anterior: targetUser.email, nuevo: email },
           rol: newRolNombre
-            ? { anterior: (targetUser as any).rol?.nombre, nuevo: newRolNombre }
+            ? { anterior: targetUser.rol, nuevo: newRolNombre }
             : undefined,
           estado: data.estado !== targetUser.estado
             ? { anterior: targetUser.estado, nuevo: data.estado }
@@ -372,8 +379,7 @@ export async function deleteUser(id: string) {
   try {
     // ── 2. Cargar usuario objetivo DESDE LA BD ───────────────────────────────
     const targetUser = await UserRepository.findUnique({
-      where: { id },
-      include: { rol: true },
+      where: { id }
     });
 
     if (!targetUser) {
@@ -382,7 +388,7 @@ export async function deleteUser(id: string) {
 
     const targetCtx = {
       id: targetUser.id,
-      rolNombre: (targetUser as any).rol?.nombre ?? "",
+      rolNombre: targetUser.rol,
       estado: targetUser.estado,
     };
 
@@ -396,7 +402,7 @@ export async function deleteUser(id: string) {
         accion: "INTENTO_ELIMINAR_USUARIO_RECHAZADO",
         detalle: {
           solicitante: { id: currentUser.id, rol: currentUser.role },
-          objetivo: { id: targetUser.id, nombre: targetUser.nombre, rol: (targetUser as any).rol?.nombre },
+          objetivo: { id: targetUser.id, nombre: targetUser.nombre, rol: targetUser.rol },
           motivo: authCheck.reason,
         },
       });
@@ -414,7 +420,7 @@ export async function deleteUser(id: string) {
           id: targetUser.id,
           nombre: targetUser.nombre,
           email: targetUser.email,
-          rol: (targetUser as any).rol?.nombre,
+          rol: targetUser.rol,
         },
       },
     });
@@ -437,7 +443,6 @@ export async function deleteUser(id: string) {
 export async function exportUsuariosCSV() {
   try {
     const users = await UserRepository.findMany({
-      include: { rol: true },
       orderBy: { creadoEn: "desc" },
     });
 
@@ -446,8 +451,8 @@ export async function exportUsuariosCSV() {
       [
         u.nombre,
         u.email,
-        (u as any).rol?.nombre ?? "Sin Rol",
-        (u as any).estado ?? "",
+        u.rol,
+        u.estado,
         u.creadoEn ? new Date(u.creadoEn).toLocaleDateString("es-CO") : "",
       ]
         .map((v) => `"${String(v || "").replace(/"/g, '""')}"`)

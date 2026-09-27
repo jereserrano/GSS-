@@ -2,7 +2,7 @@ import React from "react";
 import { ReportesPageClient } from "@/features/reportes/ReportesPageClient";
 import { getResumenReportes, getReportesListadosAction } from "@/actions/reportes.actions";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +19,10 @@ export default async function ReportesPage() {
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true, instructor: true }
+      include: { instructor: true }
     });
 
-    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
+    if (user?.rol?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
       const instructorFichas = await prisma.instructorFicha.findMany({
         where: { instructorId: user.instructor.id },
         include: { ficha: { include: { programa: { select: { nombre: true } } } } }

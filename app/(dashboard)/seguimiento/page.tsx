@@ -14,10 +14,10 @@ export default async function SeguimientoPage({ searchParams }: { searchParams: 
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({ 
       where: { email: session.user.email },
-      include: { rol: true, instructor: true, aprendiz: true }
+      include: { instructor: true, aprendiz: true }
     });
     
-    userRole = user?.rol?.nombre?.toUpperCase() || "ADMINISTRADOR";
+    userRole = user?.rol?.toUpperCase() || "ADMINISTRADOR";
     
     if (userRole === "INSTRUCTOR" && user?.instructor) {
       instructorId = user.instructor.id;

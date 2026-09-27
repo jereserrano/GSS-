@@ -41,6 +41,8 @@ export const AprendizCreateSchema = z.object({
 export const UserLoginSchema = z.object({
   email: z.string().email("Correo electrónico inválido"),
   password: z.string().min(1, "La contraseña es obligatoria"),
+  totpCode: z.string().optional(),
+  deviceId: z.string().optional(),
 });
 
 export const UserCreateSchema = z.object({

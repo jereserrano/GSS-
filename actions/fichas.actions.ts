@@ -8,7 +8,7 @@ import { fichaSchema } from "@/schemas";
 import { z } from "zod";
 import { logAudit } from "@/lib/audit.service";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
 
@@ -46,9 +46,9 @@ export async function getFichasAction(filtros: {
     if (session?.user?.email) {
       const userRecord = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { rol: true, instructor: true, aprendiz: true }
+        include: { instructor: true, aprendiz: true }
       });
-      const roleUpper = userRecord?.rol?.nombre?.toUpperCase() || "";
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
       if (roleUpper.includes("INSTRUCT")) {
         if (userRecord?.instructor?.id) {
           instructorIdFilter = userRecord.instructor.id;
@@ -107,7 +107,13 @@ export async function createFicha(data: z.infer<typeof fichaSchema>) {
     const parsed = fichaSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION"]);
+    
+    // Forzar la sede si es APOYO_COORDINACION
+    const userSedeId = (user as any).sedeId;
+    if (user.rol === "APOYO_COORDINACION" && userSedeId && data.sedeId !== userSedeId) {
+      return { error: "Solo puedes crear fichas para tu propia sede asignada." };
+    }
     const existing = await FichaRepository.findUnique({ where: { codigo: data.codigo } });
     if (existing) {
       return { error: "Ya existe una ficha con ese código" };
@@ -230,3 +236,33 @@ export async function exportFichasCSV() {
   }
 }
 
+
+export async function getFichasSelectAction() {
+  try {
+    const session = await getServerSession(authOptions);
+    let where = {};
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: { instructor: true, aprendiz: true }
+      });
+      const rolNombre = userRecord?.rol?.toUpperCase() || "";
+      if (rolNombre.includes("APRENDIZ") && userRecord?.aprendiz?.fichaId) {
+        where = { id: userRecord.aprendiz.fichaId };
+      }
+    }
+    const fichas = await prisma.ficha.findMany({
+      where,
+      select: { 
+        id: true, 
+        codigo: true, 
+        programa: { select: { nombre: true, nivelFormacion: true } },
+        _count: { select: { actividades: true, aprendices: true } }
+      },
+      orderBy: { codigo: "desc" }
+    });
+    return { success: true, data: fichas };
+  } catch (error: any) {
+    return { success: false, error: "Error al cargar fichas" };
+  }
+}

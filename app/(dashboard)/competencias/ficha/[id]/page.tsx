@@ -3,7 +3,7 @@ import { CompetenciasTable } from "@/features/academico/CompetenciasTable";
 import { getCompetenciasAction } from "@/actions/competencias.actions";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -18,10 +18,10 @@ export default async function FichaCompetenciasPage({ params }: { params: Promis
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    include: { rol: true, instructor: true }
+    include: { instructor: true }
   });
 
-  const isInstructor = user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR";
+  const isInstructor = user?.rol?.toUpperCase() === "INSTRUCTOR";
 
   const ficha = await prisma.ficha.findUnique({
     where: { id },

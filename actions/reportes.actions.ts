@@ -6,9 +6,8 @@ import { AlertaRiesgoRepository } from "@/repositories/alertaRiesgo.repository";
 import { AsistenciaRepository } from "@/repositories/asistencia.repository";
 import { EvaluacionAprendizRepository } from "@/repositories/evaluacionAprendiz.repository";
 import { TransactionRepository } from "@/repositories/transaction.repository";
-import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -19,8 +18,11 @@ export async function logAudit(data: {
   accion: string;
   modulo: string;
   descripcion?: string;
+  entidad?: string;
   entidadId?: string;
-  usuarioId?: string;
+  usuarioId?: string | null;
+  valoresAnteriores?: any;
+  valoresNuevos?: any;
 }) {
   try {
     await AuditLogRepository.create({
@@ -29,6 +31,10 @@ export async function logAudit(data: {
         modulo: data.modulo,
         detalle: data.descripcion || `${data.accion} en ${data.modulo}`,
         userId: data.usuarioId || null,
+        entidad: data.entidad ?? null,
+        entidadId: data.entidadId ?? null,
+        valoresAnteriores: data.valoresAnteriores ? JSON.parse(JSON.stringify(data.valoresAnteriores)) : null,
+        valoresNuevos: data.valoresNuevos ? JSON.parse(JSON.stringify(data.valoresNuevos)) : null,
       },
     });
   } catch (error) {
@@ -276,11 +282,11 @@ export async function getResumenReportes() {
     if (session?.user?.email) {
       userRecord = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { rol: true, instructor: true }
+        include: { instructor: true }
       });
     }
 
-    const roleUpper = userRecord?.rol?.nombre?.toUpperCase() || "";
+    const roleUpper = userRecord?.rol?.toUpperCase() || "";
     const isInstructor = roleUpper.includes("INSTRUCT") && userRecord?.instructor?.id;
     
     let aprendizWhere: any = {};
@@ -319,9 +325,21 @@ export async function getResumenReportes() {
   }
 }
 
-export async function exportAuditoriaCSV() {
+export async function exportAuditoriaCSV(filtros?: { fechaInicio?: string, fechaFin?: string }) {
   try {
+    let whereClause: any = {};
+    if (filtros?.fechaInicio || filtros?.fechaFin) {
+      whereClause.fecha = {};
+      if (filtros.fechaInicio) whereClause.fecha.gte = new Date(filtros.fechaInicio);
+      if (filtros.fechaFin) {
+        const fin = new Date(filtros.fechaFin);
+        fin.setHours(23, 59, 59, 999);
+        whereClause.fecha.lte = fin;
+      }
+    }
+
     const logs = await AuditLogRepository.findMany({
+      where: whereClause,
       orderBy: { fecha: "desc" },
       include: {
         user: { select: { nombre: true, email: true } },
@@ -357,11 +375,11 @@ export async function getReportesListadosAction() {
     if (session?.user?.email) {
       userRecord = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { rol: true, instructor: true }
+        include: { instructor: true }
       });
     }
 
-    const roleUpper = userRecord?.rol?.nombre?.toUpperCase() || "";
+    const roleUpper = userRecord?.rol?.toUpperCase() || "";
     const isInstructor = roleUpper.includes("INSTRUCT") && userRecord?.instructor?.id;
     
     let aprendizWhere: any = {};

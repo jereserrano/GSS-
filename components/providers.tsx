@@ -2,14 +2,16 @@
 
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
+import { Session } from "next-auth";
 
 interface ProvidersProps {
   children: React.ReactNode;
+  session?: Session | null;
 }
 
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children, session = null }: ProvidersProps) {
   return (
-    <SessionProvider>
+    <SessionProvider session={session}>
       {children}
       <Toaster 
         position="top-center" 

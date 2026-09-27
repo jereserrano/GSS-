@@ -9,42 +9,42 @@ export const institucionSchema = z.object({
   nit: z.string().min(1, "El NIT es obligatorio"),
   nombre: z.string().min(1, "El nombre es obligatorio"),
   municipio: z.string().min(1, "El municipio es obligatorio"),
-  departamento: z.string().optional(),
+  departamento: z.string().optional().nullable().or(z.literal("")),
   direccion: z.string().min(1, "La dirección es obligatoria"),
-  telefono: z.string().optional(),
-  email: z.string().email("Debe ser un email válido").optional().or(z.literal("")),
-  rector: z.string().optional(),
-  estado: estadoEnum.optional(),
+  telefono: z.string().optional().nullable().or(z.literal("")),
+  email: z.string().email("Debe ser un email válido").optional().nullable().or(z.literal("")),
+  rector: z.string().optional().nullable().or(z.literal("")),
+  estado: estadoEnum.optional().nullable().or(z.literal("")),
 });
 
 // Sede
 export const sedeSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
   institucionId: z.string().min(1, "Institución es obligatoria"),
-  direccion: z.string().optional(),
-  barrio: z.string().optional(),
-  municipio: z.string().optional(),
+  direccion: z.string().optional().nullable().or(z.literal('')),
+  barrio: z.string().optional().nullable().or(z.literal('')),
+  municipio: z.string().optional().nullable().or(z.literal('')),
   esPrincipal: z.boolean().optional().or(z.string().transform(val => val === "true")),
-  coordinador: z.string().optional(),
-  telefono: z.string().optional(),
-  estado: estadoEnum.optional(),
+  coordinador: z.string().optional().nullable().or(z.literal('')),
+  telefono: z.string().optional().nullable().or(z.literal('')),
+  estado: estadoEnum.optional().nullable().or(z.literal('')),
 });
 
 // Programa
 export const programaSchema = z.object({
   codigo: z.string().min(1, "El código es obligatorio"),
   nombre: z.string().min(1, "El nombre es obligatorio"),
-  nivelFormacion: z.enum(["TECNICO", "TECNOLOGO", "OPERARIO"]).optional(),
-  estado: estadoEnum.optional(),
-  version: z.string().optional().nullable(),
-  duracion: z.coerce.number().int().positive().optional().nullable(),
-  modalidad: z.enum(["PRESENCIAL", "VIRTUAL", "DISTANCIA", "COMBINADO"]).optional().nullable(),
-  area: z.string().optional().nullable(),
-  areaDesempeno: z.string().optional().nullable(),
-  titulacion: z.string().optional().nullable(),
-  descripcion: z.string().optional().nullable(),
-  perfilIngreso: z.string().optional().nullable(),
-  perfilEgresado: z.string().optional().nullable(),
+  nivelFormacion: z.enum(["TECNICO", "TECNOLOGO", "OPERARIO"]).optional().nullable().or(z.literal('')),
+  estado: estadoEnum.optional().nullable().or(z.literal('')),
+  version: z.string().optional().nullable().or(z.literal('')),
+  duracion: z.union([z.coerce.number().int().positive(), z.literal(""), z.null()]).optional(),
+  modalidad: z.enum(["PRESENCIAL", "VIRTUAL", "DISTANCIA", "COMBINADO"]).optional().nullable().or(z.literal('')),
+  area: z.string().optional().nullable().or(z.literal('')),
+  areaDesempeno: z.string().optional().nullable().or(z.literal('')),
+  titulacion: z.string().optional().nullable().or(z.literal('')),
+  descripcion: z.string().optional().nullable().or(z.literal('')),
+  perfilIngreso: z.string().optional().nullable().or(z.literal('')),
+  perfilEgresado: z.string().optional().nullable().or(z.literal('')),
 });
 
 // Ficha
@@ -61,31 +61,31 @@ export const fichaSchema = z.object({
 
 // Aprendiz
 export const aprendizSchema = z.object({
-  tipoDocumento: tipoDocumentoEnum.optional(),
+  tipoDocumento: tipoDocumentoEnum.optional().nullable().or(z.literal('')),
   numeroDocumento: z.string().min(1, "El número de documento es obligatorio"),
   nombres: z.string().min(1, "Los nombres son obligatorios"),
   apellidos: z.string().min(1, "Los apellidos son obligatorios"),
-  fechaNacimiento: z.string().optional().or(z.date().optional()),
-  genero: z.string().optional(),
-  telefono: z.string().optional(),
+  fechaNacimiento: z.string().optional().nullable().or(z.literal('')).or(z.date().optional()),
+  genero: z.string().optional().nullable().or(z.literal('')),
+  telefono: z.string().optional().nullable().or(z.literal('')),
   emailPersonal: z.string().email("Email inválido").optional().or(z.literal("")),
   emailSena: z.string().email("Email inválido").optional().or(z.literal("")),
-  direccion: z.string().optional(),
+  direccion: z.string().optional().nullable().or(z.literal('')),
   fichaId: z.string().min(1, "La ficha es obligatoria"),
-  estado: z.enum(["EN_FORMACION", "EGRESADO", "RETIRADO", "APLAZADO", "CANCELADO"]).optional(),
-  nivelRiesgo: z.enum(["BAJO", "MEDIO", "ALTO"]).optional(),
+  estado: z.string().optional().nullable().or(z.literal('')),
+  nivelRiesgo: z.string().optional().nullable().or(z.literal('')),
 });
 
 // Instructor
 export const instructorSchema = z.object({
-  tipoDocumento: tipoDocumentoEnum.optional(),
+  tipoDocumento: tipoDocumentoEnum.optional().nullable().or(z.literal('')),
   numeroDocumento: z.string().min(1, "Documento obligatorio"),
   nombres: z.string().min(1, "Nombres obligatorios"),
   apellidos: z.string().min(1, "Apellidos obligatorios"),
   email: z.string().email("Email inválido"),
-  telefono: z.string().optional(),
-  profesion: z.string().optional(),
-  estado: estadoEnum.optional(),
+  telefono: z.string().optional().nullable().or(z.literal('')),
+  profesion: z.string().optional().nullable().or(z.literal('')),
+  estado: estadoEnum.optional().nullable().or(z.literal('')),
 });
 
 // Competencia
@@ -93,9 +93,9 @@ export const competenciaSchema = z.object({
   codigo: z.string().min(1, "Código obligatorio"),
   nombre: z.string().min(1, "Nombre obligatorio"),
   programasIds: z.array(z.string()).min(1, "Debe seleccionar al menos un programa"),
-  tipo: z.enum(["TECNICA", "TRANSVERSAL", "BASICA"]).optional(),
+  tipo: z.string().optional().nullable().or(z.literal('')),
   duracionHoras: z.number().or(z.string().transform(v => Number(v))),
-  estado: estadoEnum.optional(),
+  estado: estadoEnum.optional().nullable().or(z.literal('')),
 });
 
 // Resultado Aprendizaje
@@ -103,34 +103,34 @@ export const resultadoAprendizajeSchema = z.object({
   codigo: z.string().min(1, "Código obligatorio"),
   nombre: z.string().min(1, "Nombre obligatorio"),
   competenciaId: z.string().min(1, "Competencia obligatoria"),
-  fase: z.enum(["ANALISIS", "PLANEACION", "EJECUCION", "EVALUACION"]).optional(),
+  fase: z.string().optional().nullable().or(z.literal('')),
 });
 
 // Actividad
 export const actividadSchema = z.object({
   nombre: z.string().min(1, "Nombre obligatorio"),
-  descripcion: z.string().optional(),
-  instrucciones: z.string().optional(),
-  tipo: z.enum(["TALLER", "PROYECTO", "FORO", "QUIZ"]).optional(),
+  descripcion: z.string().optional().nullable().or(z.literal('')),
+  instrucciones: z.string().optional().nullable().or(z.literal('')),
+  tipo: z.string().optional().nullable().or(z.literal('')),
   fichaId: z.string().min(1, "Ficha obligatoria"),
   fechaInicio: z.string().or(z.date()).optional(),
   fechaVencimiento: z.string().or(z.date()).optional(),
   fechaFin: z.string().or(z.date()).optional(), // Compatibilidad con el frontend actual
-  estado: z.enum(["ACTIVA", "PUBLICADA", "CERRADA", "BORRADOR"]).optional(),
-  instructorId: z.string().optional(),
-  resultadoAprendizajeId: z.string().optional(),
-  instrucciones: z.string().optional(),
+  estado: z.string().optional().nullable().or(z.literal('')),
+  instructorId: z.string().optional().nullable().or(z.literal('')),
+  resultadoAprendizajeId: z.string().optional().nullable().or(z.literal('')),
+  instrumentoEvaluacionId: z.string().optional().nullable().or(z.literal('')),
 });
 
 // Entrega
 export const entregaSchema = z.object({
   actividadId: z.string().min(1, "Actividad obligatoria"),
   aprendizId: z.string().min(1, "Aprendiz obligatorio"),
-  urlArchivo: z.string().optional(),
-  comentario: z.string().optional(),
-  estado: z.enum(["PENDIENTE", "CALIFICADA", "TARDIA", "APROBADA", "NO_APROBADA"]).optional(),
-  calificacion: z.string().optional(),
-  retroalimentacion: z.string().optional(),
+  urlArchivo: z.string().optional().nullable().or(z.literal('')),
+  comentario: z.string().optional().nullable().or(z.literal('')),
+  estado: z.string().optional().nullable().or(z.literal('')),
+  calificacion: z.string().optional().nullable().or(z.literal('')),
+  retroalimentacion: z.string().optional().nullable().or(z.literal('')),
 });
 
 // Asistencia
@@ -138,8 +138,8 @@ export const asistenciaSchema = z.object({
   fichaId: z.string().min(1, "Ficha obligatoria"),
   instructorId: z.string().min(1, "Instructor obligatorio"),
   fecha: z.string().or(z.date()),
-  tema: z.string().optional(),
-  observaciones: z.string().optional(),
+  tema: z.string().optional().nullable().or(z.literal('')),
+  observaciones: z.string().optional().nullable().or(z.literal('')),
   registros: z.array(
     z.object({
       aprendizId: z.string(),
@@ -152,7 +152,8 @@ export const asistenciaSchema = z.object({
 export const evaluacionSchema = z.object({
   aprendizId: z.string().min(1, "Aprendiz obligatorio"),
   resultadoAprendizajeId: z.string().min(1, "RAP obligatorio"),
-  juicio: z.enum(["APROBADO", "DEFICIENTE", "PENDIENTE"]).optional(),
+  criterioEvaluacionId: z.string().optional().nullable().or(z.literal('')),
+  juicio: z.string().optional().nullable().or(z.literal('')),
   fechaEvaluacion: z.string().or(z.date()).optional(),
   observaciones: z.string().optional().nullable(),
 });
@@ -161,8 +162,8 @@ export const evaluacionSchema = z.object({
 export const alertaSchema = z.object({
   aprendizId: z.string().min(1, "Aprendiz obligatorio"),
   motivo: z.string().min(1, "Motivo obligatorio"),
-  nivel: z.enum(["BAJO", "MEDIO", "ALTO"]).optional(),
-  observaciones: z.string().optional(),
+  nivel: z.string().optional().nullable().or(z.literal('')),
+  observaciones: z.string().optional().nullable().or(z.literal('')),
   gestionada: z.boolean().optional(),
 });
 
@@ -170,20 +171,20 @@ export const alertaSchema = z.object({
 export const visitaSchema = z.object({
   aprendizId: z.string().min(1, "Aprendiz obligatorio"),
   fichaId: z.string().min(1, "Ficha obligatoria"),
-  institucionId: z.string().optional(),
-  institucionNombre: z.string().optional(),
+  institucionId: z.string().optional().nullable().or(z.literal('')),
+  institucionNombre: z.string().optional().nullable().or(z.literal('')),
   fecha: z.string().or(z.date()),
   responsable: z.string().min(1, "Responsable obligatorio"),
   novedades: z.number().optional().or(z.string().transform(v => Number(v) || 0)),
   observaciones: z.string().optional().nullable(),
-  estado: z.enum(["PROGRAMADA", "REALIZADA", "APLAZADA", "CANCELADA"]).optional(),
+  estado: z.string().optional().nullable().or(z.literal('')),
 });
 
 // Documento
 export const documentoSchema = z.object({
   nombre: z.string().min(1, "Nombre obligatorio"),
-  tipo: z.string().optional(),
-  institucionId: z.string().optional(),
+  tipo: z.string().optional().nullable().or(z.literal('')),
+  institucionId: z.string().optional().nullable().or(z.literal('')),
   url: z.string().min(1, "URL obligatoria"),
 });
 
@@ -191,7 +192,7 @@ export const documentoSchema = z.object({
 export const detalleAsistenciaSchema = z.object({
   aprendizId: z.string(),
   estado: z.enum(["PRESENTE", "FALLA", "EXCUSA"]),
-  observaciones: z.string().optional(),
+  observaciones: z.string().optional().nullable().or(z.literal('')),
 });
 
 export const asistenciaMasivaSchema = z.object({

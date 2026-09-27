@@ -38,11 +38,11 @@ export async function getActividadesAction(filtros: any = {}) {
     if (session?.user?.email) {
       userContext = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { rol: true, instructor: true, aprendiz: true }
+        include: { instructor: true, aprendiz: true }
       });
     }
 
-    const rolNombre = userContext?.rol?.nombre?.toUpperCase() || "";
+    const rolNombre = userContext?.rol?.toUpperCase() || "";
     let fichaFiltro = filtros.fichaId;
 
     // Si es Aprendiz, solo puede ver actividades de su ficha y publicadas
@@ -132,6 +132,7 @@ export async function createActividad(data: z.infer<typeof actividadSchema>) {
         fichaId: data.fichaId,
         instructorId,
         resultadoAprendizajeId: data.resultadoAprendizajeId || null,
+
         fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : new Date(),
         fechaVencimiento: new Date(data.fechaFin || data.fechaVencimiento),
         estado: estadoActividad,
@@ -270,5 +271,31 @@ export async function exportActividadesCSV() {
   } catch (error: any) {
     console.error("Error exporting actividades:", error);
     return { success: false, error: "Error al generar reporte de actividades" };
+  }
+}
+
+export async function getActividadesByFichaAction(fichaId: string) {
+  try {
+    const actividades = await prisma.actividad.findMany({
+      where: { fichaId },
+      include: {
+        resultadoAprendizaje: {
+          include: {
+            competencia: true
+          }
+        },
+        entregas: {
+          include: {
+            aprendiz: {
+              include: { user: true }
+            }
+          }
+        }
+      },
+      orderBy: { fechaVencimiento: "desc" }
+    });
+    return { success: true, data: actividades };
+  } catch (error: any) {
+    return { success: false, error: "Error al cargar actividades" };
   }
 }

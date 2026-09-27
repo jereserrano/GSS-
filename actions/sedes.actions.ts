@@ -81,7 +81,7 @@ export async function createSede(data: z.infer<typeof sedeSchema>) {
         direccion: data.direccion || null,
         barrio: data.barrio || null,
         municipio: data.municipio || null,
-        esPrincipal: data.esPrincipal === "true",
+        esPrincipal: data.esPrincipal,
         coordinador: data.coordinador || null,
         telefono: data.telefono || null,
         estado: data.estado || "ACTIVO",
@@ -94,7 +94,7 @@ export async function createSede(data: z.infer<typeof sedeSchema>) {
       accion: "CREAR",
       detalle: "Acción completada exitosamente.",
     });
-    revalidatePath("/sedes");
+    revalidatePath("/", "layout");
     return { success: true, sede };
   } catch (error: any) {
     console.error("Error creating sede:", error);
@@ -116,7 +116,7 @@ export async function updateSede(id: string, data: z.infer<typeof sedeSchema>) {
         direccion: data.direccion || null,
         barrio: data.barrio || null,
         municipio: data.municipio || null,
-        esPrincipal: data.esPrincipal === "true",
+        esPrincipal: data.esPrincipal,
         coordinador: data.coordinador || null,
         telefono: data.telefono || null,
         estado: data.estado,
@@ -129,7 +129,7 @@ export async function updateSede(id: string, data: z.infer<typeof sedeSchema>) {
       accion: "ACTUALIZAR",
       detalle: "Acción completada exitosamente.",
     });
-    revalidatePath("/sedes");
+    revalidatePath("/", "layout");
     return { success: true, sede };
   } catch (error: any) {
     console.error("Error updating sede:", error);
@@ -148,7 +148,7 @@ export async function deleteSede(id: string) {
       accion: "ELIMINAR",
       detalle: "Acción completada exitosamente.",
     });
-    revalidatePath("/sedes");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting sede:", error);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { writeFile } from "fs/promises";
+import { authOptions } from "@/lib/auth";
+import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 
@@ -28,11 +28,12 @@ export async function POST(request: NextRequest) {
 
     // Path in public/uploads
     const uploadDir = join(process.cwd(), "public", "uploads");
+    await mkdir(uploadDir, { recursive: true });
+    
     const filePath = join(uploadDir, fileName);
-
     await writeFile(filePath, buffer);
 
-    const publicUrl = `/uploads/${fileName}`;
+    const publicUrl = `/api/uploads/${fileName}`;
 
     return NextResponse.json({ success: true, url: publicUrl, originalName: file.name });
   } catch (error) {

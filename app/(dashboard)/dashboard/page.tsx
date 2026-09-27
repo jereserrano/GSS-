@@ -4,8 +4,12 @@ import { RiskTable } from "@/features/dashboard/RiskTable";
 import { TrendChart, DistributionChart } from "@/features/dashboard/Charts";
 import { getDashboardKpis } from "@/actions/dashboard.actions";
 import type { KpiData } from "@/types/common.types";
-import { Clock, BookCheck, FileSignature, CheckCircle2, AlertCircle, ArrowRight, BookOpen } from "lucide-react";
+import { Clock, BookCheck, CheckCircle2, ArrowRight, BookOpen } from "lucide-react";
 import Link from "next/link";
+import { InstructorDashboard } from "@/features/dashboard/instructor/InstructorDashboard";
+import { ApoyoDashboard } from "@/features/dashboard/apoyo/ApoyoDashboard";
+import { AdminDashboard } from "@/features/dashboard/admin/AdminDashboard";
+import { AprendizDashboard } from "@/features/dashboard/aprendiz/AprendizDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +25,8 @@ export default async function DashboardPage() {
 
   const isAprendiz = userRole === "APRENDIZ" || userRole.includes("APRENDIZ");
   const isInstructor = userRole === "INSTRUCTOR" || userRole.includes("INSTRUCT");
+  const isApoyo = userRole === "APOYO_COORDINACION";
+  const isAdminOrCoord = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR";
 
   // Definir las 4 métricas adaptadas para responder preguntas pedagógicas concretas
   const kpis: KpiData[] = [
@@ -58,9 +64,6 @@ export default async function DashboardPage() {
     },
   ];
 
-  const pageTitle = isAprendiz 
-    ? "Mi Espacio Formativo" 
-    : (isInstructor ? "Panel de Gestión Académica" : "Panel de Gestión y Articulación");
 
   const pageSubtitle = isAprendiz
     ? "Consulta tu progreso en el programa de formación, actividades pendientes y estado de evidencias."
@@ -73,6 +76,7 @@ export default async function DashboardPage() {
   let saludo = "Buenas noches";
   if (hora >= 5 && hora < 12) saludo = "Buenos días";
   else if (hora >= 12 && hora < 19) saludo = "Buenas tardes";
+
 
   return (
     <div className="page-container space-y-6 pb-10">
@@ -118,7 +122,27 @@ export default async function DashboardPage() {
       </div>
 
       {/* Gráficos de Gestión Formativa con retraso */}
-      {!isAprendiz && (
+      {isInstructor && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both delay-300">
+          <InstructorDashboard />
+        </div>
+      )}
+      {isApoyo && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both delay-300">
+          <ApoyoDashboard />
+        </div>
+      )}
+      {isAprendiz && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both delay-300">
+          <AprendizDashboard />
+        </div>
+      )}
+      {isAdminOrCoord && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both delay-300">
+          <AdminDashboard />
+        </div>
+      )}
+      {!isAprendiz && !isInstructor && !isApoyo && !isAdminOrCoord && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both delay-300">
           <TrendChart />
           <DistributionChart />

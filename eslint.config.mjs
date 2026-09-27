@@ -14,6 +14,12 @@ const eslintConfig = [
   /* Configuración base de Next.js: incluye React, TypeScript y reglas de App Router */
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    languageOptions: {
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
     rules: {
       /* 
        * Prohibir el uso de `any` explícito.

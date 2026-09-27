@@ -255,6 +255,8 @@ export function EntregasTable({ initialData, actividades, aprendices, fichaIdFij
         <EntregaDetalleDialog
           entrega={entregaParaDetalle}
           onClose={() => setDetalleOpen(false)}
+          canEdit={canManage}
+          onEdit={() => handleEdit(entregaParaDetalle)}
         />
       )}
     </div>

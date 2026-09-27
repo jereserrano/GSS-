@@ -1,10 +1,11 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { BookOpen, Users, FolderOpen } from "lucide-react";
 import { redirect } from "next/navigation";
+import { ExploradorProgramas } from "@/components/shared/ExploradorProgramas";
 
 export default async function EvaluacionesPage() {
   const session = await getServerSession(authOptions);
@@ -13,9 +14,9 @@ export default async function EvaluacionesPage() {
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true, instructor: true, aprendiz: true }
+      include: { instructor: true, aprendiz: true }
     });
-    const userRole = user?.rol?.nombre?.toUpperCase() || "";
+    const userRole = user?.rol?.toUpperCase() || "";
     const isAprendiz = userRole === "APRENDIZ";
 
     if (userRole === "INSTRUCTOR" && user.instructor) {
@@ -24,6 +25,16 @@ export default async function EvaluacionesPage() {
     if (isAprendiz && user?.aprendiz?.fichaId) {
       redirect(`/evaluaciones/ficha/${user.aprendiz.fichaId}`);
     }
+  }
+
+  const isAdminOrCoord = session?.user?.role?.toUpperCase() === "ADMINISTRADOR" || session?.user?.role?.toUpperCase() === "COORDINADOR";
+
+  if (isAdminOrCoord) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <ExploradorProgramas basePath="/evaluaciones/ficha" moduloName="Juicios Valorativos" />
+      </div>
+    );
   }
 
   // Find all active fichas that the instructor has access to

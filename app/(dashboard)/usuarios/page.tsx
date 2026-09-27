@@ -2,7 +2,7 @@ import React from "react";
 import { UsuariosTable } from "@/features/administracion/UsuariosTable";
 import { getUsers, getRoles } from "@/actions/user.actions";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { getHierarchyLevel } from "@/lib/hierarchy";
 import { redirect } from "next/navigation";
 
@@ -18,7 +18,12 @@ export default async function UsuariosPage() {
   };
 
   const usuarios = await getUsers();
-  const roles = await getRoles();
+  let roles = await getRoles();
+
+  // Restringir roles para APOYO_COORDINACION
+  if (currentUserSession.role.toUpperCase() === "APOYO_COORDINACION") {
+    roles = roles.filter((r: any) => ["APRENDIZ", "INSTRUCTOR"].includes(r));
+  }
   const { prisma } = await import("@/lib/prisma");
   const instituciones = await prisma.institucion.findMany({ select: { id: true, nombre: true }, orderBy: { nombre: "asc" } });
 

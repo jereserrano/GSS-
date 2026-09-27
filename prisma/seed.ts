@@ -7,18 +7,8 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando el poblamiento de base de datos...');
 
-  // 1. ROLES
-  const roles = ['ADMINISTRADOR', 'COORDINADOR', 'INSTRUCTOR', 'APRENDIZ'];
-  const rolesIds = {};
-  for (const rolName of roles) {
-    const rol = await prisma.rol.upsert({
-      where: { nombre: rolName },
-      update: {},
-      create: { nombre: rolName, descripcion: `Rol de ${rolName.toLowerCase()}` }
-    });
-    rolesIds[rolName] = rol.id;
-  }
-  console.log('✅ Roles asegurados');
+  // 1. ROLES (Ahora es un Enum, no requiere inserción en BD)
+  console.log('✅ Roles son Enums');
 
   // 2. INSTITUCIÓN Y SEDE
   const institucion = await prisma.institucion.upsert({
@@ -69,7 +59,7 @@ async function main() {
       data: {
         codigo: `COMP-${faker.string.numeric(4)}`,
         nombre: `Competencia Técnica en ${p.nombre}`,
-        programaId: prg.id,
+        programas: { connect: { id: prg.id } },
         tipo: 'TECNICA',
         duracionHoras: 120
       }
@@ -78,7 +68,7 @@ async function main() {
       data: {
         codigo: `COMP-${faker.string.numeric(4)}`,
         nombre: `Competencia Transversal (Ética/Bilingüismo) ${p.nombre}`,
-        programaId: prg.id,
+        programas: { connect: { id: prg.id } },
         tipo: 'TRANSVERSAL',
         duracionHoras: 48
       }
@@ -111,7 +101,7 @@ async function main() {
         nombre: `${nombres} ${apellidos}`,
         email,
         passwordHash,
-        rolId: rolesIds['INSTRUCTOR'],
+        rol: 'INSTRUCTOR',
         institucionId: institucion.id
       }
     });
@@ -236,7 +226,7 @@ async function main() {
           nombre: `${nombres} ${apellidos}`,
           email,
           passwordHash,
-          rolId: rolesIds['APRENDIZ'],
+          rol: 'APRENDIZ',
           institucionId: institucion.id
         }
       });

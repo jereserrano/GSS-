@@ -45,7 +45,12 @@ export async function getAsistenciasAction(filtros: any = {}) {
               _count: { select: { aprendices: true } }
             } 
           },
-          instructor: { select: { nombres: true, apellidos: true } }
+          instructor: { select: { nombres: true, apellidos: true } },
+          detalles: {
+            include: {
+              aprendiz: { select: { nombres: true, apellidos: true, numeroDocumento: true } }
+            }
+          }
         },
         orderBy: { fecha: "desc" },
       }),
@@ -70,7 +75,7 @@ export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMas
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
 
     // Los Instructores solo pueden registrar asistencia en fichas que tienen asignadas
-    if ((user as any).rol?.nombre?.toUpperCase() === "INSTRUCTOR") {
+    if ((user as any).rol?.toUpperCase() === "INSTRUCTOR") {
       const instructorRecord = await prisma.instructor.findUnique({
         where: { userId: user.id }
       });
@@ -113,7 +118,7 @@ export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMas
 
       // 2. Crear los detalles masivamente
       if (data.detalles.length > 0) {
-        await tx.detalleAsistencia.createMany({
+        await tx.registroAsistencia.createMany({
           data: data.detalles.map(d => ({
             asistenciaId: asist.id,
             aprendizId: d.aprendizId,

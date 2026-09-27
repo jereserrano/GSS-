@@ -30,11 +30,11 @@ export async function getDashboardKpis() {
     if (session?.user?.email) {
       userContext = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { rol: true, instructor: true, aprendiz: true }
+        include: { instructor: true, aprendiz: true }
       });
     }
 
-    const rolNombre = userContext?.rol?.nombre?.toUpperCase() || "";
+    const rolNombre = userContext?.rol?.toUpperCase() || "";
     const isInstructor = rolNombre.includes("INSTRUCT");
     const isAprendiz = rolNombre.includes("APRENDIZ");
 
@@ -286,7 +286,7 @@ export async function getDashboardKpis() {
 
     return {
       ok: true,
-      rol: "ADMINISTRADOR",
+      rol: rolNombre || "ADMINISTRADOR",
       data: {
         kpis: {
           totalAprendices: totalAprendicesActivos,

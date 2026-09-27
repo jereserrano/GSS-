@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@/lib/permissions";
 
@@ -22,8 +22,7 @@ export async function requireRole(allowedRoles?: UserRole[] | UserRole, ...extra
     : [];
 
   const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    include: { rol: true }
+    where: { email: session.user.email }
   });
 
   if (!user) {
@@ -35,7 +34,7 @@ export async function requireRole(allowedRoles?: UserRole[] | UserRole, ...extra
     return user;
   }
 
-  const userRole = user.rol.nombre.toUpperCase();
+  const userRole = user.rol.toUpperCase();
   
   // El ADMINISTRADOR siempre tiene acceso a todo.
   if (userRole === "ADMINISTRADOR" || userRole.includes("ADMIN")) {
@@ -59,7 +58,7 @@ export async function requireRole(allowedRoles?: UserRole[] | UserRole, ...extra
  * @throws Error si el usuario intenta modificar un recurso que no es de su institución.
  */
 export function requireInstitutionAccess(user: any, targetInstitucionId: string) {
-  const role = user.rol.nombre.toUpperCase();
+  const role = user.rol.toUpperCase();
   
   // Los administradores pueden tocar cualquier institución.
   if (role === "ADMINISTRADOR") {

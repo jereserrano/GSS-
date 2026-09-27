@@ -4,7 +4,7 @@ import { getCompetenciasAction } from "@/actions/competencias.actions";
 import { getFichasAction } from "@/actions/fichas.actions";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { Target, Building2, MapPin, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,9 +16,9 @@ export default async function CompetenciasPage({ searchParams }: { searchParams:
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true }
+      
     });
-    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR") {
+    if (user?.rol?.toUpperCase() === "INSTRUCTOR") {
       isInstructor = true;
     }
   }

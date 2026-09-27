@@ -29,7 +29,7 @@ export function DataTable<T>({ data, columnas, onRowClick, isLoading }: DataTabl
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+    <div className="rounded-xl border border-slate-200 bg-white overflow-x-auto shadow-2xs">
       <Table>
         <TableHeader>
           <TableRow>

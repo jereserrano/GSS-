@@ -13,10 +13,10 @@ export default async function RiesgosPage({ searchParams }: { searchParams: Prom
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({ 
       where: { email: session.user.email },
-      include: { rol: true, instructor: true }
+      include: { instructor: true }
     });
     
-    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
+    if (user?.rol?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
       instructorId = user.instructor.id;
       const instructorFichas = await prisma.instructorFicha.findMany({
         where: { instructorId },

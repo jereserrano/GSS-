@@ -57,5 +57,6 @@ export const config = {
     "/roles/:path*",
     "/auditoria/:path*",
     "/configuracion/:path*",
+    "/mi-formacion/:path*",
   ],
 };

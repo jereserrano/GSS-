@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Award, Target, BarChart3, CheckCircle, XCircle, Clock, BookOpen, Users, FolderOpen } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 
 export default async function ResultadosPage() {
@@ -16,13 +16,12 @@ export default async function ResultadosPage() {
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
     include: { 
-      rol: true,
       instructor: true,
       aprendiz: { include: { ficha: true } }
     }
   });
 
-  const rol = user?.rol?.nombre?.toUpperCase();
+  const rol = user?.rol?.toUpperCase();
   const isAprendiz = rol === "APRENDIZ";
   const isInstructor = rol === "INSTRUCTOR";
 

@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ok, serverError, getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { PaginacionSchema } from "@/lib/validations";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {

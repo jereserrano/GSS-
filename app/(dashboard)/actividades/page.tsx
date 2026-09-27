@@ -1,10 +1,11 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { BookOpen, Users, FolderOpen } from "lucide-react";
 import { redirect } from "next/navigation";
+import { ExploradorProgramas } from "@/components/shared/ExploradorProgramas";
 
 export default async function ActividadesProgramasPage() {
   const session = await getServerSession(authOptions);
@@ -15,14 +16,24 @@ export default async function ActividadesProgramasPage() {
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true, instructor: true, aprendiz: true }
+      include: { instructor: true, aprendiz: true }
     });
-    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
+    if (user?.rol?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
       instructorId = user.instructor.id;
     }
     if (isAprendiz && user?.aprendiz?.fichaId) {
       redirect(`/actividades/ficha/${user.aprendiz.fichaId}`);
     }
+  }
+
+  const isAdminOrCoord = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR";
+
+  if (isAdminOrCoord) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <ExploradorProgramas basePath="/actividades/ficha" moduloName="Gestor de Actividades" />
+      </div>
+    );
   }
 
   const fichasFiltro = {

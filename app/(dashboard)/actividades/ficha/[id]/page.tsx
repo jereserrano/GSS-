@@ -3,7 +3,7 @@ import { ActividadesTable } from "@/features/ejecucion/ActividadesTable";
 import { getActividadesAction } from "@/actions/actividades.actions";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowLeft, Users, FileSignature } from "lucide-react";
 

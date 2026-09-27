@@ -24,7 +24,7 @@ interface FichasTableProps {
 export function FichasTable({ initialData, programas, instituciones, sedes }: FichasTableProps) {
   const { data: session } = useSession();
   const userRole = ((session?.user as any)?.role || "").toUpperCase();
-  const canManage = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR" || userRole === "COORDINADOR_SEDE";
+  const canManage = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR" || userRole === "COORDINADOR_SEDE" || userRole === "APOYO_COORDINACION";
 
   const [data, setData] = useState<PaginatedResponse<any> | null>(initialData);
   const [loading, setLoading] = useState(!initialData);
@@ -201,7 +201,7 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
               <Input
                 placeholder="Buscar por número de ficha, programa o institución..."
                 value={filtros.busqueda}
-                onChange={(e) => setFiltros(prev => ({ ...prev, busqueda: e.target.value, pagina: 1 }))}
+                onChange={(e) => setFiltros((prev: any) => ({ ...prev, busqueda: e.target.value, pagina: 1 }))}
                 className="bg-surface pl-9"
               />
             </div>
@@ -275,11 +275,11 @@ export function FichasTable({ initialData, programas, instituciones, sedes }: Fi
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled={data.page === 1}
-                onClick={() => setFiltros(prev => ({ ...prev, pagina: prev.pagina - 1 }))}>
+                onClick={() => setFiltros((prev: any) => ({ ...prev, pagina: prev.pagina - 1 }))}>
                 Anterior
               </Button>
               <Button variant="outline" size="sm" disabled={data.page === data.totalPages}
-                onClick={() => setFiltros(prev => ({ ...prev, pagina: prev.pagina + 1 }))}>
+                onClick={() => setFiltros((prev: any) => ({ ...prev, pagina: prev.pagina + 1 }))}>
                 Siguiente
               </Button>
             </div>

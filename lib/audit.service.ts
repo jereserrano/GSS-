@@ -6,11 +6,19 @@ export async function logAudit({
   modulo,
   accion,
   detalle,
+  entidad,
+  entidadId,
+  valoresAnteriores,
+  valoresNuevos
 }: {
-  userId: string | null;
+  userId?: string | null;
   modulo: string;
   accion: "CREAR" | "ACTUALIZAR" | "ELIMINAR" | "LOGIN" | "OTRO";
   detalle: string;
+  entidad?: string;
+  entidadId?: string;
+  valoresAnteriores?: any;
+  valoresNuevos?: any;
 }) {
   try {
     const headersList = await headers();
@@ -19,10 +27,14 @@ export async function logAudit({
 
     await prisma.auditLog.create({
       data: {
-        userId,
+        userId: userId ?? null,
         modulo,
         accion,
         detalle,
+        entidad: entidad ?? null,
+        entidadId: entidadId ?? null,
+        valoresAnteriores: valoresAnteriores ? JSON.parse(JSON.stringify(valoresAnteriores)) : null,
+        valoresNuevos: valoresNuevos ? JSON.parse(JSON.stringify(valoresNuevos)) : null,
         ip: ip.substring(0, 45), // Límite por si acaso
       },
     });

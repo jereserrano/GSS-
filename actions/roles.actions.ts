@@ -1,22 +1,8 @@
 "use server";
-import { RolRepository } from "@/repositories/rol.repository";
 import { UserRepository } from "@/repositories/user.repository";
-
 import { logAudit } from "@/lib/audit.service";
 import { getServerSession } from "next-auth/next";
-import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
-
-async function getSessionUserId() {
-  try {
-    const session = await getServerSession();
-    if (session?.user?.email) {
-      const user = await UserRepository.findUnique({ where: { email: session.user.email } });
-      return user?.id || null;
-    }
-  } catch (e) {}
-  return null;
-}
-
+import { requireRole } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
 
 export interface RolConConteo {
@@ -26,120 +12,47 @@ export interface RolConConteo {
   usuariosAsignados: number;
 }
 
+const STATIC_ROLES: Record<string, Omit<RolConConteo, "usuariosAsignados">> = {
+  ADMINISTRADOR: { id: "ADMINISTRADOR", nombre: "Administrador", descripcion: "Acceso total al sistema" },
+  INSTRUCTOR: { id: "INSTRUCTOR", nombre: "Instructor", descripcion: "Gestión de aprendices y calificaciones" },
+  APRENDIZ: { id: "APRENDIZ", nombre: "Aprendiz", descripcion: "Estudiante de la media técnica" },
+  SECRETARIO: { id: "SECRETARIO", nombre: "Secretario", descripcion: "Gestión administrativa" },
+  COORDINADOR_REGIONAL: { id: "COORDINADOR_REGIONAL", nombre: "Coordinador Regional", descripcion: "Gestión a nivel regional" },
+  SUBDIRECTOR_REGIONAL: { id: "SUBDIRECTOR_REGIONAL", nombre: "Subdirector Regional", descripcion: "Subdirección a nivel regional" },
+  COORDINADOR_SEDE: { id: "COORDINADOR_SEDE", nombre: "Coordinador de Sede", descripcion: "Gestión de la sede" },
+};
+
 export async function getRolesWithStats(): Promise<RolConConteo[]> {
   try {
-    const roles = await RolRepository.findMany({
-      include: {
-        _count: {
-          select: { users: true },
-        },
-      },
-      orderBy: {
-        nombre: "asc",
-      },
+    const users = await UserRepository.groupBy({
+      by: ['rol'],
+      _count: {
+        id: true
+      }
     });
 
-    return roles.map((r) => ({
-      id: r.id,
-      nombre: r.nombre,
-      descripcion: r.descripcion,
-      usuariosAsignados: r._count?.users ?? 0,
+    const userCountByRole = users.reduce((acc, curr) => {
+      acc[curr.rol] = curr._count.id;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.values(STATIC_ROLES).map(rol => ({
+      ...rol,
+      usuariosAsignados: userCountByRole[rol.id] || 0
     }));
   } catch (error) {
     console.error("Error fetching roles with stats:", error);
-    // Retornar roles base si la BD tiene un problema temporal
-    return [
-      {
-        id: "rol-admin",
-        nombre: "Administrador Sistema",
-        descripcion: "Acceso total a todos los módulos y configuraciones del sistema.",
-        usuariosAsignados: 1,
-      },
-      {
-        id: "rol-coord",
-        nombre: "Coordinador Académico",
-        descripcion: "Gestión de fichas, programas de formación y reportes.",
-        usuariosAsignados: 0,
-      },
-      {
-        id: "rol-inst",
-        nombre: "Instructor",
-        descripcion: "Gestión de fichas asignadas, registro de asistencia y juicios evaluativos.",
-        usuariosAsignados: 0,
-      },
-    ];
+    return Object.values(STATIC_ROLES).map(rol => ({
+      ...rol,
+      usuariosAsignados: 0
+    }));
   }
 }
 
 export async function createRol(data: { nombre: string; descripcion?: string }) {
-  try {
-    const user = await requireRole(["ADMINISTRADOR"]);
-    const { nombre, descripcion } = data;
-
-    if (!nombre || nombre.trim().length < 2) {
-      return { error: "El nombre del rol debe tener al menos 2 caracteres." };
-    }
-
-    const trimmedNombre = nombre.trim();
-
-    const existing = await RolRepository.findUnique({
-      where: { nombre: trimmedNombre },
-    });
-
-    if (existing) {
-      return { error: `Ya existe un rol con el nombre "${trimmedNombre}".` };
-    }
-
-    const nuevoRol = await RolRepository.create({
-      data: {
-        nombre: trimmedNombre,
-        descripcion: descripcion?.trim() || null,
-      },
-    });
-
-    
-    await logAudit({
-      userId: user.id,
-      modulo: "roles",
-      accion: "CREAR",
-      detalle: "Acción completada exitosamente.",
-    });
-    revalidatePath("/roles");
-    return { success: true, rol: nuevoRol };
-  } catch (error: any) {
-    console.error("Error creating role:", error);
-    return { error: error.message || "Error al registrar el rol." };
-  }
+  return { error: "Los roles son estáticos (definidos por el sistema) y no pueden crearse dinámicamente." };
 }
 
 export async function deleteRol(id: string) {
-  try {
-    const user = await requireRole(["ADMINISTRADOR"]);
-    const usersCount = await UserRepository.count({
-      where: { rolId: id },
-    });
-
-    if (usersCount > 0) {
-      return {
-        error: `No es posible eliminar este rol porque tiene ${usersCount} usuario(s) asignado(s).`,
-      };
-    }
-
-    await RolRepository.delete({
-      where: { id },
-    });
-
-    
-    await logAudit({
-      userId: user.id,
-      modulo: "roles",
-      accion: "ELIMINAR",
-      detalle: "Acción completada exitosamente.",
-    });
-    revalidatePath("/roles");
-    return { success: true };
-  } catch (error: any) {
-    console.error("Error deleting role:", error);
-    return { error: error.message || "Error al eliminar el rol." };
-  }
+  return { error: "Los roles son estáticos y no pueden ser eliminados." };
 }

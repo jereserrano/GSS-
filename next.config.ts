@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
     },
   },
 
+  /* ── Excluir módulos Node nativos/pesados del bundle de webpack ── */
+  /* Evita el error 'Cannot read properties of undefined (reading call)'  */
+  /* durante el pre-rendering estático de las páginas del dashboard.   */
+  serverExternalPackages: ['bcryptjs', 'otplib', 'qrcode', '@prisma/client', 'prisma'],
+
   /* ── Permitir acceso desde la red local en modo desarrollo ── */
   allowedDevOrigins: ['192.168.40.6', 'localhost', '127.0.0.1', '0.0.0.0'],
 

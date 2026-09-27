@@ -1,7 +1,7 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { BookOpen, Users, FolderOpen } from "lucide-react";
 
@@ -12,10 +12,10 @@ export default async function ResultadosAprendizajeProgramasPage() {
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true, instructor: true }
+      include: { instructor: true }
     });
 
-    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
+    if (user?.rol?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
       instructorId = user.instructor.id;
     }
   }

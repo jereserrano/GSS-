@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, Lock, Mail, Eye, EyeOff, ShieldCheck, MonitorSmartphone } from "lucide-react";
 
 const BACKGROUND_IMAGES = [
   "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1600",
@@ -17,11 +17,22 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentBg, setCurrentBg] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [needs2FA, setNeeds2FA] = useState(false);
+  const [totpCode, setTotpCode] = useState("");
+  const [trustDevice, setTrustDevice] = useState(false);
+  const [savedEmail, setSavedEmail] = useState("");
+  const [savedPassword, setSavedPassword] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentBg((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
     }, 4000);
+    
+    // Generar deviceId si no existe
+    if (!localStorage.getItem("gss_device_id")) {
+      localStorage.setItem("gss_device_id", crypto.randomUUID?.() || Math.random().toString(36).substring(2, 15));
+    }
+    
     return () => clearInterval(timer);
   }, []);
 
@@ -31,17 +42,35 @@ export default function LoginPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const email = formData.get("email") as string || savedEmail;
+    const password = formData.get("password") as string || savedPassword;
+    
+    setSavedEmail(email);
+    setSavedPassword(password);
+    
+    const deviceId = localStorage.getItem("gss_device_id");
 
     const result = await signIn("credentials", {
       email,
       password,
+      totpCode: needs2FA ? totpCode : "",
+      deviceId: deviceId || "",
+      trustDevice: needs2FA ? String(trustDevice) : "false",
       redirect: false,
     });
 
     if (result?.error) {
-      setError("Credenciales no válidas. Verifique su correo institucional y contraseña.");
+      const errorStr = String(result.error).toUpperCase();
+      console.log("Login error from NextAuth:", result.error);
+
+      if (errorStr.includes("REQUIRED") || errorStr.includes("2FA_REQUIRED")) {
+        setNeeds2FA(true);
+        setError(null);
+      } else if (errorStr.includes("INVALID") || errorStr.includes("2FA")) {
+        setError(`El código de verificación (2FA) es incorrecto. (Detalle: ${result.error})`);
+      } else {
+        setError(`Credenciales no válidas. (Detalle: ${result.error})`);
+      }
       setIsLoading(false);
       return;
     }
@@ -105,44 +134,111 @@ export default function LoginPage() {
 
             <form onSubmit={handleLogin} className="space-y-6">
               
-              {/* Input Usuario */}
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/60 group-focus-within:text-white transition-colors">
-                  <Mail size={18} />
-                </div>
-                <input 
-                  id="email"
-                  name="email"
-                  placeholder="Usuario" 
-                  type="email" 
-                  autoComplete="email"
-                  required
-                  className="w-full pl-12 pr-4 h-14 text-sm text-white placeholder:text-white/60 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md focus:bg-white/20 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-300"
-                />
-              </div>
+              {needs2FA ? (
+                <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                  {/* Banner de 2FA */}
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[#39A900]/20 border border-[#39A900]/40 backdrop-blur-md">
+                    <ShieldCheck size={18} className="text-green-300 shrink-0" />
+                    <p className="text-xs text-white/90 font-medium leading-relaxed">
+                      Ingresa el código de tu app autenticadora
+                    </p>
+                  </div>
 
-              {/* Input Contraseña */}
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/60 group-focus-within:text-white transition-colors">
-                  <Lock size={18} />
+                  {/* Input código TOTP */}
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/60 group-focus-within:text-white transition-colors">
+                      <Lock size={18} />
+                    </div>
+                    <input 
+                      id="totpCode"
+                      name="totpCode"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      placeholder="000000"
+                      required
+                      autoFocus
+                      value={totpCode}
+                      onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                      className="w-full pl-12 pr-4 h-14 text-sm text-white placeholder:text-white/60 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md focus:bg-white/20 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-300 text-center tracking-[0.5em] font-mono text-xl"
+                    />
+                  </div>
+
+                  {/* Checkbox: Confiar en este equipo */}
+                  <label className="flex items-start gap-3 cursor-pointer group p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-200">
+                    <div className="relative mt-0.5 shrink-0">
+                      <input
+                        id="trustDevice"
+                        type="checkbox"
+                        checked={trustDevice}
+                        onChange={(e) => setTrustDevice(e.target.checked)}
+                        className="peer sr-only"
+                      />
+                      {/* Caja personalizada del checkbox */}
+                      <div className="w-5 h-5 rounded-md border-2 border-white/30 bg-white/5 peer-checked:bg-[#39A900] peer-checked:border-[#39A900] transition-all duration-200 flex items-center justify-center">
+                        <svg
+                          className={`w-3 h-3 text-white transition-all duration-200 ${trustDevice ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <MonitorSmartphone size={14} className="text-white/70" />
+                        <span className="text-sm text-white/90 font-medium">Confiar en este equipo</span>
+                      </div>
+                      <p className="text-[11px] text-white/50 mt-0.5 leading-relaxed">
+                        No se pedirá el código 2FA en este dispositivo durante <strong className="text-white/70">30 días</strong>.
+                        Solo marca esto en equipos de tu confianza.
+                      </p>
+                    </div>
+                  </label>
                 </div>
-                <input 
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="Contraseña"
-                  autoComplete="current-password"
-                  required
-                  className="w-full pl-12 pr-12 h-14 text-sm text-white placeholder:text-white/60 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md focus:bg-white/20 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-300"
-                />
-                <button 
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-white/60 hover:text-white transition-colors focus:outline-none"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+              ) : (
+                <>
+                  {/* Input Usuario */}
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/60 group-focus-within:text-white transition-colors">
+                      <Mail size={18} />
+                    </div>
+                    <input 
+                      id="email"
+                      name="email"
+                      placeholder="Usuario" 
+                      type="email" 
+                      autoComplete="email"
+                      required
+                      className="w-full pl-12 pr-4 h-14 text-sm text-white placeholder:text-white/60 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md focus:bg-white/20 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Input Contraseña */}
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/60 group-focus-within:text-white transition-colors">
+                      <Lock size={18} />
+                    </div>
+                    <input 
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="Contraseña"
+                      autoComplete="current-password"
+                      required
+                      className="w-full pl-12 pr-12 h-14 text-sm text-white placeholder:text-white/60 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md focus:bg-white/20 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-300"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-white/60 hover:text-white transition-colors focus:outline-none"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </>
+              )}
 
               {/* Botón Iniciar Sesión (Glow Effect) */}
               <div className="pt-4 pb-2">
@@ -160,7 +256,7 @@ export default function LoginPage() {
                       Validando...
                     </span>
                   ) : (
-                    <span className="relative z-10">Iniciar Sesión</span>
+                    <span className="relative z-10">{needs2FA ? "Verificar y Entrar" : "Iniciar Sesión"}</span>
                   )}
                 </button>
               </div>

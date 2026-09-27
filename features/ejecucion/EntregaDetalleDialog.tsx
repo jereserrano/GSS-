@@ -8,25 +8,27 @@ import { formatDateShort } from "@/lib/utils";
 interface EntregaDetalleDialogProps {
   entrega: any;
   onClose: () => void;
+  canEdit?: boolean;
+  onEdit?: () => void;
 }
 
-export function EntregaDetalleDialog({ entrega, onClose }: EntregaDetalleDialogProps) {
+export function EntregaDetalleDialog({ entrega, onClose, canEdit, onEdit }: EntregaDetalleDialogProps) {
   if (!entrega) return null;
 
   const est = (entrega.estado || "").toUpperCase();
   const esAprobada = est === "APROBADA" || est === "CALIFICADA";
   const esRechazada = est === "NO_APROBADA" || est === "RECHAZADO";
 
-  const getFileUrl = (url: string) => {
-    if (!url) return "";
-    // Normalizar barras invertidas a barras normales y asegurar el slash inicial
-    const normalizedUrl = url.replace(/\\/g, "/");
-    const safeUrl = normalizedUrl.startsWith("/") ? normalizedUrl : `/${normalizedUrl}`;
-    
-    if (safeUrl.startsWith("/uploads/")) {
-      return `/api${safeUrl}`;
+  const getFileUrl = (url: any) => {
+    if (!url || typeof url !== 'string') return "";
+    try {
+      const normalizedUrl = url.replace(/\\/g, "/");
+      const safeUrl = normalizedUrl.startsWith("/") ? normalizedUrl : `/${normalizedUrl}`;
+      if (safeUrl.startsWith("/uploads/")) return `/api${safeUrl}`;
+      return url;
+    } catch (e) {
+      return "";
     }
-    return url;
   };
   
   const fileUrl = getFileUrl(entrega.urlArchivo);
@@ -82,7 +84,7 @@ export function EntregaDetalleDialog({ entrega, onClose }: EntregaDetalleDialogP
 
             {entrega.calificacion && (
               <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                <div className="font-black text-lg text-slate-700">{entrega.calificacion}</div>
+                <div className="font-black text-lg text-slate-700">{String(entrega.calificacion)}</div>
                 <div>
                   <span className="block text-[10px] uppercase text-slate-500 font-bold">Nota</span>
                 </div>
@@ -100,7 +102,7 @@ export function EntregaDetalleDialog({ entrega, onClose }: EntregaDetalleDialogP
                     <div>
                       <p className="text-sm font-semibold text-indigo-900">Evidencia Subida</p>
                       <a href={fileUrl} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 hover:underline">
-                        {entrega.urlArchivo}
+                        {String(entrega.urlArchivo)}
                       </a>
                     </div>
                   </div>
@@ -119,7 +121,7 @@ export function EntregaDetalleDialog({ entrega, onClose }: EntregaDetalleDialogP
               <div>
                 <h3 className="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-1.5"><MessageSquare size={14} className="text-slate-500"/> Comentario del Aprendiz</h3>
                 <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 whitespace-pre-wrap">
-                  {entrega.comentario}
+                  {String(entrega.comentario)}
                 </div>
               </div>
             )}
@@ -128,7 +130,7 @@ export function EntregaDetalleDialog({ entrega, onClose }: EntregaDetalleDialogP
               <div>
                 <h3 className="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-1.5"><MessageSquare size={14} className="text-amber-500"/> Retroalimentación del Instructor</h3>
                 <div className="text-sm text-slate-800 bg-amber-50 p-3 rounded-lg border border-amber-100 whitespace-pre-wrap">
-                  {entrega.retroalimentacion}
+                  {String(entrega.retroalimentacion)}
                 </div>
               </div>
             )}
@@ -137,8 +139,13 @@ export function EntregaDetalleDialog({ entrega, onClose }: EntregaDetalleDialogP
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 flex justify-end shrink-0">
-          <Button onClick={onClose}>Cerrar Detalle</Button>
+        <div className="p-4 border-t border-slate-100 flex justify-end gap-3 shrink-0">
+          <Button variant="outline" onClick={onClose}>Cerrar Detalle</Button>
+          {canEdit && onEdit && (
+            <Button onClick={() => { onClose(); onEdit(); }}>
+              Evaluar / Calificar
+            </Button>
+          )}
         </div>
 
       </div>

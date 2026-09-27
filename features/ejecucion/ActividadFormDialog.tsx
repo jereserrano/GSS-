@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { createActividad, updateActividad } from "@/actions/actividades.actions";
 import { toast } from "sonner";
 import { X, ClipboardList } from "lucide-react";
+import { JerarquiaSelectores } from "./JerarquiaSelectores";
 
 interface ActividadFormDialogProps {
   actividad?: any;
@@ -27,6 +28,7 @@ const TIPOS_ACT = [
 
 export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, onSuccess }: ActividadFormDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [selectedFicha, setSelectedFicha] = useState<string>(fichaIdFijo || actividad?.fichaId || "");
   const isEditing = !!actividad;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -40,6 +42,7 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
       descripcion: formData.get("descripcion") as string,
       tipo: formData.get("tipo") as string,
       fichaId: formData.get("fichaId") as string,
+      resultadoAprendizajeId: formData.get("resultadoAprendizajeId") as string,
       fechaInicio: formData.get("fechaInicio") as string,
       fechaFin: formData.get("fechaFin") as string,
     };
@@ -71,10 +74,10 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col my-8">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 sm:p-6">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[100%] sm:max-h-[90vh]">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b">
+        <div className="flex justify-between items-center px-6 py-4 border-b shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-pink-50 rounded-lg">
               <ClipboardList size={20} className="text-pink-600" />
@@ -94,8 +97,9 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
+          <div className="p-6 space-y-4 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-text-primary">Código *</label>
               <Input
@@ -140,17 +144,28 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
           {!fichaIdFijo && (
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-text-primary">Ficha Asignada *</label>
-              <select name="fichaId" defaultValue={actividad?.fichaId || ""} required className={selectClass}>
+              <select 
+                name="fichaId" 
+                value={selectedFicha} 
+                onChange={(e) => setSelectedFicha(e.target.value)}
+                required 
+                className={selectClass}
+              >
                 <option value="" disabled>Seleccione una ficha</option>
-                {fichas.map(f => (
-                  <option key={f.id} value={f.id}>{f.codigo} - {f.programa.nombre}</option>
+                {(fichas || []).map(f => (
+                  <option key={f.id} value={f.id}>{f.codigo} - {f.programa?.nombre}</option>
                 ))}
               </select>
             </div>
           )}
           {fichaIdFijo && <input type="hidden" name="fichaId" value={fichaIdFijo} />}
 
-          <div className="grid grid-cols-2 gap-4">
+          <JerarquiaSelectores 
+            fichaId={selectedFicha} 
+            defaultRaId={actividad?.resultadoAprendizajeId} 
+          />
+
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-text-primary">Fecha de Inicio *</label>
               <Input
@@ -158,6 +173,7 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
                 type="datetime-local"
                 defaultValue={formatDateForInput(actividad?.fechaInicio)}
                 required
+                className="[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:block [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
             </div>
             <div className="space-y-1.5">
@@ -167,12 +183,15 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
                 type="datetime-local"
                 defaultValue={formatDateForInput(actividad?.fechaFin)}
                 required
+                className="[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:block [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
             </div>
           </div>
 
+          </div>
+
           {/* Footer */}
-          <div className="pt-2 flex justify-end gap-3 border-t mt-6 pt-4">
+          <div className="px-6 py-4 flex justify-end gap-3 border-t bg-gray-50/50 shrink-0 rounded-b-xl">
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>

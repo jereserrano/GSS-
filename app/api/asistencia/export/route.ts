@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import * as XLSX from "xlsx";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -13,12 +13,12 @@ export async function GET(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true, instructor: true }
+      include: { instructor: true }
     });
 
     if (!user) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 401 });
 
-    const rolNombre = user.rol?.nombre?.toUpperCase() || "";
+    const rolNombre = user?.rol?.toUpperCase() || "";
     const allowed = ["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"].includes(rolNombre);
     if (!allowed) return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
 

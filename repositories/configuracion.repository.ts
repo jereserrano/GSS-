@@ -1,3 +1,3 @@
 import { prisma } from "@/lib/prisma";
 
-export const ConfiguracionRepository = prisma.configuracion;
+export const ConfiguracionRepository = prisma.configuracionSistema;

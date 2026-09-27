@@ -49,6 +49,7 @@ export function RiesgoFormDialog({ riesgo, aprendices, onClose, onSuccess }: Rie
       aprendizId: formData.get("aprendizId") as string,
       tipo: formData.get("tipo") as string,
       nivel: formData.get("nivel") as string,
+      motivo: formData.get("descripcion") as string,
       descripcion: formData.get("descripcion") as string,
       fechaDeteccion: formData.get("fechaDeteccion") as string,
       estado: formData.get("estado") as string,

@@ -1,5 +1,5 @@
 import type { ServiceResult, PaginatedResponse } from "@/types/common.types";
-import type { Ficha, FiltrosFicha } from "@/types/institucion.types";
+import type { Ficha, FiltrosFicha } from "@/types/ficha.types";
 
 export const FichasService = {
   async getFichas(filtros: FiltrosFicha = {}): Promise<ServiceResult<PaginatedResponse<Ficha>>> {

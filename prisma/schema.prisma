@@ -52,55 +52,57 @@ model Sede {
 
   institucion Institucion @relation(fields: [institucionId], references: [id], onDelete: Cascade)
   fichas      Ficha[]
+  usuarios    User[]
 
   @@map("sedes")
 }
 
 model Programa {
-  id              String             @id @default(cuid())
-  codigo          String             @unique
-  nombre          String
-  nivelFormacion  NivelFormacion     @default(TECNICO)
-  estado          Estado             @default(ACTIVO)
+  id             String             @id @default(cuid())
+  codigo         String             @unique
+  nombre         String
+  nivelFormacion NivelFormacion     @default(TECNICO)
+  estado         Estado             @default(ACTIVO)
   // Diseño Curricular
-  version         String?            // Versión del diseño curricular (ej: "3")
-  duracion        Int?               // Horas totales del programa
-  modalidad       ModalidadPrograma? // Presencial, Virtual, etc.
-  area            String?            // Área de conocimiento
-  areaDesempeno   String?            // Sector productivo
-  titulacion      String?            // Certificado/título que se otorga
-  descripcion     String?            @db.Text
-  perfilIngreso   String?            @db.Text
-  perfilEgresado  String?            @db.Text
-  creadoEn        DateTime           @default(now())
-  actualizadoEn   DateTime           @updatedAt
+  version        String? // Versión del diseño curricular (ej: "3")
+  duracion       Int? // Horas totales del programa
+  modalidad      ModalidadPrograma? // Presencial, Virtual, etc.
+  area           String? // Área de conocimiento
+  areaDesempeno  String? // Sector productivo
+  titulacion     String? // Certificado/título que se otorga
+  descripcion    String?            @db.Text
+  perfilIngreso  String?            @db.Text
+  perfilEgresado String?            @db.Text
+  creadoEn       DateTime           @default(now())
+  actualizadoEn  DateTime           @updatedAt
 
-  competencias    Competencia[]
-  fichas          Ficha[]
+  competencias Competencia[]
+  fichas       Ficha[]
 
   @@map("programas")
 }
 
 model Ficha {
-  id            String      @id @default(cuid())
-  codigo        String      @unique
+  id            String   @id @default(cuid())
+  codigo        String   @unique
   programaId    String
   institucionId String
   sedeId        String
   fechaInicio   DateTime
   fechaFin      DateTime
-  estado        Estado      @default(ACTIVO)
+  estado        Estado   @default(ACTIVO)
   jornada       String?
-  creadoEn      DateTime    @default(now())
-  actualizadoEn DateTime    @updatedAt
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
 
-  programa    Programa    @relation(fields: [programaId], references: [id])
-  institucion Institucion @relation(fields: [institucionId], references: [id])
-  sede        Sede        @relation(fields: [sedeId], references: [id])
-  aprendices   Aprendiz[]
-  actividades  Actividad[]
-  asistencias  Asistencia[]
-  instructores InstructorFicha[]
+  programa           Programa            @relation(fields: [programaId], references: [id])
+  institucion        Institucion         @relation(fields: [institucionId], references: [id])
+  sede               Sede                @relation(fields: [sedeId], references: [id])
+  aprendices         Aprendiz[]
+  actividades        Actividad[]
+  asistencias        Asistencia[]
+  instructores       InstructorFicha[]
+  asignacionesCarga  AsignacionCarga[]
   visitasSeguimiento VisitaSeguimiento[]
 
   @@map("fichas")
@@ -111,9 +113,9 @@ model Ficha {
 // ============================================================
 
 model Aprendiz {
-  id                   String        @id @default(cuid())
-  tipoDocumento        TipoDocumento @default(CC)
-  numeroDocumento      String        @unique
+  id                   String         @id @default(cuid())
+  tipoDocumento        TipoDocumento  @default(CC)
+  numeroDocumento      String         @unique
   nombres              String
   apellidos            String
   fechaNacimiento      DateTime?
@@ -131,13 +133,14 @@ model Aprendiz {
   creadoEn             DateTime       @default(now())
   actualizadoEn        DateTime       @updatedAt
 
-  user                User?         @relation(fields: [userId], references: [id])
-  ficha               Ficha         @relation(fields: [fichaId], references: [id])
-  entregas            Entrega[]
-  evaluaciones        EvaluacionAprendiz[]
-  alertas             AlertaRiesgo[]
-  detallesAsistencia  DetalleAsistencia[]
-  visitasSeguimiento  VisitaSeguimiento[]
+  user               User?                @relation(fields: [userId], references: [id])
+  ficha              Ficha                @relation(fields: [fichaId], references: [id])
+  entregas           Entrega[]
+  evaluaciones       EvaluacionAprendiz[]
+  alertas            AlertaRiesgo[]
+  detallesAsistencia RegistroAsistencia[]
+  visitasSeguimiento VisitaSeguimiento[]
+  excusas            Excusa[]
 
   @@map("aprendices")
 }
@@ -153,24 +156,36 @@ model Instructor {
   profesion       String?
   userId          String?       @unique
   estado          Estado        @default(ACTIVO)
+  
+  // Datos Personales Extendidos
+  direccionResidencia String?
+  municipioResidencia String?
+  eps                 String?
+  fondoPension        String?
+  arl                 String?
+  fechaNacimiento     DateTime?
+  estadoCivil         String?
+
   creadoEn        DateTime      @default(now())
   actualizadoEn   DateTime      @updatedAt
 
-  user        User?             @relation(fields: [userId], references: [id])
-  asistencias Asistencia[]
-  actividades Actividad[]
-  entregas    Entrega[]
-  fichas      InstructorFicha[]
+  user              User?             @relation(fields: [userId], references: [id])
+  asistencias       Asistencia[]
+  actividades       Actividad[]
+  entregas          Entrega[]
+  fichas            InstructorFicha[]
+  asignacionesCarga AsignacionCarga[]
+  excusasRevisadas  Excusa[]
 
   @@map("instructores")
 }
 
 model InstructorFicha {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   instructorId String
   fichaId      String
-  rolFicha     String     @default("LIDER_TECNICO")
-  asignadoEn   DateTime   @default(now())
+  rolFicha     String   @default("LIDER_TECNICO")
+  asignadoEn   DateTime @default(now())
 
   instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
   ficha      Ficha      @relation(fields: [fichaId], references: [id], onDelete: Cascade)
@@ -179,38 +194,54 @@ model InstructorFicha {
   @@map("instructor_fichas")
 }
 
+model AsignacionCarga {
+  id                     String   @id @default(cuid())
+  instructorId           String
+  fichaId                String
+  resultadoAprendizajeId String
+  asignadoEn             DateTime @default(now())
+
+  instructor           Instructor           @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  ficha                Ficha                @relation(fields: [fichaId], references: [id], onDelete: Cascade)
+  resultadoAprendizaje ResultadoAprendizaje @relation(fields: [resultadoAprendizajeId], references: [id], onDelete: Cascade)
+
+  @@unique([instructorId, fichaId, resultadoAprendizajeId])
+  @@map("asignaciones_carga")
+}
+
 // ============================================================
 // ESTRUCTURA ACADÉMICA
 // ============================================================
 
 model Competencia {
-  id            String   @id @default(cuid())
-  codigo        String   @unique
-  nombre        String   @db.Text
+  id            String          @id @default(cuid())
+  codigo        String          @unique
+  nombre        String          @db.Text
   tipo          TipoCompetencia @default(TECNICA)
   duracionHoras Int
-  estado        Estado   @default(ACTIVO)
-  creadoEn      DateTime @default(now())
-  actualizadoEn DateTime @updatedAt
+  estado        Estado          @default(ACTIVO)
+  creadoEn      DateTime        @default(now())
+  actualizadoEn DateTime        @updatedAt
 
-  programas            Programa[]
+  programas             Programa[]
   resultadosAprendizaje ResultadoAprendizaje[]
 
   @@map("competencias")
 }
 
 model ResultadoAprendizaje {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   codigo        String
-  nombre        String   @db.Text
+  nombre        String       @db.Text
   competenciaId String
   fase          FaseProyecto @default(ANALISIS)
-  creadoEn      DateTime @default(now())
-  actualizadoEn DateTime @updatedAt
+  creadoEn      DateTime     @default(now())
+  actualizadoEn DateTime     @updatedAt
 
-  competencia  Competencia          @relation(fields: [competenciaId], references: [id])
-  evaluaciones EvaluacionAprendiz[]
-  actividades  Actividad[]
+  competencia       Competencia          @relation(fields: [competenciaId], references: [id])
+  evaluaciones      EvaluacionAprendiz[]
+  actividades       Actividad[]
+  asignacionesCarga AsignacionCarga[]
 
   @@map("resultados_aprendizaje")
 }
@@ -220,19 +251,19 @@ model ResultadoAprendizaje {
 // ============================================================
 
 model Actividad {
-  id                     String                @id @default(cuid())
+  id                     String          @id @default(cuid())
   fichaId                String
   nombre                 String
-  descripcion            String?               @db.Text
-  instrucciones          String?               @db.Text
-  tipo                   TipoActividad         @default(TALLER)
-  fechaInicio            DateTime              @default(now())
+  descripcion            String?         @db.Text
+  instrucciones          String?         @db.Text
+  tipo                   TipoActividad   @default(TALLER)
+  fechaInicio            DateTime        @default(now())
   fechaVencimiento       DateTime
-  estado                 EstadoActividad       @default(ACTIVA)
+  estado                 EstadoActividad @default(ACTIVA)
   instructorId           String?
   resultadoAprendizajeId String?
-  creadoEn               DateTime              @default(now())
-  actualizadoEn          DateTime              @updatedAt
+  creadoEn               DateTime        @default(now())
+  actualizadoEn          DateTime        @updatedAt
 
   ficha                Ficha                 @relation(fields: [fichaId], references: [id])
   instructor           Instructor?           @relation(fields: [instructorId], references: [id])
@@ -272,49 +303,50 @@ enum EstadoAsistenciaAprendiz {
 }
 
 model Asistencia {
-  id           String      @id @default(cuid())
-  fichaId      String
-  instructorId String
-  fecha        DateTime
-  totalPresentes Int       @default(0)
-  totalFaltas    Int       @default(0)
-  totalExcusas   Int       @default(0)
-  observaciones  String?   @db.Text
+  id             String           @id @default(cuid())
+  fichaId        String
+  instructorId   String
+  fecha          DateTime
+  totalPresentes Int              @default(0)
+  totalFaltas    Int              @default(0)
+  totalExcusas   Int              @default(0)
+  observaciones  String?          @db.Text
   estado         EstadoAsistencia @default(PENDIENTE)
-  creadoEn       DateTime  @default(now())
-  actualizadoEn  DateTime  @updatedAt
+  creadoEn       DateTime         @default(now())
+  actualizadoEn  DateTime         @updatedAt
 
-  ficha      Ficha      @relation(fields: [fichaId], references: [id])
-  instructor Instructor @relation(fields: [instructorId], references: [id])
-  detalles   DetalleAsistencia[]
+  ficha      Ficha                @relation(fields: [fichaId], references: [id])
+  instructor Instructor           @relation(fields: [instructorId], references: [id])
+  detalles   RegistroAsistencia[]
 
   @@unique([fichaId, fecha])
   @@map("asistencias")
 }
 
-model DetalleAsistencia {
-  id           String @id @default(cuid())
-  asistenciaId String
-  aprendizId   String
-  estado       EstadoAsistenciaAprendiz @default(PRESENTE)
+model RegistroAsistencia {
+  id            String                   @id @default(cuid())
+  asistenciaId  String
+  aprendizId    String
+  estado        EstadoAsistenciaAprendiz @default(PRESENTE)
   observaciones String?
 
   asistencia Asistencia @relation(fields: [asistenciaId], references: [id], onDelete: Cascade)
   aprendiz   Aprendiz   @relation(fields: [aprendizId], references: [id], onDelete: Cascade)
 
   @@unique([asistenciaId, aprendizId])
-  @@map("detalles_asistencia")
+  @@map("registros_asistencia")
 }
 
 model EvaluacionAprendiz {
-  id                    String        @id @default(cuid())
-  aprendizId            String
+  id                     String           @id @default(cuid())
+  aprendizId             String
   resultadoAprendizajeId String
-  juicio                JuicioValorativo @default(PENDIENTE)
-  fecha                 DateTime?
-  observaciones         String?       @db.Text
-  creadoEn              DateTime      @default(now())
-  actualizadoEn         DateTime      @updatedAt
+  juicio                 JuicioValorativo @default(PENDIENTE)
+  nota                   Float?
+  fecha                  DateTime?
+  observaciones          String?          @db.Text
+  creadoEn               DateTime         @default(now())
+  actualizadoEn          DateTime         @updatedAt
 
   aprendiz             Aprendiz             @relation(fields: [aprendizId], references: [id])
   resultadoAprendizaje ResultadoAprendizaje @relation(fields: [resultadoAprendizajeId], references: [id])
@@ -328,15 +360,15 @@ model EvaluacionAprendiz {
 // ============================================================
 
 model AlertaRiesgo {
-  id             String       @id @default(cuid())
+  id             String      @id @default(cuid())
   aprendizId     String
   motivo         String
-  nivel          NivelRiesgo  @default(MEDIO)
-  fechaDeteccion DateTime     @default(now())
-  gestionada     Boolean      @default(false)
-  observaciones  String?      @db.Text
-  creadoEn       DateTime     @default(now())
-  actualizadoEn  DateTime     @updatedAt
+  nivel          NivelRiesgo @default(MEDIO)
+  fechaDeteccion DateTime    @default(now())
+  gestionada     Boolean     @default(false)
+  observaciones  String?     @db.Text
+  creadoEn       DateTime    @default(now())
+  actualizadoEn  DateTime    @updatedAt
 
   aprendiz Aprendiz @relation(fields: [aprendizId], references: [id])
 
@@ -344,21 +376,21 @@ model AlertaRiesgo {
 }
 
 model VisitaSeguimiento {
-  id            String            @id @default(cuid())
-  
-  aprendizId    String?
-  aprendiz      Aprendiz?         @relation(fields: [aprendizId], references: [id])
-  fichaId       String?
-  ficha         Ficha?            @relation(fields: [fichaId], references: [id])
-  
+  id String @id @default(cuid())
+
+  aprendizId String?
+  aprendiz   Aprendiz? @relation(fields: [aprendizId], references: [id])
+  fichaId    String?
+  ficha      Ficha?    @relation(fields: [fichaId], references: [id])
+
   institucionNombre String?
-  fecha         DateTime
-  responsable   String
-  novedades     Int               @default(0)
-  observaciones String?           @db.Text
-  estado        EstadoVisita      @default(PROGRAMADA)
-  creadoEn      DateTime          @default(now())
-  actualizadoEn DateTime          @updatedAt
+  fecha             DateTime
+  responsable       String
+  novedades         Int          @default(0)
+  observaciones     String?      @db.Text
+  estado            EstadoVisita @default(PROGRAMADA)
+  creadoEn          DateTime     @default(now())
+  actualizadoEn     DateTime     @updatedAt
 
   @@map("visitas_seguimiento")
 }
@@ -368,44 +400,49 @@ model VisitaSeguimiento {
 // ============================================================
 
 model User {
-  id            String    @id @default(cuid())
-  nombre        String
-  email         String    @unique
-  passwordHash  String
-  rolId         String
-  institucionId String?   // <-- Nuevo campo para multi-tenancy y prevención de IDOR
-  estado        Estado    @default(ACTIVO)
-  ultimoAcceso  DateTime?
-  creadoEn      DateTime  @default(now())
-  actualizadoEn DateTime  @updatedAt
+  id               String     @id @default(cuid())
+  nombre           String
+  email            String     @unique
+  passwordHash     String
+  rol              RolUsuario @default(APRENDIZ)
+  institucionId    String? // <-- Nuevo campo para multi-tenancy y prevención de IDOR
+  sedeId           String? // <-- Campo para enlazar usuario a una sede específica (ej: APOYO_COORDINACION)
+  estado           Estado     @default(ACTIVO)
+  ultimoAcceso     DateTime?
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean    @default(false)
+  last2FADate      DateTime?
+  creadoEn         DateTime   @default(now())
+  actualizadoEn    DateTime   @updatedAt
 
-  rol            Rol            @relation(fields: [rolId], references: [id])
-  institucion    Institucion?   @relation(fields: [institucionId], references: [id])
-  instructor     Instructor?
-  aprendiz       Aprendiz?
-  auditLog       AuditLog[]
-  notificaciones Notificacion[]
+  institucion        Institucion?        @relation(fields: [institucionId], references: [id])
+  sede               Sede?               @relation(fields: [sedeId], references: [id])
+  instructor         Instructor?
+  aprendiz           Aprendiz?
+  auditLog           AuditLog[]
+  notificaciones     Notificacion[]
+  mensajesEnviados   Mensaje[]            @relation("MensajesEnviados")
+  mensajesRecibidos  Mensaje[]            @relation("MensajesRecibidos")
+  sessionLogs        SessionLog[]
+  documentoEmpleados DocumentoEmpleado[]
+  solicitudCartas    SolicitudCarta[]
+  lecturasGlobales   MensajeLeido[]
 
   @@map("users")
 }
 
-model Rol {
-  id          String @id @default(cuid())
-  nombre      String @unique
-  descripcion String?
-  users       User[]
-
-  @@map("roles")
-}
-
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  modulo    String
-  accion    String
-  detalle   String   @db.Text
-  ip        String?
-  fecha     DateTime @default(now())
+  id                String   @id @default(cuid())
+  userId            String?
+  modulo            String
+  accion            String
+  detalle           String   @db.Text
+  entidad           String?  // Ej. "Usuario", "Actividad"
+  entidadId         String?  // ID del registro alterado
+  valoresAnteriores Json?    // Estado antes del cambio
+  valoresNuevos     Json?    // Estado después del cambio
+  ip                String?
+  fecha             DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id])
 
@@ -507,16 +544,15 @@ enum ModalidadPrograma {
   COMBINADO
 }
 
-
 model Documento {
-  id              String   @id @default(cuid())
-  nombre          String
-  tipo            String   @default("OTRO")
-  institucionId   String?
-  url             String
-  tamanoBytes     Int?
-  creadoEn        DateTime @default(now())
-  actualizadoEn   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  nombre        String
+  tipo          String   @default("OTRO")
+  institucionId String?
+  url           String
+  tamanoBytes   Int?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
 
   @@map("documentos")
 }
@@ -545,21 +581,21 @@ model Docente {
 }
 
 model Notificacion {
-  id          String   @id @default(cuid())
-  userId      String
-  titulo      String
-  mensaje     String   @db.Text
-  leida       Boolean  @default(false)
-  tipo        String   @default("INFO")
-  enlace      String?
-  creadoEn    DateTime @default(now())
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  userId   String
+  titulo   String
+  mensaje  String   @db.Text
+  leida    Boolean  @default(false)
+  tipo     String   @default("INFO")
+  enlace   String?
+  creadoEn DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notificaciones")
 }
 
-model Configuracion {
+model ConfiguracionSistema {
   id                  String   @id @default("global")
   anioLectivo         Int      @default(2026)
   trimestre           Int      @default(3)
@@ -571,9 +607,139 @@ model Configuracion {
   diasEntrega         Int      @default(7)
   duracionSesionHoras Int      @default(8)
   intentosLogin       Int      @default(5)
+  diasMaximoExcusa    Int      @default(3) // EX-2: días hábiles máx para radicar una excusa
+
   actualizadoEn       DateTime @updatedAt
 
-  @@map("configuracion")
+  @@map("configuracion_sistema")
 }
 
+model Mensaje {
+  id         String   @id @default(cuid())
+  emisorId   String
+  receptorId String?  // Opcional si es global
+  esGlobal   Boolean  @default(false)
+  contenido  String   @db.Text
+  adjuntoUrl String?  // MS-3: Adjuntos en mensajes
+  leido      Boolean  @default(false)
+  creadoEn   DateTime @default(now())
 
+  replyToId  String?  // MS-2: ID del mensaje al que responde
+  replyTo    Mensaje? @relation("Respuestas", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies    Mensaje[] @relation("Respuestas")
+
+  emisor           User           @relation("MensajesEnviados", fields: [emisorId], references: [id], onDelete: Cascade)
+  receptor         User?          @relation("MensajesRecibidos", fields: [receptorId], references: [id], onDelete: Cascade)
+  lecturasGlobales MensajeLeido[]
+
+  @@map("mensajes")
+}
+
+model MensajeLeido {
+  id        String   @id @default(cuid())
+  mensajeId String
+  userId    String
+  leidoEn   DateTime @default(now())
+
+  mensaje Mensaje @relation(fields: [mensajeId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mensajeId, userId])
+  @@map("mensajes_leidos")
+}
+
+model ClaseVirtual {
+  id          String   @id @default(cuid())
+  titulo      String
+  descripcion String?  @db.Text
+  enlaceUrl   String
+  fechaInicio DateTime
+  duracionMin Int
+  fichaId     String
+  estado      Estado   @default(ACTIVO)
+  creadoEn    DateTime @default(now())
+
+  @@map("clases_virtuales")
+}
+
+enum RolUsuario {
+  ADMINISTRADOR
+  INSTRUCTOR
+  APRENDIZ
+  APOYO_COORDINACION
+  COORDINADOR
+  COORDINADOR_REGIONAL
+  SUBDIRECTOR_REGIONAL
+  COORDINADOR_SEDE
+}
+
+model SessionLog {
+  id           String    @id @default(cuid())
+  userId       String
+  deviceId     String
+  ipAddress    String?
+  userAgent    String?
+  isActive     Boolean   @default(true)
+  trustedUntil DateTime? // Si está seteado y no ha expirado, no pide 2FA
+  createdAt    DateTime  @default(now())
+  lastActiveAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session_logs")
+}
+
+model Excusa {
+  id                    String    @id @default(cuid())
+  aprendizId            String
+  motivo                String
+  descripcion           String?   @db.Text
+  archivoUrl            String?
+  fechaInicio           DateTime?
+  fechaFin              DateTime?
+  estado                String    @default("PENDIENTE") // PENDIENTE, APROBADA, RECHAZADA, APELADA
+  observacionInstructor String?   @db.Text
+  apelacion             String?   @db.Text  // EX-5: Apelación de excusa rechazada
+  apelacionRespuesta    String?   @db.Text  // EX-5: Respuesta a la apelación
+  instructorRevisorId   String?
+  fecha                 DateTime  @default(now())
+  creadoEn              DateTime  @default(now())
+  actualizadoEn         DateTime  @updatedAt
+
+  aprendiz Aprendiz @relation(fields: [aprendizId], references: [id])
+  instructorRevisor Instructor? @relation(fields: [instructorRevisorId], references: [id])
+
+  @@map("excusas")
+}
+
+model DocumentoEmpleado {
+  id               String    @id @default(cuid())
+  userId           String
+  tipoDocumento    String // HV, CONTRATO, CERTIFICADO_ACADEMICO, DOCUMENTO_IDENTIDAD, OTRO
+  nombre           String
+  urlArchivo       String
+  estado           String    @default("VIGENTE") // VIGENTE, VENCIDO, RECHAZADO
+  fechaVencimiento DateTime?
+  creadoEn         DateTime  @default(now())
+  actualizadoEn    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("documentos_empleados")
+}
+
+model SolicitudCarta {
+  id            String   @id @default(cuid())
+  userId        String
+  tipoCarta     String // LABORAL, SALARIO, ETC
+  motivo        String?  @db.Text
+  dirigidoA     String?
+  estado        String   @default("PENDIENTE") // PENDIENTE, GENERADA, RECHAZADA
+  urlCarta      String?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("solicitudes_cartas")
+}

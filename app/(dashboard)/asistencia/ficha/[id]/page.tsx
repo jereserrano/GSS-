@@ -3,7 +3,7 @@ import { AsistenciaTable } from "@/features/ejecucion/AsistenciaTable";
 import { getAsistenciasAction } from "@/actions/asistencia.actions";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowLeft, Users, CalendarCheck } from "lucide-react";
 
@@ -15,9 +15,9 @@ export default async function AsistenciaFichaPage({ params, searchParams }: { pa
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { rol: true, instructor: true }
+      include: { instructor: true }
     });
-    if (user?.rol?.nombre?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
+    if (user?.rol?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
       instructorId = user.instructor.id;
     }
   }

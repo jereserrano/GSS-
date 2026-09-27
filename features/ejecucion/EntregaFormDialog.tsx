@@ -10,8 +10,10 @@ import { X, UploadCloud, CheckCircle2, Download, ExternalLink } from "lucide-rea
 
 interface EntregaFormDialogProps {
   entrega?: any;
-  actividades: { id: string; nombre: string }[];
-  aprendices: { id: string; nombres: string; apellidos: string; numeroDocumento: string }[];
+  inlineMode?: boolean;
+  actividadId?: string;
+  actividades?: { id: string; nombre: string }[];
+  aprendices?: { id: string; nombres: string; apellidos: string; numeroDocumento: string }[];
   fichaIdFijo?: string;
   onClose: () => void;
   onSuccess?: () => void | Promise<void>;
@@ -28,7 +30,7 @@ const ESTADOS = [
   { value: "TARDIA", label: "Entrega Tardía" },
 ];
 
-export function EntregaFormDialog({ entrega, actividades, aprendices, fichaIdFijo, onClose, onSuccess }: EntregaFormDialogProps) {
+export function EntregaFormDialog({ entrega, inlineMode = false, actividadId, actividades = [], aprendices = [], fichaIdFijo, onClose, onSuccess }: EntregaFormDialogProps) {
   const { data: session } = useSession();
   const userRole = ((session?.user as any)?.role || "").toUpperCase();
   const isAprendiz = userRole.includes("APRENDIZ");
@@ -113,44 +115,48 @@ export function EntregaFormDialog({ entrega, actividades, aprendices, fichaIdFij
     return new Date(date.getTime() - tzoffset).toISOString().slice(0, 16);
   };
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#f0fdf4] text-[#267000] rounded-lg border border-[#bbf7d0]">
-              <UploadCloud size={20} />
+  const content = (
+      <div className={inlineMode ? "w-full flex flex-col" : "bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]"}>
+        {!inlineMode && (
+          <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#f0fdf4] text-[#267000] rounded-lg border border-[#bbf7d0]">
+                <UploadCloud size={20} />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900">
+                  {isEditing ? "Calificar / Evaluar Evidencia" : "Registrar Entrega de Evidencia"}
+                </h2>
+                <p className="text-xs text-slate-500">
+                  {isEditing ? `Evaluación formativa para: ${entrega.aprendiz?.nombres || "Aprendiz"}` : "Adjuntar evidencia de aprendizaje"}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">
-                {isEditing ? "Calificar / Evaluar Evidencia" : "Registrar Entrega de Evidencia"}
-              </h2>
-              <p className="text-xs text-slate-500">
-                {isEditing ? `Evaluación formativa para: ${entrega.aprendiz?.nombres || "Aprendiz"}` : "Adjuntar evidencia de aprendizaje"}
-              </p>
-            </div>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md">
+              <X size={18} />
+            </button>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md">
-            <X size={18} />
-          </button>
-        </div>
+        )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className={`${inlineMode ? "space-y-4" : "p-6 space-y-4 overflow-y-auto"}`}>
           
-          <div className="space-y-1.5">
+          <div className={inlineMode ? "hidden" : "space-y-1.5"}>
             <label className="text-sm font-medium text-text-primary">Actividad *</label>
-            <select name="actividadId" defaultValue={entrega?.actividadId || actividades[0]?.id || ""} required className={selectClass} disabled={isEditing}>
+            <select name="actividadId" defaultValue={entrega?.actividadId || actividadId || actividades[0]?.id || ""} required className={selectClass} disabled={isEditing || !!actividadId}>
               <option value="" disabled>Seleccione una actividad</option>
-              {actividades.map(a => (
-                <option key={a.id} value={a.id}>{a.nombre}</option>
-              ))}
+              {actividadId && !actividades.length ? (
+                <option value={actividadId}>Actividad Seleccionada</option>
+              ) : (
+                actividades.map(a => (
+                  <option key={a.id} value={a.id}>{a.nombre}</option>
+                ))
+              )}
             </select>
-            {isEditing && <input type="hidden" name="actividadId" value={entrega?.actividadId} />}
+            {(isEditing || !!actividadId) && <input type="hidden" name="actividadId" value={entrega?.actividadId || actividadId} />}
           </div>
 
-          <div className="space-y-1.5">
+          <div className={inlineMode ? "hidden" : "space-y-1.5"}>
             <label className="text-sm font-medium text-text-primary">Aprendiz *</label>
             {isAprendiz ? (
               <div className="p-3 bg-sena-50 border border-sena-100 rounded-md text-sm text-sena-800">
@@ -308,6 +314,15 @@ export function EntregaFormDialog({ entrega, actividades, aprendices, fichaIdFij
           </div>
         </form>
       </div>
+  );
+
+  if (inlineMode) {
+    return content;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+      {content}
     </div>
   );
 }

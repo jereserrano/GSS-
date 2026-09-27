@@ -6,8 +6,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { MapPin, Phone, Building2, User } from "lucide-react";
 import type { Institucion } from "@/types/institucion.types";
 import { formatDateShort } from "@/lib/utils";
-// En un caso real importaríamos SedesTable pasando la institucionId como prop
-// import { SedesTable } from "@/features/sedes/SedesTable";
+import { SedesTable } from "@/features/sedes/SedesTable";
 
 export function InstitucionDetail({ institucion }: { institucion: Institucion }) {
   return (
@@ -70,10 +69,11 @@ export function InstitucionDetail({ institucion }: { institucion: Institucion })
               <CardTitle className="text-lg">Sedes Asociadas ({institucion.sedes?.length || 0})</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Aquí iría la tabla de sedes filtrada por esta institución */}
-              <div className="p-8 text-center text-text-secondary border rounded-lg border-dashed">
-                <p>Lista de sedes en construcción</p>
-              </div>
+              <SedesTable 
+                initialData={{ data: institucion.sedes || [] }} 
+                instituciones={[{ id: institucion.id, nombre: institucion.nombre }]} 
+                readOnly={true}
+              />
             </CardContent>
           </Card>
         </div>

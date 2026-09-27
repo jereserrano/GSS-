@@ -11,8 +11,8 @@ export async function createInstitucion(data: any) {
   try {
     const parsed = institucionSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
-    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR");
+    const userId = user.id;
     const existing = await InstitucionRepository.findUnique({ where: { nit: data.nit } });
     if (existing) {
       return { error: "Ya existe una institución con este NIT" };
@@ -52,8 +52,8 @@ export async function updateInstitucion(id: string, data: any) {
   try {
     const parsed = institucionSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
-    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR", "COORDINADOR");
+    const userId = user.id;
     const inst = await InstitucionRepository.update({
       where: { id },
       data: {

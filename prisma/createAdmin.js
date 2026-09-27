@@ -4,23 +4,16 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminRole = await prisma.rol.findFirst({ where: { nombre: 'ADMINISTRADOR' } });
-  
-  if (!adminRole) {
-    console.log("No se encontró el rol ADMINISTRADOR");
-    return;
-  }
-
   const passwordHash = bcrypt.hashSync('123456', 10);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@sena.edu.co' },
-    update: { passwordHash, rolId: adminRole.id },
+    update: { passwordHash, rol: 'ADMINISTRADOR' },
     create: {
       nombre: 'Administrador GSS',
       email: 'admin@sena.edu.co',
       passwordHash,
-      rolId: adminRole.id,
+      rol: 'ADMINISTRADOR',
       estado: 'ACTIVO'
     }
   });

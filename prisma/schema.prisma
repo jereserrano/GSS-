@@ -32,6 +32,7 @@ model Institucion {
   fichas   Ficha[]
   docentes Docente[]
   usuarios User[]
+  documentos Documento[]
 
   @@map("instituciones")
 }
@@ -553,6 +554,8 @@ model Documento {
   tamanoBytes   Int?
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
+
+  institucion   Institucion? @relation(fields: [institucionId], references: [id])
 
   @@map("documentos")
 }

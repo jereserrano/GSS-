@@ -2,7 +2,7 @@
 
 **Sistema de gestión académica para la Media Técnica SENA Regional Magdalena.**
 
-Versión actual: `v2.1.5`
+Versión actual: `v2.2.3`
 
 ---
 
@@ -149,6 +149,7 @@ GSS/
 
 | Versión | Descripción |
 |---------|-------------|
+| v2.2.3 | Módulo de Mensajería, 2FA, Gestor de Excusas con Auditoría y Migración completa de BD |
 | v2.1.5 | Sincronización BD via migraciones, nuevas vistas de fichas y competencias, mejoras de seguridad RBAC |
 | v2.1.4 | Manuales APA7, auto-perfil en creación de usuarios, instructor autodetectado en asistencia |
 | v2.1.3 | Documentación completa de jornada 18-Sep-2026 |

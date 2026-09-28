@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function main() { try { await prisma.$executeRaw`ALTER TABLE competencias ADD COLUMN urlGuia TEXT NULL;`; console.log('Column added'); } catch (e) { console.error(e); } } main().finally(() => prisma.$disconnect());

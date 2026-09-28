@@ -277,6 +277,8 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
          <EntregaFormDialog 
            entrega={gradingEntrega}
            actividadId={gradingEntrega.actividadId}
+           actividades={[{ id: gradingEntrega.actividadId, nombre: actividades.find(a => a.id === gradingEntrega.actividadId)?.nombre || "Actividad Seleccionada" }]}
+           aprendices={gradingEntrega.aprendiz ? [gradingEntrega.aprendiz] : []}
            inlineMode={false}
            onClose={() => setGradingEntrega(null)}
            onSuccess={() => {

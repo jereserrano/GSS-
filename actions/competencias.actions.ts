@@ -165,6 +165,30 @@ export async function deleteCompetencia(id: string) {
   }
 }
 
+export async function updateCompetenciaGuiaAction(id: string, urlGuia: string | null) {
+  try {
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const competencia = await CompetenciaRepository.update({
+      where: { id },
+      data: { urlGuia },
+    });
+
+    await logAudit({
+      userId: user.id,
+      modulo: "Competencias",
+      accion: "ACTUALIZAR",
+      detalle: `Guía actualizada para la competencia ${competencia.codigo}`,
+    });
+    revalidatePath("/diseno-curricular", "layout");
+    revalidatePath("/fichas", "layout");
+    revalidatePath("/portafolio", "layout");
+    return { success: true, competencia };
+  } catch (error: any) {
+    console.error("Error updating competencia guia:", error);
+    return { error: error.message || "Error al actualizar la guía de la competencia" };
+  }
+}
+
 export async function exportCompetenciasCSV() {
   try {
     const competencias = await CompetenciaRepository.findMany({

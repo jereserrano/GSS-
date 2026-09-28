@@ -240,8 +240,8 @@ export function MensajeriaView({
     activeTab === "GLOBAL"
       ? [...mensajesGlobales].reverse() // global viene desc, mostrar asc
       : mensajesDirectos.filter(
-          (m) => m.emisorId === activeTab || m.receptorId === activeTab
-        );
+        (m) => m.emisorId === activeTab || m.receptorId === activeTab
+      );
 
   const contactoActivo =
     activeTab !== "GLOBAL" ? contactos.find((c) => c.id === activeTab) : null;
@@ -251,7 +251,7 @@ export function MensajeriaView({
   // ─────────────────────────────────────────────
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nuevoMensaje.trim()) return;
+    if (!nuevoMensaje.trim() && !nuevoAdjuntoUrl) return;
 
     // MS-7: Lógica para enviar mensaje masivo
     if (modoMasivo && activeTab !== "GLOBAL" && isCoordinador) {
@@ -444,11 +444,10 @@ export function MensajeriaView({
           {/* TAB: GLOBAL */}
           <button
             onClick={() => setActiveTab("GLOBAL")}
-            className={`w-full flex items-center gap-3 p-4 text-left border-b transition-colors hover:bg-slate-100 ${
-              activeTab === "GLOBAL"
+            className={`w-full flex items-center gap-3 p-4 text-left border-b transition-colors hover:bg-slate-100 ${activeTab === "GLOBAL"
                 ? "bg-[#39A900]/10 border-l-4 border-l-[#39A900]"
                 : "border-l-4 border-l-transparent"
-            }`}
+              }`}
           >
             <div className="h-10 w-10 rounded-full bg-[#00304D] flex items-center justify-center shrink-0 text-white">
               <Megaphone size={20} />
@@ -484,18 +483,16 @@ export function MensajeriaView({
                           );
                         }
                       }}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-slate-200/50 ${
-                        esActivo ? "bg-slate-200" : ""
-                      }`}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-slate-200/50 ${esActivo ? "bg-slate-200" : ""
+                        }`}
                     >
                       <div className="h-9 w-9 rounded-full bg-[#39A900]/20 flex items-center justify-center shrink-0">
                         <User size={16} className="text-[#007832]" />
                       </div>
                       <div className="flex-1 overflow-hidden min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <p className={`text-sm truncate ${
-                            noLeidosPor[id] ? "font-bold text-gray-900" : "font-medium text-gray-800"
-                          }`}>{nombre}</p>
+                          <p className={`text-sm truncate ${noLeidosPor[id] ? "font-bold text-gray-900" : "font-medium text-gray-800"
+                            }`}>{nombre}</p>
                           <div className="flex items-center gap-1 shrink-0">
                             {/* MS-1: Badge de no leídos */}
                             {noLeidosPor[id] ? (
@@ -512,9 +509,8 @@ export function MensajeriaView({
                             )}
                           </div>
                         </div>
-                        <p className={`text-[11px] truncate ${
-                          noLeidosPor[id] ? "text-gray-700 font-medium" : "text-gray-500"
-                        }`}>{preview}</p>
+                        <p className={`text-[11px] truncate ${noLeidosPor[id] ? "text-gray-700 font-medium" : "text-gray-500"
+                          }`}>{preview}</p>
                       </div>
                     </button>
                     {/* Botón eliminar conversación */}
@@ -548,9 +544,8 @@ export function MensajeriaView({
                   <button
                     key={contacto.id}
                     onClick={() => setActiveTab(contacto.id)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-slate-200/50 ${
-                      activeTab === contacto.id ? "bg-slate-200" : ""
-                    }`}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-slate-200/50 ${activeTab === contacto.id ? "bg-slate-200" : ""
+                      }`}
                   >
                     <div className="h-9 w-9 rounded-full bg-[#39A900]/20 flex items-center justify-center shrink-0">
                       <User size={16} className="text-[#007832]" />
@@ -664,13 +659,12 @@ export function MensajeriaView({
                 >
                   <div className="relative group max-w-[70%]">
                     <div
-                      className={`rounded-2xl px-4 py-2.5 shadow-sm ${
-                        isMe
+                      className={`rounded-2xl px-4 py-2.5 shadow-sm ${isMe
                           ? "bg-[#39A900] text-white rounded-tr-none"
                           : activeTab === "GLOBAL"
-                          ? "bg-[#00304D] text-white rounded-tl-none"
-                          : "bg-[#EBF7E5] text-gray-800 rounded-tl-none"
-                      }`}
+                            ? "bg-[#00304D] text-white rounded-tl-none"
+                            : "bg-[#EBF7E5] text-gray-800 rounded-tl-none"
+                        }`}
                     >
                       {activeTab === "GLOBAL" && !isMe && (
                         <div className="text-xs font-bold text-[#39A900] mb-1">
@@ -685,7 +679,7 @@ export function MensajeriaView({
                           <span className="truncate block">{msg.replyTo.contenido}</span>
                         </div>
                       )}
-                      
+
                       {/* MS-3: Adjunto */}
                       {msg.adjuntoUrl && (
                         <a href={msg.adjuntoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 mb-2 p-2 rounded bg-black/10 hover:bg-black/20 transition-colors text-xs font-medium cursor-pointer">
@@ -693,7 +687,7 @@ export function MensajeriaView({
                           <span className="truncate max-w-[200px]">Archivo adjunto</span>
                         </a>
                       )}
-                      
+
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.contenido}</p>
                     </div>
 
@@ -725,7 +719,7 @@ export function MensajeriaView({
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
                           Responder
                         </button>
-                        
+
                         {/* Eliminar (solo si es mío) */}
                         {isMe && (
                           <button
@@ -782,7 +776,7 @@ export function MensajeriaView({
                   />
                   Activar modo Mensaje Masivo Segmentado
                 </label>
-                
+
                 {modoMasivo && (
                   <div className="flex items-center gap-2">
                     <select
@@ -879,10 +873,10 @@ export function MensajeriaView({
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    
+
                     const formData = new FormData();
                     formData.append("file", file);
-                    
+
                     try {
                       const res = await fetch("/api/upload", { method: "POST", body: formData });
                       const data = await res.json();
@@ -905,35 +899,34 @@ export function MensajeriaView({
                   <Paperclip size={18} className="text-gray-500" />
                 </Button>
               </div>
-            <Input
-              value={nuevoMensaje}
-              onChange={(e) => setNuevoMensaje(e.target.value)}
-              placeholder={
-                activeTab === "GLOBAL"
-                  ? "Escribe un comunicado global..."
-                  : "Escribe un mensaje..."
-              }
-              className="flex-1 bg-slate-50 focus-visible:ring-[#39A900]"
-              disabled={sending}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(e as any);
+              <Input
+                value={nuevoMensaje}
+                onChange={(e) => setNuevoMensaje(e.target.value)}
+                placeholder={
+                  activeTab === "GLOBAL"
+                    ? "Escribe un comunicado global..."
+                    : "Escribe un mensaje..."
                 }
-              }}
-            />
-            <Button
-              type="submit"
-              disabled={sending || !nuevoMensaje.trim()}
-              className={`${
-                activeTab === "GLOBAL"
-                  ? "bg-[#00304D] hover:bg-[#00304D]/90"
-                  : "bg-[#39A900] hover:bg-[#007832]"
-              }`}
-            >
-              <Send size={18} className={sending ? "opacity-50" : ""} />
-            </Button>
-          </form>
+                className="flex-1 bg-slate-50 focus-visible:ring-[#39A900]"
+                disabled={sending}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend(e as any);
+                  }
+                }}
+              />
+              <Button
+                type="submit"
+                disabled={sending || (!nuevoMensaje.trim() && !nuevoAdjuntoUrl)}
+                className={`${activeTab === "GLOBAL"
+                    ? "bg-[#00304D] hover:bg-[#00304D]/90"
+                    : "bg-[#39A900] hover:bg-[#007832]"
+                  }`}
+              >
+                <Send size={18} className={sending ? "opacity-50" : ""} />
+              </Button>
+            </form>
           </div>
         )}
       </div>

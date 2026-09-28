@@ -311,7 +311,12 @@ export function CentroCalificaciones({ initialFichaId = "", hideSelector = false
                                     </div>
                                   </td>
                                   <td className="px-4 py-3 text-center">
-                                    {renderJuicioBadge(juicio)}
+                                    <div className="flex flex-col items-center gap-1">
+                                      {evaluacion?.nota !== null && evaluacion?.nota !== undefined && (
+                                        <span className="font-mono font-bold text-slate-700">{evaluacion.nota}</span>
+                                      )}
+                                      {renderJuicioBadge(juicio)}
+                                    </div>
                                   </td>
                                 </tr>
                               );

@@ -151,3 +151,30 @@ export async function registerSessionLog(userId: string, deviceId: string) {
     });
   }
 }
+
+export async function disable2FAAction() {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.email) {
+      return { success: false, error: "No autenticado" };
+    }
+
+    const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+    if (!dbUser) {
+      return { success: false, error: "Usuario no encontrado" };
+    }
+
+    await prisma.user.update({
+      where: { id: dbUser.id },
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+      }
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in disable2FAAction:", error);
+    return { success: false, error: error.message || "Error interno del servidor" };
+  }
+}

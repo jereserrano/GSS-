@@ -33,6 +33,17 @@ export function InstructoresTable({ initialData }: InstructoresTableProps) {
 
   const instructores = initialData?.data || [];
 
+  const filteredInstructores = React.useMemo(() => {
+    if (!busqueda.trim()) return instructores;
+    const lower = busqueda.toLowerCase();
+    return instructores.filter((i: any) => 
+      i.nombres?.toLowerCase().includes(lower) ||
+      i.apellidos?.toLowerCase().includes(lower) ||
+      i.numeroDocumento?.toLowerCase().includes(lower) ||
+      i.email?.toLowerCase().includes(lower)
+    );
+  }, [busqueda, instructores]);
+
   const handleEdit = (instructor: any) => {
     setSelectedInstructor(instructor);
     setDialogOpen(true);
@@ -185,7 +196,7 @@ export function InstructoresTable({ initialData }: InstructoresTableProps) {
       </div>
 
       <DataTable 
-        data={instructores} 
+        data={filteredInstructores} 
         columnas={columnas} 
         isLoading={loading} 
       />

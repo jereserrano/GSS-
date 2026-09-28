@@ -221,6 +221,7 @@ model Competencia {
   tipo          TipoCompetencia @default(TECNICA)
   duracionHoras Int
   estado        Estado          @default(ACTIVO)
+  urlGuia       String?         @db.Text
   creadoEn      DateTime        @default(now())
   actualizadoEn DateTime        @updatedAt
 

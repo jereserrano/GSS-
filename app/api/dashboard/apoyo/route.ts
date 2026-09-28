@@ -102,20 +102,20 @@ export async function GET(request: NextRequest) {
     const realCompetencias = Array.from(compMap.entries()).map(([id, data]) => ({
       id,
       nombre: data.nombre,
-      promedio: data.notas.length ? Math.round(data.notas.reduce((a, b) => a + b, 0) / data.notas.length) : 0
+      promedio: data.notas.length ? Math.round((data.notas.reduce((a, b) => a + b, 0) / data.notas.length) * 20) : 0
     }));
 
     const realRAs = Array.from(raMap.entries()).map(([id, data]) => ({
       id,
       competenciaId: data.compId,
       nombre: data.nombre,
-      aprobacion: data.notas.length ? Math.round(data.notas.reduce((a, b) => a + b, 0) / data.notas.length) : 0
+      aprobacion: data.notas.length ? Math.round((data.notas.reduce((a, b) => a + b, 0) / data.notas.length) * 20) : 0
     }));
 
     let fichaProgreso = 0;
     if (todasEvaluaciones.length > 0) {
       const sumaTotal = todasEvaluaciones.reduce((sum, ev) => sum + (ev.nota || 0), 0);
-      fichaProgreso = Math.round(sumaTotal / todasEvaluaciones.length);
+      fichaProgreso = Math.round((sumaTotal / todasEvaluaciones.length) * 20);
     }
 
     // 4. MATRIZ DE RIESGO: CALCULADA SOBRE EVALUACIONES FILTRADAS
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
       const asistenciaPct = Math.max(0, 100 - ((fallas / maxSesiones) * 100));
       
       const notas = aprendizNotasFiltradas.get(a.id) || [];
-      const rendimiento = notas.length > 0 ? (notas.reduce((x, y) => x + y, 0) / notas.length) : 0; 
+      const rendimiento = notas.length > 0 ? ((notas.reduce((x, y) => x + y, 0) / notas.length) * 20) : 0; 
       
       let nivelRiesgo = "Bajo";
       if (asistenciaPct < 75 || rendimiento < 70) nivelRiesgo = "Alto";

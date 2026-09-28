@@ -78,7 +78,7 @@ export function ApoyoDashboard() {
       <select 
         value={selectedCompetencia} 
         onChange={(e) => setSelectedCompetencia(e.target.value)}
-        disabled={!selectedFicha || !dashboard.competencias?.length}
+        disabled={!dashboard.competencias?.length}
         className="flex h-9 w-full md:flex-1 md:max-w-xs rounded-lg border border-[#00304D]/20 bg-white/50 px-3 py-1 text-xs shadow-sm transition-colors focus:ring-1 focus:ring-[#39A900] disabled:opacity-50 text-[#00304D] font-medium"
       >
         <option value="">Todas las Competencias</option>

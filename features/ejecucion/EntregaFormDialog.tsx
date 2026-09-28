@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createEntrega, updateEntrega, evaluarEntregaAction } from "@/actions/entregas.actions";
 import { toast } from "sonner";
-import { X, UploadCloud, CheckCircle2, Download, ExternalLink } from "lucide-react";
+import { X, UploadCloud, CheckCircle2, Download, ExternalLink, FileText } from "lucide-react";
 
 interface EntregaFormDialogProps {
   entrega?: any;
@@ -198,69 +198,97 @@ export function EntregaFormDialog({ entrega, inlineMode = false, actividadId, ac
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-sm font-medium text-text-primary">Evidencia *</label>
-              <div className="flex bg-slate-100 p-1 rounded-md">
-                <button
-                  type="button"
-                  onClick={() => setUploadMode("file")}
-                  className={`px-3 py-1 text-xs font-medium rounded ${uploadMode === "file" ? "bg-white shadow-sm text-indigo-600" : "text-slate-500"}`}
-                >
-                  Subir Archivo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUploadMode("url")}
-                  className={`px-3 py-1 text-xs font-medium rounded ${uploadMode === "url" ? "bg-white shadow-sm text-indigo-600" : "text-slate-500"}`}
-                >
-                  Pegar Enlace
-                </button>
-              </div>
+              {isAprendiz && (
+                <div className="flex bg-slate-100 p-1 rounded-md">
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode("file")}
+                    className={`px-3 py-1 text-xs font-medium rounded ${uploadMode === "file" ? "bg-white shadow-sm text-indigo-600" : "text-slate-500"}`}
+                  >
+                    Subir Archivo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode("url")}
+                    className={`px-3 py-1 text-xs font-medium rounded ${uploadMode === "url" ? "bg-white shadow-sm text-indigo-600" : "text-slate-500"}`}
+                  >
+                    Pegar Enlace
+                  </button>
+                </div>
+              )}
             </div>
 
-            {uploadMode === "file" ? (
-              <div className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors ${file ? 'border-green-400 bg-green-50' : 'border-slate-200 hover:bg-slate-50'}`}>
-                <Input
-                  type="file"
-                  className="hidden"
-                  id="fileUpload"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                />
-                <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center gap-2 w-full">
-                  {file ? (
-                    <>
-                      <div className="p-3 bg-green-100 text-green-700 rounded-full">
-                        <CheckCircle2 size={32} />
-                      </div>
-                      <div className="text-lg font-bold text-green-700">
-                        Archivo cargado correctamente
-                      </div>
-                      <p className="text-sm font-semibold text-slate-700 break-all w-full px-4">
-                        {file.name}
-                      </p>
-                      <p className="text-xs text-green-600 font-medium mt-1">Haz clic para cambiar el archivo</p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full">
-                        <UploadCloud size={24} />
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-indigo-600 font-semibold">Haz clic para subir</span> o arrastra un archivo
-                      </div>
-                      <p className="text-xs text-slate-500">
-                        {entrega?.urlArchivo ? "Evidencia actual subida. Selecciona otro archivo para reemplazarla." : "PDF, Word, Excel, ZIP (Max. 10MB)"}
-                      </p>
-                    </>
-                  )}
-                </label>
+            {!isAprendiz ? (
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="p-2 bg-indigo-100 text-indigo-600 rounded-md shrink-0">
+                    <FileText size={20} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-700 truncate">
+                      {entrega?.urlArchivo ? "Evidencia adjunta" : "Sin evidencia"}
+                    </p>
+                  </div>
+                </div>
+                {entrega?.urlArchivo && (
+                  <a
+                    href={entrega.urlArchivo}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors shrink-0"
+                  >
+                    <ExternalLink size={16} />
+                    Ver Archivo
+                  </a>
+                )}
               </div>
             ) : (
-              <Input
-                name="urlArchivo"
-                type="url"
-                required={uploadMode === "url" && !file}
-                defaultValue={uploadMode === "url" ? (entrega?.urlArchivo || "") : ""}
-                placeholder="https://drive.google.com/... o enlace de repositorio"
-              />
+              uploadMode === "file" ? (
+                <div className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors ${file ? 'border-green-400 bg-green-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <Input
+                    type="file"
+                    className="hidden"
+                    id="fileUpload"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  />
+                  <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center gap-2 w-full">
+                    {file ? (
+                      <>
+                        <div className="p-3 bg-green-100 text-green-700 rounded-full">
+                          <CheckCircle2 size={32} />
+                        </div>
+                        <div className="text-lg font-bold text-green-700">
+                          Archivo cargado correctamente
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700 break-all w-full px-4">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-green-600 font-medium mt-1">Haz clic para cambiar el archivo</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full">
+                          <UploadCloud size={24} />
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-indigo-600 font-semibold">Haz clic para subir</span> o arrastra un archivo
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          {entrega?.urlArchivo ? "Evidencia actual subida. Selecciona otro archivo para reemplazarla." : "PDF, Word, Excel, ZIP (Max. 10MB)"}
+                        </p>
+                      </>
+                    )}
+                  </label>
+                </div>
+              ) : (
+                <Input
+                  name="urlArchivo"
+                  type="url"
+                  required={uploadMode === "url" && !file}
+                  defaultValue={uploadMode === "url" ? (entrega?.urlArchivo || "") : ""}
+                  placeholder="https://drive.google.com/... o enlace de repositorio"
+                />
+              )
             )}
           </div>
 
@@ -270,6 +298,7 @@ export function EntregaFormDialog({ entrega, inlineMode = false, actividadId, ac
               name="comentario"
               defaultValue={entrega?.comentario || ""}
               placeholder="Observaciones o notas sobre la evidencia..."
+              disabled={!isAprendiz}
             />
           </div>
 

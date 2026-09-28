@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getProgramasSelectAction, getJerarquiaByProgramaAction, getJerarquiaAcademicaAction } from "@/actions/jerarquia.actions";
 import { getFichasSelectAction } from "@/actions/fichas.actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, FileText, CheckCircle, PenTool, Loader2, ChevronRight, Plus } from "lucide-react";
+import { Target, FileText, CheckCircle, PenTool, Loader2, ChevronRight, Plus, UploadCloud, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSession } from "next-auth/react";
@@ -14,6 +14,8 @@ import { CompetenciaFormDialog } from "./CompetenciaFormDialog";
 import { ResultadoAprendizajeFormDialog } from "./ResultadoAprendizajeFormDialog";
 import { CriterioEvaluacionFormDialog } from "./CriterioEvaluacionFormDialog";
 import { InstrumentoEvaluacionFormDialog } from "./InstrumentoEvaluacionFormDialog";
+import { toast } from "sonner";
+import { updateCompetenciaGuiaAction } from "@/actions/competencias.actions";
 
 interface DisenoCurricularTreeProps {
   initialProgramaId?: string;
@@ -41,6 +43,36 @@ export function DisenoCurricularTree({ initialProgramaId = "", hideSelector = fa
   const [showCriterioModal, setShowCriterioModal] = useState(false);
   const [activeCriterioId, setActiveCriterioId] = useState<string | null>(null);
   const [showInstrumentoModal, setShowInstrumentoModal] = useState(false);
+  const [uploadingGuiaId, setUploadingGuiaId] = useState<string | null>(null);
+
+  const handleUploadGuia = async (e: React.ChangeEvent<HTMLInputElement>, competenciaId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingGuiaId(competenciaId);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      const uploadJson = await uploadRes.json();
+      
+      if (!uploadRes.ok) throw new Error(uploadJson.error || "Error al subir guía");
+      
+      const res = await updateCompetenciaGuiaAction(competenciaId, uploadJson.url);
+      if (res.error) throw new Error(res.error);
+      
+      toast.success("Guía subida y asociada correctamente");
+      // Refetch
+      fetchJerarquia(programaId);
+    } catch (error: any) {
+      toast.error(error.message || "Ocurrió un error al subir la guía");
+    } finally {
+      setUploadingGuiaId(null);
+      // Reset input
+      e.target.value = '';
+    }
+  };
 
   const fetchJerarquia = async (id: string) => {
     if (!id) {
@@ -200,6 +232,31 @@ export function DisenoCurricularTree({ initialProgramaId = "", hideSelector = fa
                     <Plus className="w-4 h-4" /> Añadir RA
                   </button>
                 )}
+                {!readOnly ? (
+                  <label 
+                    className="absolute right-28 text-sm text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {uploadingGuiaId === comp.id ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo...</>
+                    ) : (
+                      <>
+                        <UploadCloud className="w-4 h-4" /> {comp.urlGuia ? "Actualizar Guía" : "Subir Guía"}
+                        <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleUploadGuia(e, comp.id)} />
+                      </>
+                    )}
+                  </label>
+                ) : comp.urlGuia ? (
+                  <a 
+                    href={comp.urlGuia}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-4 text-sm text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Ver Guía
+                  </a>
+                ) : null}
               </summary>
               <div className="p-4 pl-6 space-y-4 bg-gray-50/30">
                 {comp.resultadosAprendizaje?.length === 0 && (

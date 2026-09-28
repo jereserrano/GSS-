@@ -72,20 +72,20 @@ export async function GET(request: NextRequest) {
     const realCompetencias = Array.from(compMap.entries()).map(([id, data]) => ({
       id,
       nombre: data.nombre,
-      promedio: data.notas.length ? Math.round(data.notas.reduce((a, b) => a + b, 0) / data.notas.length) : 0
+      promedio: data.notas.length ? Math.round((data.notas.reduce((a, b) => a + b, 0) / data.notas.length) * 20) : 0
     }));
 
     const realRAs = Array.from(raMap.entries()).map(([id, data]) => ({
       id,
       competenciaId: data.compId,
       nombre: data.nombre,
-      aprobacion: data.notas.length ? Math.round(data.notas.reduce((a, b) => a + b, 0) / data.notas.length) : 0
+      aprobacion: data.notas.length ? Math.round((data.notas.reduce((a, b) => a + b, 0) / data.notas.length) * 20) : 0
     }));
 
     let miProgreso = 0;
     if (misEvaluaciones.length > 0) {
       const sumaTotal = misEvaluaciones.reduce((sum, ev) => sum + (ev.nota || 0), 0);
-      miProgreso = Math.round(sumaTotal / misEvaluaciones.length);
+      miProgreso = Math.round((sumaTotal / misEvaluaciones.length) * 20);
     }
 
     // 4. MATRIZ DE RIESGO (Solo para mí, respetando filtros)
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     const maxSesiones = 50; 
     const asistenciaPct = Math.max(0, 100 - ((misFallas / maxSesiones) * 100));
-    const rendimiento = misNotasFiltradas.length > 0 ? (misNotasFiltradas.reduce((x, y) => x + y, 0) / misNotasFiltradas.length) : 0; 
+    const rendimiento = misNotasFiltradas.length > 0 ? ((misNotasFiltradas.reduce((x, y) => x + y, 0) / misNotasFiltradas.length) * 20) : 0; 
     
     let nivelRiesgo = "Bajo";
     if (asistenciaPct < 75 || rendimiento < 70) nivelRiesgo = "Alto";

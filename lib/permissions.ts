@@ -121,7 +121,8 @@ export const RUTAS_APRENDIZ = [
   "/gestor-actividades",
   "/centro-calificaciones",
   "/seguimiento-riesgos",
-  "/mis-excusas"
+  "/mis-excusas",
+  "/portafolio"
 ];
 
 // MATRIZ DE PERMISOS PARA SERVER ACTIONS: ROL × MÓDULO × ACCIÓN

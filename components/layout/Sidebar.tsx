@@ -10,7 +10,7 @@ import {
   Target, FileText, BookCheck, 
   CalendarCheck, TrendingUp, 
   PieChart, FolderOpen, Bell, Settings, Shield,
-  Menu, ChevronLeft, Activity, Search, User, Mail
+  Menu, ChevronLeft, Activity, Search, User, Mail, Archive
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessRoute } from "@/lib/permissions";
@@ -39,6 +39,7 @@ const navAprendiz: NavSection[] = [
       { icon: BookOpen, label: "Mi formación", href: "/fichas" },
       { icon: BookCheck, label: "Mis Actividades", href: "/gestor-actividades" },
       { icon: TrendingUp, label: "Mis Calificaciones", href: "/centro-calificaciones" },
+      { icon: Archive, label: "Mi Portafolio", href: "/portafolio" },
       { icon: Activity, label: "Seguimiento a Riesgos", href: "/seguimiento-riesgos" },
       { icon: Target, label: "Mi Ruta de Aprendizaje", href: "/diseno-curricular" },
       { icon: FileText, label: "Mis Excusas", href: "/mis-excusas" },
@@ -144,7 +145,6 @@ const navCoordinador: NavSection[] = [
       { icon: Shield, label: "Roles y Permisos", href: "/roles" },
       { icon: Settings, label: "Configuración", href: "/configuracion" },
       { icon: Search, label: "Auditoría", href: "/auditoria" },
-      { icon: Mail, label: "Mensajería", href: "/mensajes" },
       { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
       { icon: Shield, label: "Seguridad (2FA)", href: "/seguridad" },
     ],
@@ -316,8 +316,8 @@ export function Sidebar() {
   const isInstructor = rawRole === "INSTRUCTOR" || rawRole.includes("INSTRUCT");
   const isAdmin = rawRole === "ADMINISTRADOR" || rawRole.includes("ADMIN");
   const isSubdirector = rawRole === "SUBDIRECTOR" || rawRole.includes("SUBDIR");
-  const isCoordinador = !isAdmin && !isSubdirector && (rawRole.includes("COORD") || rawRole.includes("APCOORD"));
   const isApoyoAdmin = rawRole === "APOYO_COORDINACION" || rawRole.includes("APOYO");
+  const isCoordinador = !isAdmin && !isSubdirector && !isApoyoAdmin && (rawRole.includes("COORD") || rawRole.includes("APCOORD"));
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   const closeMobile = () => setMobileOpen(false);

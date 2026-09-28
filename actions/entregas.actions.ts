@@ -198,9 +198,9 @@ export async function createEntrega(data: z.infer<typeof entregaSchema>) {
       console.error("Error notificando al instructor:", notifErr);
     }
 
-    revalidatePath("/entregas");
-    revalidatePath("/actividades");
-    revalidatePath("/dashboard");
+    revalidatePath("/entregas", "layout");
+    revalidatePath("/actividades", "layout");
+    revalidatePath("/dashboard", "layout");
     return { success: true, entrega };
   } catch (error: any) {
     console.error("Error creating entrega:", error);
@@ -268,6 +268,7 @@ export async function evaluarEntregaAction(
           where: { id: evalExistente.id },
           data: {
             juicio,
+            nota: evaluacionData.calificacion ? parseFloat(evaluacionData.calificacion) : null,
             fecha: new Date(),
             observaciones: evaluacionData.retroalimentacion || evalExistente.observaciones,
           }
@@ -278,6 +279,7 @@ export async function evaluarEntregaAction(
             resultadoAprendizajeId: rapId,
             aprendizId: entrega.aprendiz.id,
             juicio,
+            nota: evaluacionData.calificacion ? parseFloat(evaluacionData.calificacion) : null,
             fecha: new Date(),
             observaciones: evaluacionData.retroalimentacion || null,
           }
@@ -309,11 +311,11 @@ export async function evaluarEntregaAction(
       }
     }
 
-    revalidatePath("/entregas");
-    revalidatePath("/evaluaciones");
-    revalidatePath("/actividades");
-    revalidatePath("/resultados");
-    revalidatePath("/dashboard");
+    revalidatePath("/entregas", "layout");
+    revalidatePath("/evaluaciones", "layout");
+    revalidatePath("/actividades", "layout");
+    revalidatePath("/resultados", "layout");
+    revalidatePath("/dashboard", "layout");
     return { success: true, entrega };
   } catch (error: any) {
     console.error("Error evaluando entrega:", error);
@@ -346,8 +348,8 @@ export async function updateEntrega(id: string, data: z.infer<typeof entregaSche
       accion: "ACTUALIZAR",
       detalle: `Entrega actualizada ID: ${id}`,
     });
-    revalidatePath("/entregas");
-    revalidatePath("/dashboard");
+    revalidatePath("/entregas", "layout");
+    revalidatePath("/dashboard", "layout");
     return { success: true, entrega };
   } catch (error: any) {
     console.error("Error updating entrega:", error);
@@ -367,7 +369,7 @@ export async function deleteEntrega(id: string) {
       accion: "ELIMINAR",
       detalle: "Acción completada exitosamente.",
     });
-    revalidatePath("/entregas");
+    revalidatePath("/entregas", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting entrega:", error);

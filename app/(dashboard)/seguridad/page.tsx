@@ -1,5 +1,6 @@
 import React from "react";
 import { Setup2FA } from "@/features/auth/Setup2FA";
+import { Disable2FAButton } from "@/features/auth/Disable2FAButton";
 import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 
@@ -27,6 +28,7 @@ export default async function SeguridadPage() {
         <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-green-800">
           <h2 className="text-lg font-bold mb-2">¡2FA Activado!</h2>
           <p>Tu cuenta está protegida. Se solicitará el código de tu aplicación autenticadora (Google Authenticator) en dispositivos nuevos o cada 7 días.</p>
+          <Disable2FAButton />
         </div>
       ) : (
         <Setup2FA />

@@ -1,6 +1,6 @@
 {
   "name": "gss-media-tecnica",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
@@ -35,8 +35,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
+    "googleapis": "^182.0.0",
     "lucide-react": "^0.511.0",
-    "next": "^15.3.0",
+    "next": "^16.3.7",
     "next-auth": "^4.24.11",
     "otplib": "^12.0.1",
     "qrcode": "^1.5.4",
@@ -46,7 +48,7 @@
     "serwist": "^9.5.12",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.3.0",
-    "xlsx": "^0.18.5",
+    "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -59,12 +61,15 @@
     "autoprefixer": "^10.4.21",
     "bcryptjs": "^3.0.3",
     "eslint": "^9.0.0",
-    "eslint-config-next": "^15.3.0",
+    "eslint-config-next": "^16.3.7",
     "postcss": "^8.5.3",
     "prisma": "^6.0.0",
     "tailwindcss": "^4.1.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
     "typescript": "^5.8.0"
+  },
+  "overrides": {
+    "browserslist": ">=4.28.7"
   }
 }

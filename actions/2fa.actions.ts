@@ -178,3 +178,26 @@ export async function disable2FAAction() {
     return { success: false, error: error.message || "Error interno del servidor" };
   }
 }
+
+export async function disable2FAForUserAction(userId: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.email) return { success: false, error: 'No autenticado' };
+
+    const currentUser = await prisma.user.findUnique({ where: { email: user.email }, include: { rol: true } });
+    if (!currentUser?.rol?.nombre?.toUpperCase().includes('ADMIN')) {
+       return { success: false, error: 'No tienes permisos' };
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+      }
+    });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

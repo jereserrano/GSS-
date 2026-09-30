@@ -13,7 +13,6 @@ const nextConfig: NextConfig = {
   /* ── Modo estricto de React: detecta efectos secundarios duplicados en dev ── */
   reactStrictMode: true,
   typescript: { ignoreBuildErrors: true },
-  turbopack: {},
 
 
   /* ── Configuración de Server Actions para permitir acceso desde LAN ── */

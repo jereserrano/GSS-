@@ -1,17 +1,33 @@
 import React from "react";
 import { Setup2FA } from "@/features/auth/Setup2FA";
 import { Disable2FAButton } from "@/features/auth/Disable2FAButton";
+import { Admin2FAManager } from "@/features/auth/Admin2FAManager";
 import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 
 export default async function SeguridadPage() {
   const session = await getServerSession();
   let is2FAEnabled = false;
+  let isAdmin = false;
+  let usersWith2FA: any[] = [];
   
   if (session?.user?.email) {
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email },
+      include: { rol: true }
+    });
+    
     if (user?.twoFactorEnabled) {
       is2FAEnabled = true;
+    }
+    
+    if (user?.rol?.nombre?.toUpperCase().includes('ADMIN')) {
+      isAdmin = true;
+      usersWith2FA = await prisma.user.findMany({
+        where: { twoFactorEnabled: true },
+        include: { rol: true },
+        orderBy: { nombre: 'asc' }
+      });
     }
   }
 
@@ -33,6 +49,11 @@ export default async function SeguridadPage() {
       ) : (
         <Setup2FA />
       )}
+
+      {isAdmin && (
+        <Admin2FAManager usersWith2FA={usersWith2FA} />
+      )}
     </div>
   );
 }
+

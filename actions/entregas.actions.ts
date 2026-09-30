@@ -9,6 +9,8 @@ import { z } from "zod";
 import { logAudit } from "@/lib/audit.service";
 import { getServerSession } from "next-auth/next";
 import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+import { GoogleDriveService } from "@/services/google-drive.service";
+import path from "path";
 
 async function getSessionUserId() {
   try {
@@ -25,6 +27,7 @@ import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { crearNotificacionSistema } from "./notificaciones.actions";
+import { recalcularRiesgoAprendiz } from "@/services/riesgo.service";
 
 export async function getEntregasAction(filtros: any = {}) {
   try {
@@ -65,6 +68,7 @@ export async function getEntregasAction(filtros: any = {}) {
       ...(filtros.actividadId ? { actividadId: filtros.actividadId } : {}),
       ...(aprendizFiltro ? { aprendizId: aprendizFiltro } : {}),
       ...(filtros.estado ? { estado: filtros.estado } : {}),
+      ...(filtros.fichaId ? { actividad: { fichaId: filtros.fichaId } } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([
@@ -162,8 +166,7 @@ export async function createEntrega(data: z.infer<typeof entregaSchema>) {
           aprendizId: aprendizId,
           urlArchivo: data.urlArchivo || null,
           comentario: data.comentario || null,
-          estado: initialEstado,
-          fechaEntrega: data.fechaEntrega ? new Date(data.fechaEntrega) : new Date(),
+          estado: initialEstado as any,
           calificacion: initialCalificacion,
           retroalimentacion: initialRetro,
         },
@@ -180,6 +183,45 @@ export async function createEntrega(data: z.infer<typeof entregaSchema>) {
       accion: existing ? "ACTUALIZAR" : "CREAR",
       detalle: `Entrega de actividad ID ${data.actividadId} por aprendiz ID ${aprendizId}`,
     });
+
+    // --- INTEGRACIÓN GOOGLE DRIVE ---
+    if (isAprendiz && data.urlArchivo) {
+      try {
+        const filename = data.urlArchivo.split('/').pop();
+        if (filename) {
+          const physicalPath = path.join(process.cwd(), "public", "uploads", filename);
+          
+          // Obtener los nombres reales de competencia y resultado
+          let compName = "Otras Evidencias";
+          let resName = "Sin Resultado Asignado";
+          
+          const fullAct = await prisma.actividad.findUnique({
+            where: { id: data.actividadId },
+            include: { resultadoAprendizaje: { include: { competencia: true } } }
+          });
+          
+          if (fullAct?.resultadoAprendizaje) {
+             // Reemplazar caracteres que puedan molestar en nombres de carpetas
+             resName = fullAct.resultadoAprendizaje.nombre.replace(/[<>:"/\\|?*]/g, '');
+             if (fullAct.resultadoAprendizaje.competencia) {
+                compName = fullAct.resultadoAprendizaje.competencia.nombre.replace(/[<>:"/\\|?*]/g, '');
+             }
+          }
+
+          // Lanzar en background (sin await) para no bloquear la respuesta al usuario
+          GoogleDriveService.uploadEvidenceToDrive(
+            user.id,
+            physicalPath,
+            `${entrega.actividad.nombre}_${filename}`,
+            "application/octet-stream",
+            compName,
+            resName
+          ).catch(e => console.error("Fallo al subir a Google Drive:", e));
+        }
+      } catch (e) {
+        console.error("Error preparando backup a Drive:", e);
+      }
+    }
 
     // Notificar al instructor responsable de la actividad
     try {
@@ -222,6 +264,12 @@ export async function evaluarEntregaAction(
     const instructorRecord = await prisma.instructor.findUnique({
       where: { userId: user.id }
     });
+
+    const entregaPrevia = await prisma.entrega.findUnique({
+      where: { id },
+      select: { estado: true }
+    });
+    const fueEvaluadaAntes = entregaPrevia && (entregaPrevia.estado === "APROBADA" || entregaPrevia.estado === "NO_APROBADA" || entregaPrevia.estado === "CALIFICADA");
 
     const entrega = await EntregaRepository.update({
       where: { id },
@@ -299,9 +347,14 @@ export async function evaluarEntregaAction(
       try {
         const estadoEtiqueta = evaluacionData.estado === "APROBADA" ? "APROBADA ✅" : 
                                evaluacionData.estado === "NO_APROBADA" ? "NO APROBADA ⚠️" : "CALIFICADA 📝";
+                               
+        const tituloNotif = fueEvaluadaAntes 
+          ? `Tu actividad fue reevaluada: ${entrega.actividad.nombre}`
+          : `Tu entrega ha sido calificada: ${entrega.actividad.nombre}`;
+
         await crearNotificacionSistema(
           entrega.aprendiz.userId,
-          `Tu entrega ha sido evaluada: ${entrega.actividad.nombre}`,
+          tituloNotif,
           `Resultado: ${estadoEtiqueta}. Retroalimentación del instructor: ${evaluacionData.retroalimentacion || "Sin comentarios."}`,
           evaluacionData.estado === "APROBADA" ? "EXITO" : "ALERTA",
           "/entregas"  // ← el aprendiz va a ver sus entregas y resultado
@@ -310,6 +363,9 @@ export async function evaluarEntregaAction(
         console.error("Error enviando notificación al aprendiz:", notifErr);
       }
     }
+
+    // Disparar cálculo de riesgo en segundo plano (Fire and Forget)
+    recalcularRiesgoAprendiz(entrega.aprendiz.id).catch(console.error);
 
     revalidatePath("/entregas", "layout");
     revalidatePath("/evaluaciones", "layout");
@@ -335,7 +391,7 @@ export async function updateEntrega(id: string, data: z.infer<typeof entregaSche
       comentario: data.comentario || null,
       retroalimentacion: data.retroalimentacion || null,
     };
-    if (data.fechaEntrega) dataToUpdate.fechaEntrega = new Date(data.fechaEntrega);
+    if ((data as any).fechaEntrega) dataToUpdate.fechaEntrega = new Date((data as any).fechaEntrega);
 
     const entrega = await EntregaRepository.update({
       where: { id },

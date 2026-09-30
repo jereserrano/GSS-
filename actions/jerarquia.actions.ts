@@ -12,7 +12,15 @@ export async function getJerarquiaAcademicaAction(fichaId: string) {
           include: {
             competencias: {
               include: {
-                resultadosAprendizaje: true
+                resultadosAprendizaje: {
+                  include: {
+                    criterios: {
+                      include: {
+                        instrumentos: true
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -73,7 +81,15 @@ export async function getJerarquiaByProgramaAction(programaId: string) {
     const competencias = await prisma.competencia.findMany({
       where: { programas: { some: { id: programaId } } },
       include: {
-        resultadosAprendizaje: true
+        resultadosAprendizaje: {
+          include: {
+            criterios: {
+              include: {
+                instrumentos: true
+              }
+            }
+          }
+        }
       },
       orderBy: { codigo: "asc" }
     });

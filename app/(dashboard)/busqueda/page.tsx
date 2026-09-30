@@ -4,8 +4,9 @@ import { buscarGlobalmente } from "@/actions/busqueda.actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function BusquedaPage({ searchParams }: { searchParams: { q?: string } }) {
-  const query = searchParams.q || "";
+export default async function BusquedaPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+  const query = q || "";
   let resultados: any = { aprendices: [], fichas: [], actividades: [] };
   
   if (query.trim().length > 0) {

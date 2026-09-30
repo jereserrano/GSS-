@@ -15,15 +15,13 @@ interface Ficha {
 interface AprendizFormDialogProps {
   aprendiz?: any;
   fichas: Ficha[];
+  fichaIdFijo?: string;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 const TIPOS_DOCUMENTO = ["CC", "TI", "CE", "PP"];
-const NIVELES_RIESGO = [
-  { value: "BAJO", label: "Bajo" },
-  { value: "MEDIO", label: "Medio" },
-  { value: "ALTO", label: "Alto" },
-];
+
 const ESTADOS_APRENDIZ = [
   { value: "EN_FORMACION", label: "En Formación" },
   { value: "EGRESADO", label: "Egresado" },
@@ -45,19 +43,18 @@ export function AprendizFormDialog({ aprendiz, fichas, fichaIdFijo, onClose, onS
 
     const formData = new FormData(e.currentTarget);
     const data = {
-      tipoDocumento:    formData.get("tipoDocumento") as string,
-      numeroDocumento:  formData.get("numeroDocumento") as string,
-      nombres:          formData.get("nombres") as string,
-      apellidos:        formData.get("apellidos") as string,
-      emailPersonal:    formData.get("emailPersonal") as string,
-      emailSena:        formData.get("emailSena") as string,
-      telefono:         formData.get("telefono") as string,
-      fechaNacimiento:  formData.get("fechaNacimiento") as string,
-      genero:           formData.get("genero") as string,
-      direccion:        formData.get("direccion") as string,
-      fichaId:          fichaIdFijo || (formData.get("fichaId") as string),
-      estado:           formData.get("estado") as string,
-      nivelRiesgo:      formData.get("nivelRiesgo") as string,
+      tipoDocumento: formData.get("tipoDocumento") as any,
+      numeroDocumento: formData.get("numeroDocumento") as string,
+      nombres: formData.get("nombres") as string,
+      apellidos: formData.get("apellidos") as string,
+      emailPersonal: formData.get("emailPersonal") as string,
+      emailSena: formData.get("emailSena") as string,
+      telefono: formData.get("telefono") as string,
+      fechaNacimiento: formData.get("fechaNacimiento") as string,
+      genero: formData.get("genero") as any,
+      direccion: formData.get("direccion") as string,
+      fichaId: fichaIdFijo || (formData.get("fichaId") as string),
+      estado: formData.get("estado") as any,
     };
 
     try {
@@ -208,14 +205,6 @@ export function AprendizFormDialog({ aprendiz, fichas, fichaIdFijo, onClose, onS
                 <select name="estado" defaultValue={aprendiz?.estado || "EN_FORMACION"} className={selectClass}>
                   {ESTADOS_APRENDIZ.map(e => (
                     <option key={e.value} value={e.value}>{e.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-text-primary">Nivel de Riesgo</label>
-                <select name="nivelRiesgo" defaultValue={aprendiz?.nivelRiesgo || "BAJO"} className={selectClass}>
-                  {NIVELES_RIESGO.map(r => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </select>
               </div>

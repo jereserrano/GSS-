@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -93,11 +93,22 @@ export async function GET(request: NextRequest) {
       }));
     });
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Asistencias");
+    // Construir workbook con exceljs (sin vulnerabilidades CVE-2023-30533 / CVE-2024-22363 de xlsx)
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Asistencias");
 
-    const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    if (rows.length > 0) {
+      // Añadir fila de encabezados
+      worksheet.columns = Object.keys(rows[0]).map((key) => ({
+        header: key,
+        key,
+        width: Math.max(key.length + 4, 18),
+      }));
+      // Añadir filas de datos
+      worksheet.addRows(rows);
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
 
     return new NextResponse(buffer, {
       status: 200,

@@ -176,9 +176,7 @@ export function ProgramasTable({ initialData }: ProgramasTableProps) {
                 className="bg-surface pl-9"
               />
             </div>
-            <Button variant="outline" className="shrink-0 bg-surface">
-              <Filter size={16} className="mr-2" /> Filtros
-            </Button>
+
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>

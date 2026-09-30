@@ -9,6 +9,7 @@ import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit.service";
 import { requireRole } from "@/lib/rbac";
+import { recalcularRiesgoAprendiz } from "@/services/riesgo.service";
 
 export async function getEvaluacionesAction(filtros: any = {}) {
   try {
@@ -78,7 +79,6 @@ export async function createEvaluacion(data: any) {
     const evaluacion = await EvaluacionAprendizRepository.create({
       data: {
         resultadoAprendizajeId: data.resultadoAprendizajeId,
-        criterioEvaluacionId: data.criterioEvaluacionId || null,
         aprendizId: data.aprendizId,
         juicio: data.juicio || "PENDIENTE",
         fecha: data.fechaEvaluacion ? new Date(data.fechaEvaluacion) : null,
@@ -92,6 +92,10 @@ export async function createEvaluacion(data: any) {
       accion: "CREAR",
       detalle: `Evaluación registrada para aprendiz ID: ${data.aprendizId}`,
     });
+
+    // Disparar cálculo de riesgo en segundo plano (Fire and Forget)
+    recalcularRiesgoAprendiz(data.aprendizId).catch(console.error);
+
     revalidatePath("/evaluaciones");
     return { success: true, evaluacion };
   } catch (error: any) {
@@ -121,6 +125,10 @@ export async function updateEvaluacion(id: string, data: any) {
       accion: "ACTUALIZAR",
       detalle: `Evaluación actualizada ID: ${id}`,
     });
+
+    // Disparar cálculo de riesgo en segundo plano (Fire and Forget)
+    recalcularRiesgoAprendiz(evaluacion.aprendizId).catch(console.error);
+
     revalidatePath("/evaluaciones");
     return { success: true, evaluacion };
   } catch (error: any) {
@@ -257,7 +265,7 @@ export async function calificarMasivoAction(fichaId: string, raId: string, calif
     await logAudit({
       userId: user.id,
       modulo: "Evaluaciones",
-      accion: "CALIFICACION_MASIVA",
+      accion: "ACTUALIZAR",
       detalle: `Calificación masiva para RAP ID: ${raId} en Ficha ID: ${fichaId} (${calificaciones.length} aprendices)`,
     });
     

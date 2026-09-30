@@ -49,8 +49,8 @@ export function Header() {
   useEffect(() => {
     if (session?.user) {
       cargarNotificaciones();
-      // Refrescar cada 30 segundos
-      const interval = setInterval(cargarNotificaciones, 30000);
+      // Refrescar cada 10 segundos
+      const interval = setInterval(cargarNotificaciones, 10000);
       return () => clearInterval(interval);
     }
   }, [session]);

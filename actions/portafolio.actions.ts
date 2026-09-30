@@ -184,3 +184,76 @@ export async function getPortafolioAprendizAction(): Promise<
     return { success: false, error: error.message || "Error al cargar el portafolio" };
   }
 }
+import { GoogleDriveService } from "@/services/google-drive.service";
+import path from "path";
+
+export async function syncAllEvidenciasToDrive() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email || session.user.role !== "APRENDIZ") {
+      return { success: false, error: "No autorizado" };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { aprendiz: true }
+    });
+
+    if (!user?.aprendiz || !user.googleDriveLinked) {
+      return { success: false, error: "Usuario o Drive no vinculados" };
+    }
+
+    const entregas = await prisma.entrega.findMany({
+      where: {
+        aprendizId: user.aprendiz.id,
+        urlArchivo: { not: null }
+      },
+      include: {
+        actividad: {
+          include: {
+            resultadoAprendizaje: {
+              include: { competencia: true }
+            }
+          }
+        }
+      }
+    });
+
+    let syncCount = 0;
+
+    for (const entrega of entregas) {
+      if (!entrega.urlArchivo) continue;
+      
+      const filename = entrega.urlArchivo.split('/').pop();
+      if (!filename) continue;
+
+      const physicalPath = path.join(process.cwd(), "public", "uploads", filename);
+      
+      let compName = "Otras Evidencias";
+      let resName = "Sin Resultado Asignado";
+      
+      if (entrega.actividad?.resultadoAprendizaje) {
+         resName = entrega.actividad.resultadoAprendizaje.nombre.replace(/[<>:"/\\|?*]/g, '');
+         if (entrega.actividad.resultadoAprendizaje.competencia) {
+            compName = entrega.actividad.resultadoAprendizaje.competencia.nombre.replace(/[<>:"/\\|?*]/g, '');
+         }
+      }
+
+      await GoogleDriveService.uploadEvidenceToDrive(
+        user.id,
+        physicalPath,
+        `${entrega.actividad.nombre}_${filename}`,
+        "application/octet-stream",
+        compName,
+        resName
+      ).catch(e => console.error("Error sincronizando antigua evidencia:", e));
+
+      syncCount++;
+    }
+
+    return { success: true, count: syncCount };
+  } catch (error: any) {
+    console.error("Error en syncAllEvidenciasToDrive:", error);
+    return { success: false, error: error.message };
+  }
+}

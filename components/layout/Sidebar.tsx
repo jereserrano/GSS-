@@ -38,6 +38,7 @@ const navAprendiz: NavSection[] = [
     items: [
       { icon: BookOpen, label: "Mi formación", href: "/fichas" },
       { icon: BookCheck, label: "Mis Actividades", href: "/gestor-actividades" },
+      { icon: FolderOpen, label: "Mis Entregas", href: "/entregas" },
       { icon: TrendingUp, label: "Mis Calificaciones", href: "/centro-calificaciones" },
       { icon: Archive, label: "Mi Portafolio", href: "/portafolio" },
       { icon: Activity, label: "Seguimiento a Riesgos", href: "/seguimiento-riesgos" },

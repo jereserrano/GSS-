@@ -8,11 +8,12 @@ import { asistenciaSchema } from "@/schemas";
 import { z } from "zod";
 import { logAudit } from "@/lib/audit.service";
 import { requireRole } from "@/lib/rbac";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
+import { recalcularRiesgoFicha } from "@/services/riesgo.service";
 
 export async function getAsistenciasAction(filtros: any = {}) {
   try {
@@ -103,18 +104,51 @@ export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMas
 
     // Usar transacción para atomicidad
     const asistencia = await TransactionRepository.$transaction(async (tx) => {
-      // 1. Crear el encabezado
-      const asist = await tx.asistencia.create({
-        data: {
+      // 1. Buscar si ya existe la asistencia para esta ficha en ese día
+      const startDate = new Date(`${data.fecha}T00:00:00.000Z`);
+      const endDate = new Date(`${data.fecha}T23:59:59.999Z`);
+      
+      const existeAsistencia = await tx.asistencia.findFirst({
+        where: {
           fichaId: data.fichaId,
-          instructorId: data.instructorId,
-          fecha: new Date(data.fecha),
-          estado: "REGISTRADA",
-          totalPresentes: presentes,
-          totalFaltas: faltas,
-          totalExcusas: excusas,
-        },
+          fecha: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
       });
+
+      let asist;
+      if (existeAsistencia) {
+        // Borrar los detalles anteriores
+        await tx.registroAsistencia.deleteMany({
+          where: { asistenciaId: existeAsistencia.id }
+        });
+        // Actualizar totales
+        asist = await tx.asistencia.update({
+          where: { id: existeAsistencia.id },
+          data: {
+            instructorId: data.instructorId,
+            estado: "REGISTRADA",
+            totalPresentes: presentes,
+            totalFaltas: faltas,
+            totalExcusas: excusas,
+          }
+        });
+      } else {
+        // Crear nueva
+        asist = await tx.asistencia.create({
+          data: {
+            fichaId: data.fichaId,
+            instructorId: data.instructorId,
+            fecha: startDate,
+            estado: "REGISTRADA",
+            totalPresentes: presentes,
+            totalFaltas: faltas,
+            totalExcusas: excusas,
+          },
+        });
+      }
 
       // 2. Crear los detalles masivamente
       if (data.detalles.length > 0) {
@@ -137,6 +171,10 @@ export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMas
       accion: "CREAR",
       detalle: `Se registraron ${data.detalles.length} aprendices en la asistencia de la ficha.`,
     });
+    
+    // Disparar cálculo de riesgo en segundo plano (Fire and Forget)
+    recalcularRiesgoFicha(data.fichaId).catch(console.error);
+
     revalidatePath("/asistencia");
     return { success: true, asistencia };
   } catch (error: any) {
@@ -175,6 +213,10 @@ export async function updateAsistencia(id: string, data: z.infer<typeof asistenc
       accion: "ACTUALIZAR",
       detalle: "Acción completada exitosamente.",
     });
+
+    // Disparar cálculo de riesgo en segundo plano (Fire and Forget)
+    recalcularRiesgoFicha(data.fichaId).catch(console.error);
+
     revalidatePath("/asistencia");
     return { success: true, asistencia };
   } catch (error: any) {
@@ -285,12 +327,22 @@ export async function exportAsistenciasXLSX(fechaInicio?: string, fechaFin?: str
       }));
     });
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Asistencias");
+    // Construir workbook con exceljs (sin vulnerabilidades CVE-2023-30533 / CVE-2024-22363 de xlsx)
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Asistencias");
+
+    if (rows.length > 0) {
+      worksheet.columns = Object.keys(rows[0]).map((key) => ({
+        header: key,
+        key,
+        width: Math.max(key.length + 4, 18),
+      }));
+      worksheet.addRows(rows);
+    }
 
     // Retornar como base64 para que el cliente lo descargue
-    const base64 = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
+    const excelBuffer = await workbook.xlsx.writeBuffer();
+    const base64 = Buffer.from(excelBuffer).toString("base64");
     return { success: true, base64 };
   } catch (error: any) {
     console.error("Error exporting asistencias XLSX:", error);

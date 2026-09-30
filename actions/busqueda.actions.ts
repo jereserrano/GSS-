@@ -12,7 +12,7 @@ export async function buscarGlobalmente(query: string) {
     const role = (session.user?.role ?? "").toUpperCase();
     const isInstructor = role.includes("INSTRUCT");
     const isAprendiz = role.includes("APRENDIZ");
-    // const isAdmin = role.includes("ADMIN");
+    const isAdminOrCoord = role.includes("ADMINISTRADOR") || role.includes("COORDINADOR");
 
     // Lógica de permisos de visibilidad para la búsqueda
     // Para simplificar: el instructor solo busca en sus fichas,
@@ -48,24 +48,31 @@ export async function buscarGlobalmente(query: string) {
     const actividadWhere = fichasIds ? { fichaId: { in: fichasIds } } : {};
 
     const q = query.trim();
+    const terms = q.split(/\s+/).filter(Boolean);
+    const aprendizTerms = terms.map(t => ({
+      OR: [
+        { nombres: { contains: t } },
+        { apellidos: { contains: t } },
+        { numeroDocumento: { contains: t } },
+      ]
+    }));
 
-    const [aprendices, fichas, actividades] = await prisma.$transaction([
+    const [aprendices, fichas, actividades, instituciones, programas] = await prisma.$transaction([
       prisma.aprendiz.findMany({
         where: {
           ...aprendizWhere,
-          OR: [
-            { nombres: { contains: q } },
-            { apellidos: { contains: q } },
-            { numeroDocumento: { contains: q } },
-          ]
+          AND: aprendizTerms.length > 0 ? aprendizTerms : undefined
         },
-        take: 10,
+        take: 15,
         include: { ficha: { select: { codigo: true } } }
       }),
       prisma.ficha.findMany({
         where: {
           ...fichaWhere,
-          codigo: { contains: q }
+          OR: [
+            { codigo: { contains: q } },
+            { programa: { nombre: { contains: q } } }
+          ]
         },
         take: 10,
         include: { programa: { select: { nombre: true } } }
@@ -73,16 +80,40 @@ export async function buscarGlobalmente(query: string) {
       prisma.actividad.findMany({
         where: {
           ...actividadWhere,
-          nombre: { contains: q }
+          OR: [
+            { nombre: { contains: q } },
+            { descripcion: { contains: q } },
+            { ficha: { codigo: { contains: q } } }
+          ]
         },
         take: 10,
         include: { ficha: { select: { codigo: true } } }
-      })
+      }),
+      // Instituciones y Programas solo relevantes si no son instructores o si hay match
+      isAdminOrCoord ? prisma.institucion.findMany({
+        where: {
+          OR: [
+            { nombre: { contains: q } },
+            { nit: { contains: q } },
+            { municipio: { contains: q } }
+          ]
+        },
+        take: 10
+      }) : prisma.institucion.findMany({ where: { id: "not-found" } }),
+      isAdminOrCoord ? prisma.programa.findMany({
+        where: {
+          OR: [
+            { nombre: { contains: q } },
+            { codigo: { contains: q } }
+          ]
+        },
+        take: 10
+      }) : prisma.programa.findMany({ where: { id: "not-found" } })
     ]);
 
     return {
       success: true,
-      data: { aprendices, fichas, actividades }
+      data: { aprendices, fichas, actividades, instituciones, programas }
     };
   } catch (error: any) {
     console.error("Error en busqueda global:", error);

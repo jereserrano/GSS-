@@ -145,7 +145,7 @@ export function MensajeriaView({
   // Carga inicial + polling cada 30s
   useEffect(() => {
     loadData();
-    pollingRef.current = setInterval(loadData, 30000);
+    pollingRef.current = setInterval(loadData, 5000);
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
@@ -243,8 +243,21 @@ export function MensajeriaView({
         (m) => m.emisorId === activeTab || m.receptorId === activeTab
       );
 
-  const contactoActivo =
+  let contactoActivo =
     activeTab !== "GLOBAL" ? contactos.find((c) => c.id === activeTab) : null;
+
+  if (!contactoActivo && activeTab !== "GLOBAL" && mensajesDelChat.length > 0) {
+    const msg = mensajesDelChat[0];
+    const userRef = msg.emisorId === activeTab ? msg.emisor : msg.receptor;
+    if (userRef) {
+      contactoActivo = {
+        id: activeTab,
+        nombre: userRef.nombre || "Usuario",
+        email: userRef.email || "",
+        rol: userRef.rol || "",
+      } as Contacto;
+    }
+  }
 
   // ─────────────────────────────────────────────
   // ENVIAR MENSAJE
@@ -466,9 +479,9 @@ export function MensajeriaView({
               </p>
               {chatsRecientes.map(({ contacto, ultimoMensaje }) => {
                 const id = contacto?.id || (ultimoMensaje.emisorId === userId ? ultimoMensaje.receptorId! : ultimoMensaje.emisorId);
-                const nombre = contacto?.nombre || "Usuario";
-                const esActivo = activeTab === id;
                 const esPropio = ultimoMensaje.emisorId === userId;
+                const nombre = contacto?.nombre || (esPropio ? ultimoMensaje.receptor?.nombre : ultimoMensaje.emisor?.nombre) || "Usuario";
+                const esActivo = activeTab === id;
                 const preview = `${esPropio ? "Tú: " : ""}${ultimoMensaje.contenido.slice(0, 40)}${ultimoMensaje.contenido.length > 40 ? "…" : ""}`;
 
                 return (

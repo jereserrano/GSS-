@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { getProgramasSelectAction, getJerarquiaByProgramaAction, getJerarquiaAcademicaAction } from "@/actions/jerarquia.actions";
 import { getFichasSelectAction } from "@/actions/fichas.actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, FileText, CheckCircle, PenTool, Loader2, ChevronRight, Plus, UploadCloud, ExternalLink } from "lucide-react";
+import { deleteCriterioEvaluacion } from "@/actions/criterios.actions";
+import { Target, FileText, CheckCircle, PenTool, Loader2, ChevronRight, Plus, UploadCloud, ExternalLink, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSession } from "next-auth/react";
@@ -278,10 +279,10 @@ export function DisenoCurricularTree({ initialProgramaId = "", hideSelector = fa
                       )}
                     </summary>
                     <div className="p-3 pl-8 space-y-3 bg-gray-50">
-                      {ra.criteriosEvaluacion?.length === 0 && (
+                      {(!ra.criterios || ra.criterios.length === 0) && (
                         <div className="text-xs text-gray-500 italic">No hay criterios de evaluación. {!readOnly && <button className="text-blue-600 hover:underline" onClick={() => { setActiveRAId(ra.id); setShowCriterioModal(true); }}>Añadir Criterio</button>}</div>
                       )}
-                      {ra.criteriosEvaluacion?.map((ce: any) => (
+                      {ra.criterios?.map((ce: any) => (
                         <div key={ce.id} className="border rounded bg-white p-3 shadow-sm text-sm">
                           <div className="flex items-start justify-between gap-2 font-medium">
                             <div className="flex items-start gap-2">
@@ -289,23 +290,43 @@ export function DisenoCurricularTree({ initialProgramaId = "", hideSelector = fa
                               <span>{ce.codigo ? `[${ce.codigo}] ` : ''}{ce.descripcion}</span>
                             </div>
                             {!readOnly && (
-                              <button 
-                                onClick={() => { setActiveCriterioId(ce.id); setShowInstrumentoModal(true); }}
-                                className="text-xs text-orange-600 hover:underline flex items-center gap-1 shrink-0"
-                              >
-                                <Plus className="w-3 h-3" /> Añadir Instrumento
-                              </button>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <button 
+                                  onClick={() => { setActiveCriterioId(ce.id); setShowInstrumentoModal(true); }}
+                                  className="text-xs text-orange-600 hover:underline flex items-center gap-1"
+                                >
+                                  <Plus className="w-3 h-3" /> Añadir Instrumento
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    if (confirm("¿Estás seguro de eliminar este criterio?")) {
+                                      const toastId = toast.loading("Eliminando criterio...");
+                                      const res = await deleteCriterioEvaluacion(ce.id);
+                                      if (res.success) {
+                                        toast.success("Criterio eliminado", { id: toastId });
+                                        handleRefresh();
+                                      } else {
+                                        toast.error(res.error || "Error al eliminar", { id: toastId });
+                                      }
+                                    }
+                                  }}
+                                  className="text-xs text-red-600 hover:text-red-800 transition-colors"
+                                  title="Eliminar Criterio"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             )}
                           </div>
                           <div className="mt-2 pl-6">
                             <h4 className="text-xs font-bold text-gray-500 uppercase mb-1 flex items-center gap-1">
                               <PenTool className="w-3 h-3" /> Instrumentos
                             </h4>
-                            {ce.instrumentosEvaluacion?.length === 0 ? (
+                            {(!ce.instrumentos || ce.instrumentos.length === 0) ? (
                                <p className="text-xs text-gray-400 italic">Sin instrumentos.</p>
                             ) : (
                               <ul className="list-disc list-inside text-xs space-y-1 text-gray-700">
-                                {ce.instrumentosEvaluacion?.map((ie: any) => (
+                                {ce.instrumentos?.map((ie: any) => (
                                   <li key={ie.id}>{ie.nombre} ({ie.tipo})</li>
                                 ))}
                               </ul>

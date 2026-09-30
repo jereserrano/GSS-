@@ -18,9 +18,10 @@ interface AsistenciasTableProps {
   fichas: { id: string; codigo: string; programa: { nombre: string } }[];
   instructores: { id: string; nombres: string; apellidos: string }[];
   fichaIdFijo?: string;
+  instructorIdFijo?: string;
 }
 
-export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo }: AsistenciasTableProps) {
+export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo, instructorIdFijo }: AsistenciasTableProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const userRole = ((session?.user as any)?.role ?? "").toUpperCase();
@@ -253,6 +254,7 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
           fichas={fichas}
           instructores={instructores}
           fichaIdFijo={fichaIdFijo}
+          instructorIdFijo={instructorIdFijo}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

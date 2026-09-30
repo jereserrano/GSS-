@@ -88,7 +88,7 @@ export async function getActividadesAction(filtros: any = {}) {
             select: { nombres: true, apellidos: true }
           },
           resultadoAprendizaje: {
-            select: { codigo: true, nombre: true }
+            select: { codigo: true, nombre: true, competencia: { select: { codigo: true, nombre: true } } }
           },
           entregas: isAprendiz && userContext?.aprendiz ? {
             where: { aprendizId: userContext.aprendiz.id },

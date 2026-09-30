@@ -105,6 +105,7 @@ export default async function AsistenciaFichaPage({ params, searchParams }: { pa
         fichas={[ficha] as any}
         instructores={instructores}
         fichaIdFijo={ficha.id}
+        instructorIdFijo={instructorId || undefined}
       />
     </div>
   );

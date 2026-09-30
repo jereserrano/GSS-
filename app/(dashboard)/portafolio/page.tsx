@@ -2,7 +2,9 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { PortafolioAprendiz } from "@/features/portafolio/PortafolioAprendiz";
+import { GoogleDriveConfig } from "@/features/portafolio/GoogleDriveConfig";
 import { Archive } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 
 export const metadata = {
   title: "Mi Portafolio | GSS Media Técnica",
@@ -15,6 +17,8 @@ export default async function PortafolioPage() {
   if (!session?.user || session.user.role !== "APRENDIZ") {
     redirect("/dashboard");
   }
+
+  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
 
   return (
     <div className="page-container space-y-6 page-enter">
@@ -30,6 +34,7 @@ export default async function PortafolioPage() {
         </div>
       </div>
 
+      <GoogleDriveConfig isLinked={!!user?.googleDriveLinked} />
       <PortafolioAprendiz />
     </div>
   );

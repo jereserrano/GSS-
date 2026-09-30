@@ -14,8 +14,8 @@ export function BusquedaPageClient({ query, resultados }: { query: string; resul
     );
   }
 
-  const { aprendices = [], fichas = [], actividades = [] } = resultados;
-  const total = aprendices.length + fichas.length + actividades.length;
+  const { aprendices = [], fichas = [], actividades = [], instituciones = [], programas = [] } = resultados;
+  const total = aprendices.length + fichas.length + actividades.length + instituciones.length + programas.length;
 
   if (total === 0) {
     return (
@@ -79,6 +79,43 @@ export function BusquedaPageClient({ query, resultados }: { query: string; resul
                 <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full mt-2 inline-block">
                   {act.estado}
                 </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {instituciones.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Shield className="text-orange-600" /> Instituciones ({instituciones.length})
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {instituciones.map((inst: any) => (
+              <Link href={`/instituciones/${inst.id}`} key={inst.id} className="card-institucional p-4 hover:border-orange-500 transition-colors block group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-slate-900">{inst.nombre}</h3>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">{inst.nit} - {inst.municipio}</p>
+                  </div>
+                  <ArrowRight size={16} className="text-slate-300 group-hover:text-orange-500" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {programas.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <BookCheck className="text-indigo-600" /> Programas ({programas.length})
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {programas.map((prog: any) => (
+              <div key={prog.id} className="card-institucional p-4 hover:border-indigo-500 transition-colors">
+                <h3 className="font-bold text-slate-900 line-clamp-2">{prog.nombre}</h3>
+                <p className="text-xs text-slate-500 mt-1">Código: {prog.codigo}</p>
               </div>
             ))}
           </div>

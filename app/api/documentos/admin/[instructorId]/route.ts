@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { instructorId: string } }
+  { params }: { params: Promise<{ instructorId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: "Rol no autorizado" }, { status: 403 });
     }
 
-    const { instructorId } = params;
+    const { instructorId } = await params;
 
     const instructorRaw = await prisma.instructor.findUnique({
       where: { id: instructorId },

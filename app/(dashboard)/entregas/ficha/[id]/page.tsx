@@ -10,6 +10,9 @@ import { ArrowLeft, Users, FolderOpen } from "lucide-react";
 export default async function EntregasFichaPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ busqueda?: string }> }) {
   const { id: fichaId } = await params;
   
+  const session = await getServerSession(authOptions);
+  const isAprendiz = session?.user?.role?.toUpperCase() === "APRENDIZ";
+
   const ficha = await prisma.ficha.findUnique({
     where: { id: fichaId },
     include: {
@@ -32,7 +35,8 @@ export default async function EntregasFichaPage({ params, searchParams }: { para
   // Pasar fichaId al action (para filtrar las entregas)
   const result = await getEntregasAction({ 
     busqueda: (await searchParams).busqueda,
-    fichaId: ficha.id
+    fichaId: ficha.id,
+    tamano: 1000
   });
   const initialData = result.success ? result.data : null;
 
@@ -50,8 +54,8 @@ export default async function EntregasFichaPage({ params, searchParams }: { para
 
   return (
     <div className="page-container space-y-6 page-enter">
-      <Link href={`/entregas/programa/${ficha.programa.id}`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary transition-colors">
-        <ArrowLeft size={16} /> Volver a {ficha.programa.codigo}
+      <Link href={isAprendiz ? "/dashboard" : `/entregas/programa/${ficha.programa.id}`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary transition-colors">
+        <ArrowLeft size={16} /> {isAprendiz ? "Volver al Dashboard" : `Volver a ${ficha.programa.codigo}`}
       </Link>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl p-6">

@@ -98,7 +98,6 @@ export async function createAprendiz(data: z.infer<typeof aprendizSchema>) {
         direccion: data.direccion || null,
         fichaId: data.fichaId,
         estado: data.estado || "EN_FORMACION",
-        nivelRiesgo: data.nivelRiesgo || "BAJO",
       },
     });
 
@@ -134,7 +133,6 @@ export async function updateAprendiz(id: string, data: z.infer<typeof aprendizSc
       genero: data.genero || null,
       direccion: data.direccion || null,
       estado: data.estado,
-      nivelRiesgo: data.nivelRiesgo,
     };
 
     if (data.fechaNacimiento) {

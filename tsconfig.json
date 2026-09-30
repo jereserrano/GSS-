@@ -8,13 +8,13 @@
       "esnext"
     ], /* APIs disponibles en el entorno */
     "allowJs": true, /* Permite importar archivos .js desde .ts */
-    "skipLibCheck": true, /* Omite verificación de tipos en node_modules *//* ── Módulos ── */
+    "skipLibCheck": true, /* Omite verificación de tipos en node_modules */ /* ── Módulos ── */
     "module": "esnext", /* Sistema de módulos de salida */
     "moduleResolution": "bundler", /* Resolución de módulos compatible con Next.js/Vite */
     "resolveJsonModule": true, /* Permite importar archivos .json */
-    "jsx": "preserve", /* Preserva JSX para que Next.js lo transforme *//* ── Salida ── */
+    "jsx": "react-jsx", /* Preserva JSX para que Next.js lo transforme */ /* ── Salida ── */
     "noEmit": true, /* No emite archivos: TypeScript solo verifica tipos */
-    "incremental": true, /* Compilación incremental (más rápida) *//* ── Estrictez — ninguna regla relaxada ── */
+    "incremental": true, /* Compilación incremental (más rápida) */ /* ── Estrictez — ninguna regla relaxada ── */
     "strict": true, /* Activa todas las comprobaciones estrictas */
     "noUnusedLocals": true, /* Error en variables declaradas y no usadas */
     "noUnusedParameters": true, /* Error en parámetros declarados y no usados */
@@ -22,7 +22,7 @@
     "exactOptionalPropertyTypes": true, /* Distingue propiedad ausente de propiedad undefined */
     "noImplicitReturns": true, /* Error si una función puede retornar sin valor */
     "noFallthroughCasesInSwitch": true, /* Error en casos switch sin break/return */
-    "forceConsistentCasingInFileNames": true, /* Error si el casing del import no coincide con el archivo *//* ── Rutas de importación ── */
+    "forceConsistentCasingInFileNames": true, /* Error si el casing del import no coincide con el archivo */ /* ── Rutas de importación ── */
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -44,7 +44,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

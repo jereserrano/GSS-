@@ -12,6 +12,7 @@ interface AsistenciaFormDialogProps {
   fichas: { id: string; codigo: string; programa: { nombre: string } }[];
   instructores: { id: string; nombres: string; apellidos: string }[];
   fichaIdFijo?: string;
+  instructorIdFijo?: string;
   onClose: () => void;
   onSuccess?: () => void | Promise<void>;
 }
@@ -20,13 +21,11 @@ const selectClass =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
 
 const ESTADOS = [
-  { value: "PROGRAMADA", label: "Programada" },
-  { value: "EN_CURSO", label: "En Curso" },
-  { value: "FINALIZADA", label: "Finalizada" },
-  { value: "CANCELADA", label: "Cancelada" },
+  { value: "PENDIENTE", label: "Pendiente" },
+  { value: "REGISTRADA", label: "Registrada" },
 ];
 
-export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaIdFijo, onClose, onSuccess }: AsistenciaFormDialogProps) {
+export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaIdFijo, instructorIdFijo, onClose, onSuccess }: AsistenciaFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!asistencia;
 
@@ -36,8 +35,8 @@ export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaId
 
     const formData = new FormData(e.currentTarget);
     const data = {
-      fichaId: formData.get("fichaId") as string,
-      instructorId: formData.get("instructorId") as string,
+      fichaId: fichaIdFijo || (formData.get("fichaId") as string),
+      instructorId: instructorIdFijo || (formData.get("instructorId") as string),
       fecha: formData.get("fecha") as string,
       tema: formData.get("tema") as string,
       estado: formData.get("estado") as string,
@@ -104,15 +103,17 @@ export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaId
           )}
           {fichaIdFijo && <input type="hidden" name="fichaId" value={fichaIdFijo} />}
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text-primary">Instructor Asignado *</label>
-            <select name="instructorId" defaultValue={asistencia?.instructorId || ""} required className={selectClass}>
-              <option value="" disabled>Seleccione un instructor</option>
-              {instructores.map(i => (
-                <option key={i.id} value={i.id}>{i.nombres} {i.apellidos}</option>
-              ))}
-            </select>
-          </div>
+          {!instructorIdFijo && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text-primary">Instructor Asignado *</label>
+              <select name="instructorId" defaultValue={asistencia?.instructorId || ""} required className={selectClass} disabled={isEditing}>
+                <option value="" disabled>Seleccione un instructor</option>
+                {instructores.map(i => (
+                  <option key={i.id} value={i.id}>{i.nombres} {i.apellidos}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -127,7 +128,7 @@ export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaId
             {isEditing && (
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-text-primary">Estado</label>
-                <select name="estado" defaultValue={asistencia?.estado || "PROGRAMADA"} className={selectClass}>
+                <select name="estado" defaultValue={asistencia?.estado || "PENDIENTE"} className={selectClass}>
                   {ESTADOS.map(e => (
                     <option key={e.value} value={e.value}>{e.label}</option>
                   ))}

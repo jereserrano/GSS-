@@ -36,7 +36,9 @@ files.forEach(file => {
     imports.add(`import { ${repoName} } from "@/repositories/${model}.repository";`);
     
     // Replace in content
-    const regex = new RegExp(`prisma\\.${model}\\.`, 'g');
+    // Escapamos `model` para prevenir ReDoS con RegExp din\u00e1mico (CWE-1333)
+    const escapedModel = model.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`prisma\\.${escapedModel}\\.`, 'g');
     content = content.replace(regex, `${repoName}.`);
   });
 

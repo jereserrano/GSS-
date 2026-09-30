@@ -244,8 +244,36 @@ model ResultadoAprendizaje {
   evaluaciones      EvaluacionAprendiz[]
   actividades       Actividad[]
   asignacionesCarga AsignacionCarga[]
+  criterios         CriterioEvaluacion[]
 
   @@map("resultados_aprendizaje")
+}
+
+model CriterioEvaluacion {
+  id                     String               @id @default(cuid())
+  codigo                 String?
+  descripcion            String               @db.Text
+  resultadoAprendizajeId String
+  creadoEn               DateTime             @default(now())
+  actualizadoEn          DateTime             @updatedAt
+
+  resultadoAprendizaje   ResultadoAprendizaje @relation(fields: [resultadoAprendizajeId], references: [id], onDelete: Cascade)
+  instrumentos           InstrumentoEvaluacion[]
+
+  @@map("criterios_evaluacion")
+}
+
+model InstrumentoEvaluacion {
+  id                   String             @id @default(cuid())
+  nombre               String
+  tipo                 String
+  criterioEvaluacionId String
+  creadoEn             DateTime           @default(now())
+  actualizadoEn        DateTime           @updatedAt
+
+  criterioEvaluacion   CriterioEvaluacion @relation(fields: [criterioEvaluacionId], references: [id], onDelete: Cascade)
+
+  @@map("instrumentos_evaluacion")
 }
 
 // ============================================================
@@ -414,6 +442,12 @@ model User {
   twoFactorSecret  String?
   twoFactorEnabled Boolean    @default(false)
   last2FADate      DateTime?
+  
+  // Integración Google Drive
+  googleDriveLinked    Boolean @default(false)
+  googleDriveFolderId  String?
+  googleRefreshToken   String? @db.Text
+
   creadoEn         DateTime   @default(now())
   actualizadoEn    DateTime   @updatedAt
 

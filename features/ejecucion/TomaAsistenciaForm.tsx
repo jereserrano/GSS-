@@ -125,7 +125,7 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
 
     if (result.success) {
       toast.success("Asistencia registrada masivamente con éxito");
-      router.push("/asistencia");
+      router.push(`/asistencia/ficha/${fichaId}`);
     } else {
       toast.error(result.error || "Error al registrar asistencia");
     }

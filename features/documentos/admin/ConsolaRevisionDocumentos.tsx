@@ -9,6 +9,7 @@ export function ConsolaRevisionDocumentos() {
   const [instructores, setInstructores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterEstado, setFilterEstado] = useState("TODOS");
   
   // Sheet State
   const [selectedInstructorId, setSelectedInstructorId] = useState<string | null>(null);
@@ -44,10 +45,13 @@ export function ConsolaRevisionDocumentos() {
     setLoadingDetails(false);
   };
 
-  const filtered = instructores.filter(i => 
-    i.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    i.cedula.includes(searchTerm)
-  );
+  const filtered = instructores.filter(i => {
+    const nombre = i.nombre || "";
+    const cedula = i.cedula || "";
+    const matchesSearch = nombre.toLowerCase().includes(searchTerm.toLowerCase()) || cedula.includes(searchTerm);
+    const matchesEstado = filterEstado === "TODOS" || i.estadoDocumentacion === filterEstado;
+    return matchesSearch && matchesEstado;
+  });
 
   return (
     <div className="flex gap-6 relative h-[600px] overflow-hidden">
@@ -63,9 +67,16 @@ export function ConsolaRevisionDocumentos() {
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="flex items-center px-4 py-2 bg-slate-100 rounded-md text-sm text-[#00304D] font-medium hover:bg-slate-200 transition-colors">
-            <Filter className="h-4 w-4 mr-2" /> Filtros
-          </button>
+          <select 
+            className="flex items-center px-4 py-2 bg-slate-100 rounded-md text-sm text-[#00304D] font-medium hover:bg-slate-200 transition-colors focus:outline-none cursor-pointer"
+            value={filterEstado}
+            onChange={(e) => setFilterEstado(e.target.value)}
+          >
+            <option value="TODOS">Todos los estados</option>
+            <option value="Completo">Completos</option>
+            <option value="Incompleto">Incompletos</option>
+            <option value="Sin Iniciar">Sin Iniciar</option>
+          </select>
         </div>
 
         <div className="flex-1 overflow-y-auto">

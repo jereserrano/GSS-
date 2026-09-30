@@ -37,6 +37,8 @@ export function EntregasTable({ initialData, actividades, aprendices, fichaIdFij
   const [entregaParaDetalle, setEntregaParaDetalle] = useState<any>(null);
   
   const [exporting, setExporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const entregas = initialData?.data || [];
 
   const filteredEntregas = React.useMemo(() => {
@@ -49,6 +51,17 @@ export function EntregasTable({ initialData, actividades, aprendices, fichaIdFij
       e.actividad?.nombre?.toLowerCase().includes(lower)
     );
   }, [busqueda, entregas]);
+
+  // Reset page when search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [busqueda]);
+
+  const totalPages = Math.ceil(filteredEntregas.length / itemsPerPage) || 1;
+  const currentEntregas = filteredEntregas.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleEdit = (entrega: any) => {
     setSelectedEntrega(entrega);
@@ -205,6 +218,38 @@ export function EntregasTable({ initialData, actividades, aprendices, fichaIdFij
     }] : [])
   ];
 
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="flex items-center justify-between px-2 py-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+        <span className="text-sm text-slate-500">
+          Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredEntregas.length)} de {filteredEntregas.length} registros
+        </span>
+        <div className="flex gap-1">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Anterior
+          </Button>
+          <span className="flex items-center px-3 text-sm font-medium text-slate-700">
+            Página {currentPage} de {totalPages}
+          </span>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Siguiente
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 justify-between">
@@ -234,11 +279,15 @@ export function EntregasTable({ initialData, actividades, aprendices, fichaIdFij
         </div>
       </div>
 
+      {renderPagination()}
+
       <DataTable 
-        data={filteredEntregas} 
+        data={currentEntregas} 
         columnas={columnas} 
         isLoading={loading} 
       />
+
+      {renderPagination()}
 
       {dialogOpen && (
         <EntregaFormDialog 

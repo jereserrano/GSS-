@@ -72,6 +72,28 @@ export function ActividadDetalleDialog({ actividad, onClose }: ActividadDetalleD
             </div>
           </div>
 
+          {actividad.resultadoAprendizaje && (
+            <div className="space-y-4 border-t border-slate-100 pt-5">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Asociación Curricular</h3>
+              
+              {actividad.resultadoAprendizaje.competencia && (
+                <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100/50 mb-3">
+                  <span className="block text-[10px] uppercase text-blue-600 font-bold mb-1">Competencia</span>
+                  <p className="text-sm text-slate-700">
+                    <span className="font-semibold">{actividad.resultadoAprendizaje.competencia.codigo}</span> - {actividad.resultadoAprendizaje.competencia.nombre}
+                  </p>
+                </div>
+              )}
+              
+              <div className="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100/50">
+                <span className="block text-[10px] uppercase text-indigo-600 font-bold mb-1">Resultado de Aprendizaje (RA)</span>
+                <p className="text-sm text-slate-700">
+                  <span className="font-semibold">{actividad.resultadoAprendizaje.codigo}</span> - {actividad.resultadoAprendizaje.nombre}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4 border-t border-slate-100 pt-5">
             {actividad.descripcion && (
               <div>

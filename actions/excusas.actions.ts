@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { enviarMensajeAction } from "./mensajes.actions";
 import { crearNotificacionSistema } from "./notificaciones.actions";
 import { logAudit } from "@/lib/audit.service";
+import { recalcularRiesgoAprendiz } from "@/services/riesgo.service";
 
 // ─────────────────────────────────────────────
 // ROLES CON PERMISO DE REVISAR EXCUSAS
@@ -335,6 +336,9 @@ export async function responderExcusaAction(
         excusaActual.fechaInicio,
         excusaActual.fechaFin
       );
+      
+      // Disparar cálculo de riesgo en segundo plano (Fire and Forget)
+      recalcularRiesgoAprendiz(excusaActual.aprendizId).catch(console.error);
     }
 
     // Notificación al aprendiz por mensaje y campana

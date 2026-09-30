@@ -38,6 +38,7 @@ export function EntregaFormDialog({ entrega, inlineMode = false, actividadId, ac
   const [loading, setLoading] = useState(false);
   const [uploadMode, setUploadMode] = useState<"url" | "file">(entrega?.urlArchivo && !entrega.urlArchivo.startsWith("/uploads/") ? "url" : "file");
   const [file, setFile] = useState<File | null>(null);
+  const [estadoSel, setEstadoSel] = useState(entrega?.estado || "PENDIENTE");
   const isEditing = !!entrega;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -177,7 +178,12 @@ export function EntregaFormDialog({ entrega, inlineMode = false, actividadId, ac
             {!isAprendiz && (
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-text-primary">Estado</label>
-                <select name="estado" defaultValue={entrega?.estado || "PENDIENTE"} className={selectClass}>
+                <select 
+                  name="estado" 
+                  value={estadoSel} 
+                  onChange={(e) => setEstadoSel(e.target.value)}
+                  className={selectClass}
+                >
                   {ESTADOS.map(e => (
                     <option key={e.value} value={e.value}>{e.label}</option>
                   ))}
@@ -315,6 +321,14 @@ export function EntregaFormDialog({ entrega, inlineMode = false, actividadId, ac
                     max="5"
                     defaultValue={entrega?.calificacion}
                     placeholder="Ej: 4.5"
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        // Sena usa tradicionalmente 3.0 o 70% (3.5) para aprobar.
+                        // Calculamos APROBADA si >= 3.0 para formato decimal
+                        setEstadoSel(val >= 3.0 ? "APROBADA" : "NO_APROBADA");
+                      }
+                    }}
                   />
                 </div>
               </div>

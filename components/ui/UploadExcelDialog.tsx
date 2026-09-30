@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { Button } from "@/components/ui/button";
 import { Upload, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -29,47 +29,65 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
 
     setLoading(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const data = e.target?.result;
-          const workbook = XLSX.read(data, { type: "array" });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          const rawJson = XLSX.utils.sheet_to_json(worksheet);
-          
-          // Retrocompatibilidad con la plantilla antigua
-          const json = rawJson.map((row: any) => {
-            if (row.fichaId && !row.codigoFicha) {
-              row.codigoFicha = row.fichaId;
-            }
-            return row;
-          });
+      // Leer el archivo como ArrayBuffer y procesarlo con exceljs (sin vulnerabilidades de xlsx)
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(arrayBuffer);
 
-          if (json.length === 0) {
-            toast.error("El archivo está vacío");
-            setLoading(false);
-            return;
-          }
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet) {
+        toast.error("El archivo no contiene hojas de cálculo.");
+        setLoading(false);
+        return;
+      }
 
-          const res = await onUpload(json);
-          
-          if (res.success) {
-            toast.success(`Carga exitosa: ${res.count} registros insertados.`);
-            setOpen(false);
-            setFile(null);
-          } else {
-            toast.error(res.error || "Error en la validación de los datos. Operación abortada.");
-          }
-        } catch (err: any) {
-          toast.error("Error al procesar el archivo Excel.");
-        } finally {
-          setLoading(false);
+      // Extraer encabezados de la primera fila
+      const headers: string[] = [];
+      worksheet.getRow(1).eachCell((cell) => {
+        headers.push(String(cell.value ?? ""));
+      });
+
+      // Convertir filas a objetos JSON
+      const rawJson: any[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Saltar encabezados
+        const rowObj: any = {};
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const header = headers[colNumber - 1];
+          if (header) rowObj[header] = cell.value ?? "";
+        });
+        // Solo añadir filas que no estén completamente vacías
+        if (Object.values(rowObj).some((v) => v !== "" && v !== null && v !== undefined)) {
+          rawJson.push(rowObj);
         }
-      };
-      reader.readAsArrayBuffer(file);
-    } catch (err) {
-      toast.error("Error al leer el archivo");
+      });
+
+      // Retrocompatibilidad con la plantilla antigua
+      const json = rawJson.map((row: any) => {
+        if (row.fichaId && !row.codigoFicha) {
+          row.codigoFicha = row.fichaId;
+        }
+        return row;
+      });
+
+      if (json.length === 0) {
+        toast.error("El archivo está vacío");
+        setLoading(false);
+        return;
+      }
+
+      const res = await onUpload(json);
+
+      if (res.success) {
+        toast.success(`Carga exitosa: ${res.count} registros insertados.`);
+        setOpen(false);
+        setFile(null);
+      } else {
+        toast.error(res.error || "Error en la validación de los datos. Operación abortada.");
+      }
+    } catch (err: any) {
+      toast.error("Error al procesar el archivo Excel.");
+    } finally {
       setLoading(false);
     }
   };

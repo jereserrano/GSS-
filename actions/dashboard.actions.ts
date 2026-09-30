@@ -43,13 +43,13 @@ export async function getDashboardKpis() {
       const aprendizId = userContext.aprendiz.id;
       const fichaId = userContext.aprendiz.fichaId;
 
-      const [totalActividades, misEntregas, actividadesPendientes, proximosCierres] = await Promise.all([
+      const [totalActividades, misEntregas, actividadesPendientes, proximosCierres, misJuicios] = await Promise.all([
         prisma.actividad.count({
           where: { fichaId, estado: { in: ["ACTIVA", "PUBLICADA"] } }
         }),
         prisma.entrega.findMany({
-          where: { aprendizId },
-          select: { id: true, estado: true, calificacion: true }
+          where: { aprendizId, actividad: { fichaId } },
+          select: { id: true, estado: true, calificacion: true, actividadId: true }
         }),
         prisma.actividad.findMany({
           where: {
@@ -71,11 +71,15 @@ export async function getDashboardKpis() {
           take: 5,
           include: { ficha: { select: { codigo: true } } },
           orderBy: { fechaVencimiento: "asc" }
+        }),
+        prisma.evaluacionAprendiz.count({
+          where: { aprendizId, juicio: "APROBADO" }
         })
       ]);
 
       const aprobadas = misEntregas.filter(e => e.estado === "APROBADA").length;
       const pendientes = misEntregas.filter(e => e.estado === "PENDIENTE").length;
+      const entregasUnicas = new Set(misEntregas.map(e => e.actividadId)).size;
 
       return {
         ok: true,
@@ -83,14 +87,14 @@ export async function getDashboardKpis() {
         data: {
           kpis: {
             totalAprendices: totalActividades, // Para aprendiz: total actividades
-            totalInstituciones: misEntregas.length, // Total evidencias entregadas
-            totalFichas: aprobadas, // Evidencias aprobadas
+            totalInstituciones: entregasUnicas, // Total evidencias entregadas
+            totalFichas: misJuicios, // Juicios (Evaluaciones) aprobados
             asistenciaPromedio: Number(Number(userContext.aprendiz.porcentajeAsistencia || 100).toFixed(1)),
           },
           labels: {
             kpi1: { title: "Actividades de Ficha", sub: "Asignadas a tu grupo" },
             kpi2: { title: "Evidencias Enviadas", sub: `${pendientes} en revisión` },
-            kpi3: { title: "Actividades Aprobadas", sub: "Juicios positivos alcanzados" },
+            kpi3: { title: "Resultados Aprobados", sub: "Juicios positivos alcanzados" },
             kpi4: { title: "Asistencia Personal", sub: "Porcentaje de permanencia" },
           },
           proximosCierres: proximosCierres.map(a => ({

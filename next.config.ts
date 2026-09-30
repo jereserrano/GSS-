@@ -5,14 +5,16 @@ const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
   reloadOnOnline: true,
+  disable: true, // Forzar desactivar caché de PWA
 });
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   /* ── Modo estricto de React: detecta efectos secundarios duplicados en dev ── */
   reactStrictMode: true,
-  eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  turbopack: {},
+
 
   /* ── Configuración de Server Actions para permitir acceso desde LAN ── */
   experimental: {

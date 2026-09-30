@@ -6,6 +6,14 @@ import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { crearNotificacionSistema } from "./notificaciones.actions";
 
+const userSelectWithNames = { id: true, nombre: true, email: true, rol: true, instructor: { select: { nombres: true, apellidos: true } }, aprendiz: { select: { nombres: true, apellidos: true } } };
+function resolveName(u: any) {
+  if (!u) return "Usuario";
+  if (u.instructor) return `${u.instructor.nombres} ${u.instructor.apellidos}`.trim();
+  if (u.aprendiz) return `${u.aprendiz.nombres} ${u.aprendiz.apellidos}`.trim();
+  return u.nombre || "Usuario";
+}
+
 // ─────────────────────────────────────────────
 // ENVIAR MENSAJE (directo o global)
 // ─────────────────────────────────────────────
@@ -107,9 +115,9 @@ export async function getMensajesAction() {
       orderBy: { creadoEn: "desc" },
       take: 50,
       include: {
-        emisor: { select: { nombre: true, email: true, rol: true } },
+        emisor: { select: userSelectWithNames },
         lecturasGlobales: { where: { userId } }, // Para saber si ya lo leyó
-        replyTo: { select: { id: true, contenido: true, emisor: { select: { nombre: true } } } },
+        replyTo: { select: { id: true, contenido: true, emisor: { select: userSelectWithNames } } },
       },
     });
 
@@ -121,9 +129,9 @@ export async function getMensajesAction() {
       },
       orderBy: { creadoEn: "asc" }, // ascendente para renderizado natural del chat
       include: {
-        emisor: { select: { id: true, nombre: true, email: true, rol: true } },
-        receptor: { select: { id: true, nombre: true, email: true, rol: true } },
-        replyTo: { select: { id: true, contenido: true, emisor: { select: { nombre: true } } } },
+        emisor: { select: userSelectWithNames },
+        receptor: { select: userSelectWithNames },
+        replyTo: { select: { id: true, contenido: true, emisor: { select: userSelectWithNames } } },
       },
     });
 
@@ -144,7 +152,13 @@ export async function getMensajesAction() {
       noLeidosPor[r.emisorId] = r._count.id;
     });
 
-    return { success: true, data: { globales, directos, noLeidosPor } };
+    const mapMessage = (m: any) => ({
+      ...m,
+      emisor: m.emisor ? { ...m.emisor, nombre: resolveName(m.emisor) } : null,
+      receptor: m.receptor ? { ...m.receptor, nombre: resolveName(m.receptor) } : null,
+      replyTo: m.replyTo ? { ...m.replyTo, emisor: { ...m.replyTo.emisor, nombre: resolveName(m.replyTo?.emisor) } } : null,
+    });
+    return { success: true, data: { globales: globales.map(mapMessage), directos: directos.map(mapMessage), noLeidosPor } };
   } catch (error: any) {
     console.error("Error al obtener mensajes:", error);
     return { success: false, error: "Error al obtener mensajes." };
@@ -266,7 +280,7 @@ export async function getContactosDisponiblesAction() {
       });
       contactos = rawUsers.map((u) => ({
         id: u.id,
-        nombre: u.nombre,
+        nombre: resolveName(u),
         email: u.email,
         rol: u.rol,
         fichaId: u.aprendiz?.ficha?.id || null,
@@ -289,23 +303,17 @@ export async function getContactosDisponiblesAction() {
           },
         },
       });
-      const coordAdmin = await prisma.user.findMany({
-        where: { rol: { in: ["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION"] }, estado: "ACTIVO" },
-        select: { id: true, nombre: true, email: true, rol: true },
-      });
+      const coordAdmin = await prisma.user.findMany({ where: { rol: { in: ["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION"] }, estado: "ACTIVO" }, select: userSelectWithNames });
 
       const instructores =
         aprendiz?.ficha?.instructores
           ?.map((i) => i.instructor.user)
           .filter(Boolean)
-          .map((u: any) => ({ id: u.id, nombre: u.nombre, email: u.email, rol: u.rol })) || [];
-      contactos = [...coordAdmin, ...instructores];
+          .map((u: any) => ({ id: u.id, nombre: resolveName(u), email: u.email, rol: u.rol })) || [];
+      contactos = [...coordAdmin.map((u: any) => ({ ...u, nombre: resolveName(u) })), ...instructores.map((u: any) => ({ ...u, nombre: resolveName(u) }))];
     } else if (role === "INSTRUCTOR") {
       // Instructor puede ver coord, apoyo y aprendices de sus fichas (con etiqueta de ficha)
-      const coordAdmin = await prisma.user.findMany({
-        where: { rol: { in: ["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION"] }, estado: "ACTIVO" },
-        select: { id: true, nombre: true, email: true, rol: true },
-      });
+      const coordAdmin = await prisma.user.findMany({ where: { rol: { in: ["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION"] }, estado: "ACTIVO" }, select: userSelectWithNames });
       const fichas = await prisma.instructorFicha.findMany({
         where: { instructor: { userId } },
         include: {
@@ -323,7 +331,7 @@ export async function getContactosDisponiblesAction() {
           .filter(Boolean)
           .map((u: any) => ({
             id: u.id,
-            nombre: u.nombre,
+            nombre: resolveName(u),
             email: u.email,
             rol: u.rol,
             fichaId: f.ficha.id,
@@ -334,14 +342,11 @@ export async function getContactosDisponiblesAction() {
           }))
       );
 
-      contactos = [...coordAdmin.map((u) => ({ ...u, fichaId: null, fichaCodigo: null, programaId: null, programaNombre: null, etiqueta: "" })), ...aprendices];
+      contactos = [...coordAdmin.map((u: any) => ({ ...u, nombre: resolveName(u), fichaId: null, fichaCodigo: null, programaId: null, programaNombre: null, etiqueta: "" })), ...aprendices];
     } else if (role === "APOYO_COORDINACION") {
       // FIX #4: APOYO puede ver coord + todos los de su sede,
       // incluyendo aprendices cuya FICHA pertenece a esa sede (no solo User.sedeId)
-      const coordAdmin = await prisma.user.findMany({
-        where: { rol: { in: ["ADMINISTRADOR", "COORDINADOR"] }, estado: "ACTIVO" },
-        select: { id: true, nombre: true, email: true, rol: true },
-      });
+      const coordAdmin = await prisma.user.findMany({ where: { rol: { in: ["ADMINISTRADOR", "COORDINADOR"] }, estado: "ACTIVO" }, select: userSelectWithNames });
 
       const userApoyo = await prisma.user.findUnique({ where: { id: userId } });
       let sedeUsers: any[] = [];
@@ -351,10 +356,11 @@ export async function getContactosDisponiblesAction() {
         // Usuarios con sedeId directo (instructores, otros apoyos, etc.)
         const usersDirectos = await prisma.user.findMany({
           where: { sedeId: userApoyo.sedeId, id: { not: userId }, estado: "ACTIVO" },
-          select: { id: true, nombre: true, email: true, rol: true },
+          select: userSelectWithNames,
         });
         sedeUsers = usersDirectos.map((u) => ({
           ...u,
+          nombre: resolveName(u),
           fichaId: null,
           fichaCodigo: null,
           programaId: null,
@@ -372,7 +378,7 @@ export async function getContactosDisponiblesAction() {
 
         const rawAprendices = await prisma.aprendiz.findMany({
           where: { fichaId: { in: fichaIds } },
-          include: { user: { select: { id: true, nombre: true, email: true, rol: true, estado: true } } },
+          include: { user: { select: { ...userSelectWithNames, estado: true } } },
         });
         aprendicesDeSede = rawAprendices
           .filter((a) => a.user && a.user.estado === "ACTIVO" && a.user.id !== userId)
@@ -380,7 +386,7 @@ export async function getContactosDisponiblesAction() {
             const ficha = fichaMap.get(a.fichaId);
             return {
               id: a.user!.id,
-              nombre: a.user!.nombre,
+              nombre: resolveName(a.user),
               email: a.user!.email,
               rol: a.user!.rol,
               fichaId: a.fichaId,
@@ -393,7 +399,7 @@ export async function getContactosDisponiblesAction() {
       }
 
       contactos = [
-        ...coordAdmin.map((u) => ({ ...u, fichaId: null, fichaCodigo: null, programaId: null, programaNombre: null, etiqueta: "" })),
+        ...coordAdmin.map((u) => ({ ...u, nombre: resolveName(u), fichaId: null, fichaCodigo: null, programaId: null, programaNombre: null, etiqueta: "" })),
         ...sedeUsers,
         ...aprendicesDeSede,
       ];

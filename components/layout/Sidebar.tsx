@@ -26,11 +26,20 @@ interface NavSection {
   items: NavItem[];
 }
 
+interface SidebarProps {
+  branding?: {
+    nombreSoftware?: string;
+    nombreInstitucion?: string;
+    logoUrl?: string;
+  };
+}
+
 // Menú específico para APRENDIZ
 const navAprendiz: NavSection[] = [
   {
     items: [
       { icon: LayoutDashboard, label: "Inicio", href: "/dashboard" },
+      { icon: User, label: "Mi Perfil", href: "/perfil" },
     ],
   },
   {
@@ -51,7 +60,6 @@ const navAprendiz: NavSection[] = [
     items: [
       { icon: Mail, label: "Mensajería", href: "/mensajes" },
       { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
-      { icon: User, label: "Perfil", href: "/usuarios" },
       { icon: Shield, label: "Seguridad (2FA)", href: "/seguridad" },
     ],
   },
@@ -62,6 +70,7 @@ const navInstructor: NavSection[] = [
   {
     items: [
       { icon: LayoutDashboard, label: "Inicio", href: "/dashboard" },
+      { icon: User, label: "Mi Perfil", href: "/perfil" },
     ],
   },
   {
@@ -99,6 +108,7 @@ const navCoordinador: NavSection[] = [
   {
     items: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+      { icon: User, label: "Mi Perfil", href: "/perfil" },
     ],
   },
   {
@@ -157,13 +167,13 @@ const navSubdirector: NavSection[] = [
   {
     items: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+      { icon: User, label: "Mi Perfil", href: "/perfil" },
     ],
   },
   {
     title: "Institucional",
     items: [
       { icon: Building2, label: "Instituciones", href: "/instituciones" },
-      { icon: MapPin, label: "Sedes", href: "/sedes" },
       { icon: BookOpen, label: "Programas", href: "/programas" },
       { icon: Users, label: "Fichas / Grupos", href: "/fichas" },
     ],
@@ -193,13 +203,13 @@ const navApoyoCoordinacion: NavSection[] = [
   {
     items: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+      { icon: User, label: "Mi Perfil", href: "/perfil" },
     ],
   },
   {
     title: "Institucional",
     items: [
       { icon: Building2, label: "Instituciones", href: "/instituciones" },
-      { icon: MapPin, label: "Sedes", href: "/sedes" },
       { icon: BookOpen, label: "Programas", href: "/programas" },
       { icon: Users, label: "Fichas / Grupos", href: "/fichas" },
     ],
@@ -250,13 +260,13 @@ const navAdmin: NavSection[] = [
   {
     items: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+      { icon: User, label: "Mi Perfil", href: "/perfil" },
     ],
   },
   {
     title: "Gestión Institucional",
     items: [
       { icon: Building2, label: "Instituciones", href: "/instituciones" },
-      { icon: MapPin, label: "Sedes", href: "/sedes" },
       { icon: BookOpen, label: "Programas", href: "/programas" },
       { icon: Users, label: "Fichas / Grupos", href: "/fichas" },
     ],
@@ -305,7 +315,7 @@ const navAdmin: NavSection[] = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ branding }: SidebarProps) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
@@ -378,21 +388,21 @@ export function Sidebar() {
           {!collapsed ? (
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div className="flex items-center justify-center bg-white px-2 py-1 rounded-lg shadow-sm">
-                <img src="/logo.png" alt="GSS" className="h-7 object-contain" />
+                <img src={branding?.logoUrl || "/logo.png"} alt="Logo" className="h-7 object-contain" />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="font-bold text-xs text-white tracking-tight truncate leading-tight">
-                  Media Técnica
+                  {branding?.nombreSoftware || "Media Técnica"}
                 </span>
                 <span className="text-[10px] text-white/70 font-medium truncate leading-tight">
-                  Seguimiento Formativo
+                  {branding?.nombreInstitucion || "Seguimiento Formativo"}
                 </span>
               </div>
             </div>
           ) : (
             <div className="w-full flex justify-center">
               <div className="bg-white px-1.5 py-1 rounded-lg shadow-sm flex items-center justify-center">
-                <img src="/logo.png" alt="GSS" className="h-5 object-contain" />
+                <img src={branding?.logoUrl || "/logo.png"} alt="Logo" className="h-5 object-contain" />
               </div>
             </div>
           )}

@@ -13,14 +13,14 @@ export function InstitucionDetail({ institucion }: { institucion: Institucion })
     <div className="space-y-6">
       {/* Tarjeta de Encabezado */}
       <Card className="border-0 shadow-sm bg-surface overflow-hidden">
-        <div className="h-24 bg-sena-900 flex items-center justify-between px-8">
+        <div className="h-24 bg-emerald-800 flex items-center justify-between px-8">
           <div className="flex items-center gap-4 text-white">
-            <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center text-sena-900 shadow-md">
+            <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center text-emerald-800 shadow-md">
               <Building2 size={32} />
             </div>
             <div>
               <h2 className="text-2xl font-bold">{institucion.nombre}</h2>
-              <p className="text-sena-100 flex items-center gap-2">
+              <p className="text-emerald-50 flex items-center gap-2">
                 NIT: {institucion.nit} 
                 <span className="opacity-50">•</span> 
                 {institucion.municipio}, {institucion.departamento}
@@ -72,7 +72,6 @@ export function InstitucionDetail({ institucion }: { institucion: Institucion })
               <SedesTable 
                 initialData={{ data: institucion.sedes || [] }} 
                 instituciones={[{ id: institucion.id, nombre: institucion.nombre }]} 
-                readOnly={true}
               />
             </CardContent>
           </Card>

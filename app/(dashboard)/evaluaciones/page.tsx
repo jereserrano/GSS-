@@ -19,10 +19,10 @@ export default async function EvaluacionesPage() {
     const userRole = user?.rol?.toUpperCase() || "";
     const isAprendiz = userRole === "APRENDIZ";
 
-    if (userRole === "INSTRUCTOR" && user.instructor) {
+    if (user && userRole === "INSTRUCTOR" && user.instructor) {
       instructorId = user.instructor.id;
     }
-    if (isAprendiz && user?.aprendiz?.fichaId) {
+    if (user && isAprendiz && user.aprendiz?.fichaId) {
       redirect(`/evaluaciones/ficha/${user.aprendiz.fichaId}`);
     }
   }

@@ -14,7 +14,7 @@ export const metadata = {
 export default async function PortafolioPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || session.user.role !== "APRENDIZ") {
+  if (!session?.user?.email || session.user.role !== "APRENDIZ") {
     redirect("/dashboard");
   }
 

@@ -66,8 +66,8 @@ export function AuditoriaTable({ initialData }: { initialData: any }) {
     setExporting(true);
     try {
       const filtros = {
-        fechaInicio: exportFechas.inicio || undefined,
-        fechaFin: exportFechas.fin || undefined
+        ...(exportFechas.inicio ? { fechaInicio: exportFechas.inicio } : {}),
+        ...(exportFechas.fin ? { fechaFin: exportFechas.fin } : {})
       };
       const result = await exportAuditoriaCSV(filtros);
       if (!result.success || !result.csv) throw new Error(result.error || "Error exportando");

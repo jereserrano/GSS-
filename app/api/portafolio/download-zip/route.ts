@@ -129,12 +129,18 @@ async function buildZip(entries: ZipEntry[]): Promise<Buffer> {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
+    // Robust lookup: first find the user by email, then look for their aprendiz profile
+    const userRecord = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+    if (!userRecord) {
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    }
+
     const aprendiz = await prisma.aprendiz.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: userRecord.id },
       include: {
         ficha: {
           include: {

@@ -83,9 +83,9 @@ export async function createCompetencia(data: z.infer<typeof competenciaSchema>)
         programas: {
           connect: data.programasIds.map(id => ({ id }))
         },
-        tipo: data.tipo || "TECNICA",
+        tipo: (data.tipo as any) || "TECNICA",
         duracionHoras: Number(data.duracionHoras),
-        estado: data.estado || "ACTIVO",
+        estado: (data.estado as any) || "ACTIVO",
       },
     });
 
@@ -121,9 +121,9 @@ export async function updateCompetencia(id: string, data: z.infer<typeof compete
         programas: {
           set: data.programasIds.map(id => ({ id }))
         },
-        tipo: data.tipo,
+        tipo: data.tipo as any,
         duracionHoras: Number(data.duracionHoras),
-        estado: data.estado,
+        estado: data.estado as any,
       },
     });
 

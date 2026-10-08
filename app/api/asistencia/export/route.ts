@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const rows = asistencias.flatMap((a) => {
+    const rows: any[] = asistencias.flatMap((a: any): any[] => {
       const baseRow = {
         "Fecha": a.fecha ? new Date(a.fecha).toLocaleDateString("es-CO") : "",
         "Ficha": a.ficha?.codigo ?? "",
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
         return [{ ...baseRow, "Aprendiz": "Sin detalles", "Documento": "", "Estado Asistencia": "", "Obs. Asistencia": "" }];
       }
 
-      return a.detalles.map(d => ({
+      return a.detalles.map((d: any) => ({
         ...baseRow,
         "Aprendiz": `${d.aprendiz?.nombres ?? ""} ${d.aprendiz?.apellidos ?? ""}`.trim(),
         "Documento": `${d.aprendiz?.tipoDocumento ?? ""} ${d.aprendiz?.numeroDocumento ?? ""}`.trim(),

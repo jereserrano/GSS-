@@ -199,6 +199,7 @@ export const asistenciaMasivaSchema = z.object({
   fichaId: z.string(),
   fecha: z.string().or(z.date()),
   instructorId: z.string(),
+  tema: z.string().optional(),
   detalles: z.array(detalleAsistenciaSchema),
 });
 

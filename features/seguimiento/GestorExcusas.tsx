@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { getExcusasPorRolAction, responderExcusaAction, responderApelacionAction } from "@/actions/excusas.actions";
+import { getFichasSelectAction } from "@/actions/fichas.actions";
 import { toast } from "sonner";
 import { FileText, CheckCircle, XCircle, Clock, Check, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,9 +21,15 @@ export function GestorExcusas({ canEdit }: { canEdit: boolean }) {
   // Filtros
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
   const [filtroFicha, setFiltroFicha] = useState("TODAS");
+  const [fichasActivas, setFichasActivas] = useState<string[]>([]);
 
   useEffect(() => {
     loadExcusas();
+    getFichasSelectAction().then(res => {
+      if (res.success && res.data) {
+        setFichasActivas(res.data.map(f => f.codigo));
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -74,7 +81,8 @@ export function GestorExcusas({ canEdit }: { canEdit: boolean }) {
   };
 
   // Obtener fichas únicas para el filtro
-  const fichasUnicas = Array.from(new Set(excusas.map(ex => ex.aprendiz?.ficha?.codigo).filter(Boolean)));
+  const fichasExcusas = Array.from(new Set(excusas.map(ex => ex.aprendiz?.ficha?.codigo).filter(Boolean)));
+  const fichasUnicas = fichasActivas.length > 0 ? Array.from(new Set([...fichasActivas, ...fichasExcusas])) : fichasExcusas;
 
   return (
     <div className="space-y-6">

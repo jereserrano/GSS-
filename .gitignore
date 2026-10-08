@@ -31,3 +31,8 @@ tsconfig.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Archivos de despliegue
+PLAN_DESPLIEGUE.md
+gss_project.zip
+/scripts/

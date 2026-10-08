@@ -40,13 +40,12 @@ export function AprendicesTable({ initialData, fichas, fichaIdFijo }: Aprendices
   const [exporting, setExporting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
+  const defaultFichaId = fichaIdFijo || (fichas?.length === 1 ? fichas[0]?.id : undefined);
   const [filtros, setFiltros] = useState<FiltrosAprendiz>({
     pagina: 1,
     tamano: 10,
     busqueda: "",
-    estado: undefined,
-    nivelRiesgo: undefined,
-    fichaId: fichaIdFijo || (fichas.length === 1 ? fichas[0].id : undefined)
+    ...(defaultFichaId ? { fichaId: defaultFichaId } : {})
   });
 
   const cargarDatos = async () => {
@@ -342,7 +341,7 @@ export function AprendicesTable({ initialData, fichas, fichaIdFijo }: Aprendices
         <AprendizFormDialog
           aprendiz={selectedAprendiz}
           fichas={fichas}
-          fichaIdFijo={fichaIdFijo}
+          {...(fichaIdFijo ? { fichaIdFijo } : {})}
           onClose={handleCloseDialog}
         />
       )}

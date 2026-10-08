@@ -7,13 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Shield, Users, Lock } from "lucide-react";
 import type { ColumnaDef } from "@/types/common.types";
 import { RolFormDialog } from "./RolFormDialog";
-import type { RolConConteo } from "@/actions/roles.actions";
+import { deleteRol, type RolConConteo } from "@/actions/roles.actions";
+import { toast } from "sonner";
 
 interface RolesTableProps {
   initialRoles?: RolConConteo[];
+  isAdmin?: boolean;
 }
 
-export function RolesTable({ initialRoles = [] }: RolesTableProps) {
+export function RolesTable({ initialRoles = [], isAdmin = false }: RolesTableProps) {
   const [roles, setRoles] = useState<RolConConteo[]>(initialRoles);
   const [busqueda, setBusqueda] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,18 +73,42 @@ export function RolesTable({ initialRoles = [] }: RolesTableProps) {
       key: "acciones",
       header: "Acciones",
       align: "right",
-      render: (r) => (
-        <div className="flex justify-end gap-1.5">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs font-medium text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-[#003F8C] flex items-center gap-1"
-          >
-            <Lock size={12} className="text-slate-400" />
-            <span>Permisos</span>
-          </Button>
-        </div>
-      ),
+      render: (r) => {
+        const isStatic = ["ADMINISTRADOR", "INSTRUCTOR", "APRENDIZ", "SECRETARIO", "COORDINADOR_REGIONAL", "SUBDIRECTOR_REGIONAL", "COORDINADOR_SEDE"].includes(r.id);
+        
+        return (
+          <div className="flex justify-end gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-medium text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-[#003F8C] flex items-center gap-1"
+            >
+              <Lock size={12} className="text-slate-400" />
+              <span>Permisos</span>
+            </Button>
+            {isAdmin && !isStatic && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (confirm(`¿Estás seguro de eliminar el rol ${r.nombre}?`)) {
+                    const res = await deleteRol(r.id);
+                    if (res.success) {
+                      toast.success("Rol eliminado");
+                      setRoles(roles.filter(rol => rol.id !== r.id));
+                    } else {
+                      toast.error(res.error || "Error al eliminar el rol");
+                    }
+                  }
+                }}
+                className="h-8 text-xs font-medium text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 flex items-center gap-1"
+              >
+                Eliminar
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 

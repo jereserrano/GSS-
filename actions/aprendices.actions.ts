@@ -25,6 +25,78 @@ import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { NivelRiesgo } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { FiltrosAprendiz } from "@/types/aprendiz.types";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+/** Returns the aprendiz record linked to the currently logged-in user */
+export async function getAprendizPropioAction() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) return { success: false, error: "No autenticado" };
+    const user = await UserRepository.findUnique({ where: { email: session.user.email } });
+    if (!user) return { success: false, error: "Usuario no encontrado" };
+    const aprendiz = await prisma.aprendiz.findUnique({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        nombres: true,
+        apellidos: true,
+        fichaId: true,
+        porcentajeAsistencia: true,
+        promedioAcumulado: true,
+        nivelRiesgo: true,
+        estado: true,
+        ficha: {
+          select: {
+            codigo: true,
+            programa: { select: { nombre: true } },
+            _count: { select: { actividades: true } }
+          }
+        },
+        entregas: {
+          select: { estado: true, actividad: { select: { nombre: true } } },
+          where: { estado: { in: ["PENDIENTE", "NO_APROBADA", "TARDIA"] } }
+        },
+        alertas: {
+          where: { gestionada: false },
+          orderBy: { fechaDeteccion: "desc" },
+          select: { id: true, motivo: true, nivel: true, observaciones: true, fechaDeteccion: true, gestionada: true }
+        },
+        evaluaciones: {
+          select: { nota: true, juicio: true, resultadoAprendizaje: { select: { nombre: true } } }
+        }
+      }
+    });
+    if (!aprendiz) return { success: false, error: "Perfil de aprendiz no encontrado" };
+
+    // Calculate live promedio and filter failed items
+    let promedioReal = aprendiz.promedioAcumulado;
+    let evaluacionesConNota = aprendiz.evaluaciones?.filter(e => e.nota !== null) || [];
+    if (evaluacionesConNota.length > 0) {
+      const sum = evaluacionesConNota.reduce((acc, curr) => acc + (curr.nota ?? 0), 0);
+      promedioReal = parseFloat((sum / evaluacionesConNota.length).toFixed(2));
+    }
+
+    const fallasEvaluaciones = aprendiz.evaluaciones
+      ?.filter(e => e.juicio === "DEFICIENTE")
+      ?.map(e => e.resultadoAprendizaje?.nombre) || [];
+
+    const fallasEntregas = aprendiz.entregas
+      ?.filter(e => e.estado === "NO_APROBADA" || e.estado === "TARDIA")
+      ?.map(e => e.actividad?.nombre) || [];
+
+    return { 
+      success: true, 
+      data: { 
+        ...aprendiz, 
+        promedioAcumulado: promedioReal,
+        fallas: [...fallasEvaluaciones, ...fallasEntregas]
+      } 
+    };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
 
 export async function getAprendicesAction(filtros: FiltrosAprendiz = {}) {
   try {
@@ -32,7 +104,7 @@ export async function getAprendicesAction(filtros: FiltrosAprendiz = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
-    const where = {
+    const where: any = {
       ...(filtros.busqueda ? {
         OR: [
           { nombres: { contains: filtros.busqueda } },
@@ -86,7 +158,7 @@ export async function createAprendiz(data: z.infer<typeof aprendizSchema>) {
 
     const aprendiz = await AprendizRepository.create({
       data: {
-        tipoDocumento: data.tipoDocumento,
+        tipoDocumento: data.tipoDocumento as any,
         numeroDocumento: data.numeroDocumento,
         nombres: data.nombres,
         apellidos: data.apellidos,
@@ -97,7 +169,7 @@ export async function createAprendiz(data: z.infer<typeof aprendizSchema>) {
         genero: data.genero || null,
         direccion: data.direccion || null,
         fichaId: data.fichaId,
-        estado: data.estado || "EN_FORMACION",
+        estado: (data.estado as any) || "EN_FORMACION",
       },
     });
 

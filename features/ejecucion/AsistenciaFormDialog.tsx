@@ -28,17 +28,34 @@ const ESTADOS = [
 export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaIdFijo, instructorIdFijo, onClose, onSuccess }: AsistenciaFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!asistencia;
+  
+  const formatDateForInput = (dateString?: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 16);
+  };
+
+  const originalDateStr = isEditing ? formatDateForInput(asistencia?.fecha).slice(0, 10) : "";
+  const [currentDate, setCurrentDate] = useState<string>(formatDateForInput(asistencia?.fecha) || formatDateForInput(new Date().toISOString()));
+  const isDateChanged = isEditing && originalDateStr && currentDate.slice(0, 10) !== originalDateStr;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    let finalTema = formData.get("tema") as string;
+    const motivo = formData.get("motivoReprogramacion") as string;
+    
+    if (isDateChanged && motivo) {
+      finalTema = finalTema ? `${finalTema} | Reprogramación: ${motivo}` : `Reprogramación: ${motivo}`;
+    }
+
     const data = {
       fichaId: fichaIdFijo || (formData.get("fichaId") as string),
       instructorId: instructorIdFijo || (formData.get("instructorId") as string),
       fecha: formData.get("fecha") as string,
-      tema: formData.get("tema") as string,
+      tema: finalTema,
       estado: formData.get("estado") as string,
     };
 
@@ -58,11 +75,6 @@ export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaId
     }
   };
 
-  const formatDateForInput = (dateString?: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toISOString().slice(0, 16);
-  };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
@@ -121,7 +133,8 @@ export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaId
               <Input
                 name="fecha"
                 type="datetime-local"
-                defaultValue={formatDateForInput(asistencia?.fecha) || formatDateForInput(new Date().toISOString())}
+                value={currentDate}
+                onChange={(e) => setCurrentDate(e.target.value)}
                 required
               />
             </div>
@@ -141,10 +154,22 @@ export function AsistenciaFormDialog({ asistencia, fichas, instructores, fichaId
             <label className="text-sm font-medium text-text-primary">Tema de la Sesión</label>
             <Input
               name="tema"
-              defaultValue={asistencia?.tema}
+              defaultValue={asistencia?.tema?.split(" | Reprogramación:")[0] || asistencia?.tema}
               placeholder="Ej: Programación Orientada a Objetos"
             />
           </div>
+
+          {isDateChanged && (
+            <div className="space-y-1.5 bg-red-50 p-3 rounded-lg border border-red-100">
+              <label className="text-sm font-medium text-red-700">Motivo de Reprogramación *</label>
+              <Input
+                name="motivoReprogramacion"
+                required
+                className="border-red-200 focus-visible:ring-red-500"
+                placeholder="Justifique el cambio de fecha (ej. Reposición de clase)"
+              />
+            </div>
+          )}
 
           {/* Footer */}
           <div className="pt-2 flex justify-end gap-3 border-t mt-6 pt-4">

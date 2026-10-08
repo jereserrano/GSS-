@@ -97,8 +97,8 @@ export async function createPrograma(data: z.infer<typeof programaSchema>) {
       data: {
         codigo: data.codigo,
         nombre: data.nombre,
-        nivelFormacion: data.nivelFormacion || "TECNICO",
-        estado: data.estado || "ACTIVO",
+        nivelFormacion: (data.nivelFormacion as any) || "TECNICO",
+        estado: (data.estado as any) || "ACTIVO",
         version: data.version || null,
         duracion: data.duracion ? Number(data.duracion) : null,
         modalidad: (data.modalidad as any) || null,
@@ -136,8 +136,8 @@ export async function updatePrograma(id: string, data: z.infer<typeof programaSc
       data: {
         codigo: data.codigo,
         nombre: data.nombre,
-        nivelFormacion: data.nivelFormacion,
-        estado: data.estado,
+        nivelFormacion: data.nivelFormacion as any,
+        estado: data.estado as any,
         version: data.version || null,
         duracion: data.duracion ? Number(data.duracion) : null,
         modalidad: (data.modalidad as any) || null,

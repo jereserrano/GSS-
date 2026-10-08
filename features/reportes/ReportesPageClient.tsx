@@ -91,6 +91,7 @@ export function ReportesPageClient({ resumen, listados, fichas }: ReportesPageCl
   const [fichaSeleccionada, setFichaSeleccionada] = useState<string>("all");
   const [fechaInicio, setFechaInicio] = useState<string>("");
   const [fechaFin, setFechaFin] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("aprendices");
 
   const handleDescargar = async (reporte: typeof REPORTES[number]) => {
     setLoadingId(reporte.id);
@@ -246,13 +247,28 @@ export function ReportesPageClient({ resumen, listados, fichas }: ReportesPageCl
 
       <div className="pt-6">
         <h2 className="text-lg font-semibold text-text-primary mb-4">Vista Previa de Listados</h2>
-        <Tabs defaultValue="aprendices" className="w-full bg-white rounded-xl border border-slate-200 p-4">
+        <Tabs className="w-full bg-white rounded-xl border border-slate-200 p-4">
           <TabsList className="mb-4">
-            <TabsTrigger value="aprendices">Aprendices</TabsTrigger>
-            <TabsTrigger value="alertas">Alertas de Riesgo</TabsTrigger>
-            <TabsTrigger value="asistencia">Asistencia</TabsTrigger>
+            <TabsTrigger 
+              onClick={() => setActiveTab("aprendices")} 
+              active={activeTab === "aprendices"}
+            >
+              Aprendices
+            </TabsTrigger>
+            <TabsTrigger 
+              onClick={() => setActiveTab("alertas")} 
+              active={activeTab === "alertas"}
+            >
+              Alertas de Riesgo
+            </TabsTrigger>
+            <TabsTrigger 
+              onClick={() => setActiveTab("asistencia")} 
+              active={activeTab === "asistencia"}
+            >
+              Asistencia
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="aprendices">
+          <TabsContent active={activeTab === "aprendices"}>
             <DataTable 
               data={listados.aprendices} 
               columnas={[
@@ -266,7 +282,7 @@ export function ReportesPageClient({ resumen, listados, fichas }: ReportesPageCl
               ]} 
             />
           </TabsContent>
-          <TabsContent value="alertas">
+          <TabsContent active={activeTab === "alertas"}>
             <DataTable 
               data={listados.alertas} 
               columnas={[
@@ -278,13 +294,15 @@ export function ReportesPageClient({ resumen, listados, fichas }: ReportesPageCl
               ]} 
             />
           </TabsContent>
-          <TabsContent value="asistencia">
+          <TabsContent active={activeTab === "asistencia"}>
             <DataTable 
               data={listados.asistencias} 
               columnas={[
                 { key: "fecha", header: "Fecha", render: (item) => new Date(item.fecha).toLocaleDateString("es-CO") },
                 { key: "ficha", header: "Ficha", render: (item) => item.ficha?.codigo || "N/A" },
-                { key: "sesionId", header: "ID Sesión", render: (item) => item.id.substring(0,8) }
+                { key: "presentes", header: "Presentes", render: (item) => item.totalPresentes },
+                { key: "faltas", header: "Faltas", render: (item) => item.totalFaltas },
+                { key: "estado", header: "Estado", render: (item) => item.estado === "COMPLETADA" ? "Completada" : "En Progreso" }
               ]} 
             />
           </TabsContent>

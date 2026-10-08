@@ -128,14 +128,14 @@ export async function createActividad(data: z.infer<typeof actividadSchema>) {
         nombre: data.nombre,
         descripcion: data.descripcion || null,
         instrucciones: data.instrucciones || null,
-        tipo: data.tipo || "TALLER",
+        tipo: (data.tipo as any) || "TALLER",
         fichaId: data.fichaId,
         instructorId,
         resultadoAprendizajeId: data.resultadoAprendizajeId || null,
 
         fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : new Date(),
-        fechaVencimiento: new Date(data.fechaFin || data.fechaVencimiento),
-        estado: estadoActividad,
+        fechaVencimiento: new Date((data.fechaFin || data.fechaVencimiento) as string | number | Date),
+        estado: estadoActividad as any,
       },
     });
 
@@ -154,7 +154,7 @@ export async function createActividad(data: z.infer<typeof actividadSchema>) {
           select: { userId: true }
         });
 
-        const fechaVenceFormatted = new Date(data.fechaFin || data.fechaVencimiento).toLocaleDateString("es-CO");
+        const fechaVenceFormatted = new Date((data.fechaFin || data.fechaVencimiento) as string | number | Date).toLocaleDateString("es-CO");
         for (const ap of aprendices) {
           if (ap.userId) {
             await crearNotificacionSistema(
@@ -192,12 +192,12 @@ export async function updateActividad(id: string, data: z.infer<typeof actividad
         nombre: data.nombre,
         descripcion: data.descripcion || null,
         instrucciones: data.instrucciones || null,
-        tipo: data.tipo,
+        tipo: data.tipo as any,
         fichaId: data.fichaId,
         resultadoAprendizajeId: data.resultadoAprendizajeId || null,
-        fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : undefined,
-        fechaVencimiento: new Date(data.fechaFin || data.fechaVencimiento),
-        estado: data.estado,
+        ...(data.fechaInicio ? { fechaInicio: new Date(data.fechaInicio) } : {}),
+        fechaVencimiento: new Date((data.fechaFin || data.fechaVencimiento) as string | number | Date),
+        estado: data.estado as any,
       },
     });
 

@@ -37,7 +37,7 @@ export function DocenteFormDialog({ docente, instituciones, onClose, onSuccess }
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     if (errors[e.target.name]) {
-      setErrors(prev => ({ ...prev, [e.target.name]: null }));
+      setErrors((prev: any) => ({ ...prev, [e.target.name]: null }));
     }
   };
 

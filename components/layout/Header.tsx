@@ -24,7 +24,7 @@ interface NotificacionItem {
   enlace?: string | null;
 }
 
-export function Header() {
+export function Header({ logoUrl }: { logoUrl?: string }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [notificaciones, setNotificaciones] = useState<NotificacionItem[]>([]);
@@ -47,12 +47,11 @@ export function Header() {
   };
 
   useEffect(() => {
-    if (session?.user) {
-      cargarNotificaciones();
-      // Refrescar cada 10 segundos
-      const interval = setInterval(cargarNotificaciones, 10000);
-      return () => clearInterval(interval);
-    }
+    if (!session?.user) return;
+    cargarNotificaciones();
+    // Refrescar cada 10 segundos
+    const interval = setInterval(cargarNotificaciones, 10000);
+    return () => clearInterval(interval);
   }, [session]);
 
   const unreadCount = notificaciones.filter((n) => !n.leida).length;
@@ -111,7 +110,7 @@ export function Header() {
         <div className="w-10 md:hidden" />
         
         <div className="hidden lg:flex items-center gap-2 pr-3 border-r border-slate-200 text-xs text-slate-500">
-          <img src="/logo.png" alt="GSS" className="h-6 object-contain" />
+          <img src={logoUrl || "/logo.png"} alt="GSS" className="h-6 object-contain" />
           <span className="text-slate-300">|</span>
           <span className="font-medium text-slate-600 truncate max-w-[280px]">
             Seguimiento Media Técnica
@@ -261,18 +260,25 @@ export function Header() {
 
         {/* Perfil de Usuario */}
         <div className="flex items-center gap-2.5">
-          <div className="hidden sm:flex flex-col items-end">
+          <Link href="/perfil" className="hidden sm:flex flex-col items-end hover:opacity-80 transition-opacity">
             <span className="text-xs font-bold text-slate-900 leading-tight">
               {status === "loading" ? "..." : userName}
             </span>
             <span className="text-[11px] font-medium text-slate-500 leading-tight">
               {status === "loading" ? "" : userRole}
             </span>
-          </div>
+          </Link>
 
-          <div className="h-9 w-9 bg-[#f0fdf4] text-[#267000] border border-[#bbf7d0] rounded-full flex items-center justify-center font-bold text-xs shrink-0 select-none shadow-xs">
-            {status === "loading" ? <User size={16} /> : initials}
-          </div>
+          <Link href="/perfil" className="h-9 w-9 bg-[#f0fdf4] text-[#267000] border border-[#bbf7d0] rounded-full flex items-center justify-center font-bold text-xs shrink-0 select-none shadow-xs hover:opacity-80 transition-opacity overflow-hidden">
+            {status === "loading" ? <User size={16} /> : 
+             (session?.user as any)?.fotoPerfil ? (
+               (session?.user as any).fotoPerfil.startsWith("/") || (session?.user as any).fotoPerfil.startsWith("http") || (session?.user as any).fotoPerfil.startsWith("data:") ? (
+                 <img src={(session?.user as any).fotoPerfil} alt="Perfil" className="w-full h-full object-cover" />
+               ) : (
+                 <span className="text-xl leading-none">{(session?.user as any).fotoPerfil}</span>
+               )
+             ) : initials}
+          </Link>
 
           {/* Botón Cerrar Sesión con purga de Router Cache */}
           <button

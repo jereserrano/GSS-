@@ -85,11 +85,11 @@ export function AprendizProfile({ aprendiz }: { aprendiz: Aprendiz }) {
             </div>
 
             {/* Sección de Instructores (Líder y Transversales) */}
-            {aprendiz.ficha?.instructores && aprendiz.ficha.instructores.length > 0 && (
+            {(aprendiz.ficha as any)?.instructores && (aprendiz.ficha as any).instructores.length > 0 && (
               <div className="pt-4 mt-2 border-t border-border">
                 <p className="text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">Equipo de Instructores</p>
                 <div className="space-y-2">
-                  {aprendiz.ficha.instructores.map((asignacion: any) => (
+                  {(aprendiz.ficha as any).instructores.map((asignacion: any) => (
                     <div key={asignacion.id} className="flex flex-col p-2 bg-surface rounded-lg border border-border/50">
                       <div className="flex justify-between items-start">
                         <span className="text-xs font-semibold text-text-primary">

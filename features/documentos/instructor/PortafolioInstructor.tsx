@@ -5,13 +5,30 @@ import { toast } from "sonner";
 import { User, FileText, CheckCircle, Clock, XCircle, Save, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DocumentosEmpleado } from "@/features/documentos/DocumentosEmpleado";
+import { useSearchParams } from "next/navigation";
+
+import { useSession } from "next-auth/react";
 
 export function PortafolioInstructor({ userId }: { userId: string }) {
-  const [activeTab, setActiveTab] = useState("datos");
+  const searchParams = useSearchParams();
+  const { update } = useSession();
+  
+  const initialTab = searchParams.get("tab") === "cartas" || searchParams.get("tab") === "docs" ? "docs" : "datos";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [datos, setDatos] = useState<any>({});
   
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "cartas" || tab === "docs") {
+      setActiveTab("docs");
+    } else if (tab === "datos") {
+      setActiveTab("datos");
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     const fetchDatos = async () => {
       setLoading(true);
@@ -37,8 +54,14 @@ export function PortafolioInstructor({ userId }: { userId: string }) {
         body: JSON.stringify(datos)
       });
       const json = await res.json();
-      if (json.success) toast.success("Datos guardados correctamente");
-      else toast.error(json.error);
+      if (json.success) {
+        toast.success("Datos guardados correctamente");
+        if (datos.fotoPerfil !== undefined) {
+          await update({ fotoPerfil: datos.fotoPerfil });
+        }
+      } else {
+        toast.error(json.error);
+      }
     } catch (e) {
       toast.error("Error al guardar");
     }
@@ -65,7 +88,9 @@ export function PortafolioInstructor({ userId }: { userId: string }) {
       {loading ? (
         <div className="py-10 text-center text-gray-500 animate-pulse">Cargando portafolio...</div>
       ) : activeTab === "datos" ? (
-        <form onSubmit={handleSave} className="space-y-4 animate-in fade-in">
+        <form onSubmit={handleSave} className="space-y-6 animate-in fade-in">
+
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-[#00304D]">Dirección de Residencia</label>
@@ -113,31 +138,9 @@ export function PortafolioInstructor({ userId }: { userId: string }) {
         </form>
       ) : (
         <div className="space-y-6 animate-in fade-in">
-          <p className="text-sm text-gray-500">
-            Sube aquí los documentos obligatorios requeridos para tu contratación y seguimiento.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <DocCard title="Documento de Identidad" tipo="CEDULA" />
-            <DocCard title="Hoja de Vida (Formato SENA)" tipo="HOJA_DE_VIDA" />
-            <DocCard title="Certificados Académicos" tipo="CERTIFICADO_ESTUDIO" />
-            <DocCard title="Certificación Bancaria" tipo="CERTIFICADO_BANCARIO" />
-          </div>
+          <DocumentosEmpleado userId={userId} />
         </div>
       )}
-    </div>
-  );
-}
-
-function DocCard({ title, tipo }: { title: string; tipo: string }) {
-  // Simularemos el UI de estado por ahora
-  return (
-    <div className="border border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors">
-      <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-        <UploadCloud className="h-5 w-5 text-gray-400" />
-      </div>
-      <h3 className="font-semibold text-sm text-[#00304D]">{title}</h3>
-      <p className="text-xs text-gray-500 mt-1 mb-3">PDF (Max 5MB)</p>
-      <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => alert("Función de subida en desarrollo")}>Subir Archivo</Button>
     </div>
   );
 }

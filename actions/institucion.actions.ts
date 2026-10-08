@@ -4,7 +4,7 @@ import { InstitucionRepository } from "@/repositories/institucion.repository";
 
 import { institucionSchema } from "@/schemas";
 import { revalidatePath } from "next/cache";
-import { logAudit } from "./reportes.actions";
+import { logAudit } from "@/lib/audit.service";
 import { requireRole } from "@/lib/auth-helpers";
 
 export async function createInstitucion(data: any) {
@@ -40,7 +40,7 @@ export async function createInstitucion(data: any) {
       detalle: "Acción completada exitosamente.",
     });
     revalidatePath("/instituciones");
-    await logAudit({ accion: "CREAR", modulo: "INSTITUCIONES", descripcion: `Institución creada: ${inst.nombre} (NIT: ${inst.nit})`, usuarioId: user.id });
+
     return { success: true, institucion: inst };
   } catch (error: any) {
     console.error("Error creating institucion:", error);
@@ -85,7 +85,7 @@ export async function updateInstitucion(id: string, data: any) {
       detalle: "Acción completada exitosamente.",
     });
     revalidatePath(`/instituciones/${id}`);
-    await logAudit({ accion: "EDITAR", modulo: "INSTITUCIONES", descripcion: `Institución actualizada: ${inst.nombre}`, usuarioId: user.id });
+
     return { success: true, institucion: inst };
   } catch (error: any) {
     console.error("Error updating institucion:", error);
@@ -95,8 +95,8 @@ export async function updateInstitucion(id: string, data: any) {
 
 export async function deleteInstitucion(id: string) {
   try {
-    const userId = await getSessionUserId();
     const user = await requireRole("ADMINISTRADOR"); // Solo admins borran
+    const userId = user.id;
     const inst = await InstitucionRepository.delete({
       where: { id },
     });
@@ -109,7 +109,7 @@ export async function deleteInstitucion(id: string) {
       detalle: "Acción completada exitosamente.",
     });
     revalidatePath("/instituciones");
-    await logAudit({ accion: "ELIMINAR", modulo: "INSTITUCIONES", descripcion: `Institución eliminada: ${inst.nombre}`, usuarioId: user.id });
+
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting institucion:", error);

@@ -130,6 +130,7 @@ export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMas
           data: {
             instructorId: data.instructorId,
             estado: "REGISTRADA",
+            observaciones: data.tema || null,
             totalPresentes: presentes,
             totalFaltas: faltas,
             totalExcusas: excusas,
@@ -142,6 +143,7 @@ export async function guardarAsistenciaMasiva(data: z.infer<typeof asistenciaMas
             fichaId: data.fichaId,
             instructorId: data.instructorId,
             fecha: startDate,
+            observaciones: data.tema || null,
             estado: "REGISTRADA",
             totalPresentes: presentes,
             totalFaltas: faltas,
@@ -331,7 +333,7 @@ export async function exportAsistenciasXLSX(fechaInicio?: string, fechaFin?: str
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Asistencias");
 
-    if (rows.length > 0) {
+    if (rows.length > 0 && rows[0]) {
       worksheet.columns = Object.keys(rows[0]).map((key) => ({
         header: key,
         key,

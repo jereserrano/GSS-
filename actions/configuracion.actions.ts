@@ -40,6 +40,11 @@ export async function updateConfiguracionAction(data: any) {
       diasEntrega: Number(data.diasEntrega),
       duracionSesionHoras: Number(data.duracionSesionHoras),
       intentosLogin: Number(data.intentosLogin),
+      nombreInstitucion: String(data.nombreInstitucion || "SENA"),
+      nombreSoftware: String(data.nombreSoftware || "GSS - Media Técnica"),
+      colorPrincipal: String(data.colorPrincipal || "#39A900"),
+      colorSecundario: String(data.colorSecundario || "#00304D"),
+      logoUrl: String(data.logoUrl || "/logo-sena.png"),
     };
 
     const config = await ConfiguracionRepository.upsert({

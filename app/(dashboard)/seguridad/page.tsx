@@ -13,19 +13,17 @@ export default async function SeguridadPage() {
   
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({ 
-      where: { email: session.user.email },
-      include: { rol: true }
+      where: { email: session.user.email }
     });
     
     if (user?.twoFactorEnabled) {
       is2FAEnabled = true;
     }
     
-    if (user?.rol?.nombre?.toUpperCase().includes('ADMIN')) {
+    if (typeof user?.rol === 'string' && user.rol.toUpperCase().includes('ADMIN')) {
       isAdmin = true;
       usersWith2FA = await prisma.user.findMany({
         where: { twoFactorEnabled: true },
-        include: { rol: true },
         orderBy: { nombre: 'asc' }
       });
     }

@@ -76,10 +76,10 @@ export function RolFormDialog({ isOpen, onClose, onSuccess }: RolFormDialogProps
     setLoading(true);
 
     try {
-      // Guardar el rol en la base de datos
       const res = await createRol({
         nombre: nombre.trim(),
-        descripcion: descripcion.trim() || undefined,
+        ...(descripcion.trim() ? { descripcion: descripcion.trim() } : {}),
+        permisos: modulosSeleccionados,
       });
 
       if (res.error) {

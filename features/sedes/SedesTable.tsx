@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Filter, Download, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Download, Pencil, Trash2 } from "lucide-react";
 import type { ColumnaDef, PaginatedResponse } from "@/types/common.types";
 import { getSedesAction, deleteSede, exportSedesCSV } from "@/actions/sedes.actions";
 import { SedeFormDialog } from "./SedeFormDialog";
@@ -120,7 +120,7 @@ export function SedesTable({ initialData, instituciones }: SedesTableProps) {
     },
     {
       key: "coordinador",
-      header: "Coordinador",
+      header: "Coordinador / Apoyo",
       render: (s) => (
         <div className="flex flex-col">
           <span className="text-sm">{s.coordinador || "No asignado"}</span>
@@ -173,9 +173,6 @@ export function SedesTable({ initialData, instituciones }: SedesTableProps) {
                 className="bg-surface pl-9"
               />
             </div>
-            <Button variant="outline" className="shrink-0 bg-surface">
-              <Filter size={16} className="mr-2" /> Filtros
-            </Button>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="bg-surface" onClick={handleExport} disabled={exporting}>

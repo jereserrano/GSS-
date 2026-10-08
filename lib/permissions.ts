@@ -4,7 +4,7 @@
 export type UserRole = "ADMINISTRADOR" | "SUBDIRECTOR" | "COORDINADOR" | "APCOORDINADOR" | "INSTRUCTOR" | "APRENDIZ" | string;
 
 // Rutas base comunes para todos los roles permitidos en el dashboard
-const RUTAS_COMUNES = ["/dashboard", "/notificaciones", "/mensajes", "/usuarios", "/seguridad"];
+const RUTAS_COMUNES = ["/dashboard", "/perfil", "/notificaciones", "/mensajes", "/usuarios", "/seguridad"];
 
 // Listas Blancas (Whitelists) estrictas por Rol:
 

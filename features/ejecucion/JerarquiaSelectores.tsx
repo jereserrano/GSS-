@@ -6,13 +6,13 @@ import { getJerarquiaAcademicaAction } from "@/actions/jerarquia.actions";
 const selectClass =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
 
-export function JerarquiaSelectores({ 
-  fichaId, 
-  defaultRaId = "", 
-  defaultCriterioId = "", 
-  defaultInstrumentoId = "" 
-}: { 
-  fichaId: string, 
+export function JerarquiaSelectores({
+  fichaId,
+  defaultRaId = "",
+  defaultCriterioId = "",
+  defaultInstrumentoId = ""
+}: {
+  fichaId: string,
   defaultRaId?: string,
   defaultCriterioId?: string,
   defaultInstrumentoId?: string
@@ -29,7 +29,7 @@ export function JerarquiaSelectores({
       getJerarquiaAcademicaAction(fichaId).then(res => {
         if (res.success && res.data) {
           setCompetencias(res.data);
-          
+
           // Si hay un RA por defecto, intentar autoseleccionar la competencia
           if (defaultRaId) {
             for (const c of res.data) {
@@ -56,13 +56,13 @@ export function JerarquiaSelectores({
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-gray-50 mt-4 mb-4">
       <h3 className="text-sm font-semibold text-gray-700">Trazabilidad Académica (SENA)</h3>
-      
+
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-text-primary">Competencia / Módulo</label>
-        <select 
-          className={selectClass} 
-          value={selectedComp} 
-          onChange={e => { setSelectedComp(e.target.value); setSelectedRa(""); setSelectedCriterio(""); setSelectedInstrumento(""); }}
+        <select
+          className={selectClass}
+          value={selectedComp}
+          onChange={e => { setSelectedComp(e.target.value); setSelectedRa(""); }}
         >
           <option value="">Seleccione competencia...</option>
           {competencias.map(c => (
@@ -73,10 +73,10 @@ export function JerarquiaSelectores({
 
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-text-primary">Resultado de Aprendizaje (RA)</label>
-        <select 
+        <select
           name="resultadoAprendizajeId"
-          className={selectClass} 
-          value={selectedRa} 
+          className={selectClass}
+          value={selectedRa}
           onChange={e => { setSelectedRa(e.target.value); }}
           disabled={!selectedComp}
         >

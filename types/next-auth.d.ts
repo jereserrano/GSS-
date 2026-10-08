@@ -20,6 +20,8 @@ declare module "next-auth" {
       rolName: string;
       /** Nivel de jerarquía numérico (1 = mayor autoridad) */
       hierarchyLevel: number;
+      fotoPerfil?: string | null;
+      twoFactorEnabled?: boolean;
     } & DefaultSession["user"];
   }
 

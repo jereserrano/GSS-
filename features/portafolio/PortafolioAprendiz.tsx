@@ -215,7 +215,12 @@ export function PortafolioAprendiz() {
     setDownloading(true);
     try {
       const res = await fetch("/api/portafolio/download-zip");
-      if (!res.ok) throw new Error("Error al generar el archivo");
+      // Check if response is an error (JSON) before treating it as a zip file
+      const contentType = res.headers.get("Content-Type") ?? "";
+      if (!res.ok || contentType.includes("application/json")) {
+        const errJson = await res.json().catch(() => ({ error: "Error al generar el archivo" }));
+        throw new Error(errJson.error || "Error al generar el portafolio");
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

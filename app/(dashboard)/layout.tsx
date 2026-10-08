@@ -6,10 +6,11 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { Force2FAWrapper } from "@/features/auth/Force2FAWrapper";
 import { SessionHydration } from "@/components/SessionHydration";
+import { ThemeInjector } from "@/components/layout/ThemeInjector";
+import { prisma } from "@/lib/prisma";
 
 // El dashboard siempre requiere sesión — nunca pre-renderizar estáticamente
 export const dynamic = "force-dynamic";
-
 
 export default async function DashboardLayout({
   children,
@@ -22,6 +23,7 @@ export default async function DashboardLayout({
   if (session?.user && !(session.user as any).twoFactorEnabled) {
     return (
       <SessionHydration session={session}>
+        <ThemeInjector />
         <div className="flex min-h-screen bg-app items-center justify-center p-4">
           <div className="w-full max-w-2xl">
             <Force2FAWrapper />
@@ -31,12 +33,19 @@ export default async function DashboardLayout({
     );
   }
 
+  const config = await prisma.configuracionSistema.findFirst();
+
   return (
     <SessionHydration session={session}>
+      <ThemeInjector />
       <div className="flex min-h-screen bg-app">
-        <Sidebar />
+        <Sidebar branding={{
+          ...(config?.nombreSoftware ? { nombreSoftware: config.nombreSoftware } : {}),
+          ...(config?.nombreInstitucion ? { nombreInstitucion: config.nombreInstitucion } : {}),
+          ...(config?.logoUrl ? { logoUrl: config.logoUrl } : {}),
+        }} />
         <div className="main-content flex-1 flex flex-col w-full min-h-screen">
-          <Header />
+          <Header {...(config?.logoUrl ? { logoUrl: config.logoUrl } : {})} />
           <main className="flex-1 w-full relative">
             {children}
           </main>

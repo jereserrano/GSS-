@@ -19,12 +19,12 @@ export default async function AprendicesFichasPage() {
     const userRole = user?.rol?.toUpperCase() || "";
     const isAprendiz = userRole === "APRENDIZ";
 
-    if (userRole === "INSTRUCTOR" && user.instructor) {
+    if (user && userRole === "INSTRUCTOR" && user.instructor) {
       instructorId = user.instructor.id;
     }
     
     // Si es aprendiz, redirigimos automáticamente a su propia ficha
-    if (isAprendiz && user?.aprendiz?.fichaId) {
+    if (user && isAprendiz && user.aprendiz?.fichaId) {
       redirect(`/aprendices/ficha/${user.aprendiz.fichaId}`);
     }
   }

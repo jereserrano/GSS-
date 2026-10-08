@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { getProgramaCompleto } from "@/actions/programas.actions";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
@@ -62,7 +64,22 @@ function TextSection({ title, icon: Icon, content }: { title: string; icon: any;
 export function ProgramaDetailPanel({ programa, onClose, onEdit }: ProgramaDetailPanelProps) {
   const { data: session } = useSession();
   const role = (session?.user?.role ?? "").toUpperCase();
-  const canEdit = role === "ADMINISTRADOR" || role === "COORDINADOR";
+  const canEdit = role === "ADMINISTRADOR" || role.includes("COORDINADOR") || role.includes("SUBDIRECTOR");
+
+  const [competencias, setCompetencias] = useState<any[]>([]);
+  const [loadingComps, setLoadingComps] = useState(false);
+
+  useEffect(() => {
+    if (programa?.id) {
+      setLoadingComps(true);
+      getProgramaCompleto(programa.id).then(res => {
+        if (res.success && res.data) {
+          setCompetencias(res.data.competencias || []);
+        }
+        setLoadingComps(false);
+      });
+    }
+  }, [programa?.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -154,6 +171,40 @@ export function ProgramaDetailPanel({ programa, onClose, onEdit }: ProgramaDetai
               </h3>
               <TextSection title="Perfil de Ingreso" icon={ChevronRight} content={programa.perfilIngreso} />
               <TextSection title="Perfil del Egresado" icon={ChevronRight} content={programa.perfilEgresado} />
+            </div>
+          )}
+
+          {/* Competencias - Diseño Curricular Real */}
+          {competencias.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <BookOpen size={13} />
+                Diseño Curricular (Competencias)
+              </h3>
+              <div className="space-y-3">
+                {competencias.slice(0, 4).map(comp => (
+                  <div key={comp.id} className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                    <p className="text-xs font-bold text-emerald-700 mb-1">{comp.codigo}</p>
+                    <p className="text-sm text-slate-700 font-medium leading-snug">{comp.nombre}</p>
+                    <div className="flex gap-2 mt-2">
+                      <span className="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{comp.tipo}</span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{comp.duracionHoras} horas</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {competencias.length > 4 && (
+                <div className="text-center pt-2 pb-1 text-xs text-slate-500 italic">
+                  + {competencias.length - 4} competencias más
+                </div>
+              )}
+              <div className="pt-3 border-t border-slate-100 flex justify-center">
+                <Button variant="link" className="text-emerald-700 hover:text-emerald-800 h-auto p-0 text-sm font-semibold" asChild>
+                  <Link href={`/diseno-curricular/programa/${programa.id}`}>
+                    Ir y ver diseño curricular completo &rarr;
+                  </Link>
+                </Button>
+              </div>
             </div>
           )}
 

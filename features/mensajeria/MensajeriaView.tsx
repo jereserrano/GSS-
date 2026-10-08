@@ -248,14 +248,16 @@ export function MensajeriaView({
 
   if (!contactoActivo && activeTab !== "GLOBAL" && mensajesDelChat.length > 0) {
     const msg = mensajesDelChat[0];
-    const userRef = msg.emisorId === activeTab ? msg.emisor : msg.receptor;
-    if (userRef) {
-      contactoActivo = {
-        id: activeTab,
-        nombre: userRef.nombre || "Usuario",
-        email: userRef.email || "",
-        rol: userRef.rol || "",
-      } as Contacto;
+    if (msg) {
+      const userRef = msg.emisorId === activeTab ? msg.emisor : msg.receptor;
+      if (userRef) {
+        contactoActivo = {
+          id: activeTab,
+          nombre: userRef.nombre || "Usuario",
+          email: userRef.email || "",
+          rol: userRef.rol || "",
+        } as Contacto;
+      }
     }
   }
 

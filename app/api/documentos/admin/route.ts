@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     const data = instructoresRaw.map((inst: any) => {
       const docs = inst.user?.documentoEmpleados || [];
-      const requiredDocs = ["CEDULA", "HOJA_DE_VIDA", "CERTIFICADO_ESTUDIO"];
+      const requiredDocs = ["DOCUMENTO_IDENTIDAD", "HV", "CERTIFICADO_ACADEMICO"];
       let uploadedDocsCount = 0;
       
       requiredDocs.forEach(req => {
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       });
 
       let estadoDocumentacion = "Incompleto";
-      if (uploadedDocsCount === requiredDocs.length) estadoDocumentacion = "Completo";
+      if (uploadedDocsCount >= requiredDocs.length) estadoDocumentacion = "Completo";
       if (uploadedDocsCount === 0) estadoDocumentacion = "Sin Iniciar";
 
       return {

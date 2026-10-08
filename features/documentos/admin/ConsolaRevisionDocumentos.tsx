@@ -4,6 +4,9 @@ import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Search, Filter, ChevronRight, FileText, Download, CheckCircle, AlertCircle, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GestorSolicitudesCartas } from "./GestorSolicitudesCartas";
+import { useSearchParams } from "next/navigation";
 
 export function ConsolaRevisionDocumentos() {
   const [instructores, setInstructores] = useState<any[]>([]);
@@ -15,6 +18,17 @@ export function ConsolaRevisionDocumentos() {
   const [selectedInstructorId, setSelectedInstructorId] = useState<string | null>(null);
   const [instructorDetails, setInstructorDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState("revision");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "cartas") {
+      setActiveTab("cartas");
+    } else if (tab === "revision") {
+      setActiveTab("revision");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchInstructores();
@@ -54,8 +68,16 @@ export function ConsolaRevisionDocumentos() {
   });
 
   return (
-    <div className="flex gap-6 relative h-[600px] overflow-hidden">
-      {/* Left Side: Data Table */}
+    <div className="space-y-6">
+      <Tabs className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger active={activeTab === "revision"} onClick={() => setActiveTab("revision")}>Revisión de Portafolios</TabsTrigger>
+          <TabsTrigger active={activeTab === "cartas"} onClick={() => setActiveTab("cartas")}>Gestor de Cartas</TabsTrigger>
+        </TabsList>
+
+        <TabsContent active={activeTab === "revision"}>
+          <div className="flex gap-6 relative h-[600px] overflow-hidden">
+            {/* Left Side: Data Table */}
       <div className={`flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-[#00304D]/10 overflow-hidden transition-all duration-300 ${selectedInstructorId ? 'w-1/2' : 'w-full'}`}>
         <div className="p-4 border-b flex gap-4">
           <div className="relative flex-1">
@@ -107,7 +129,14 @@ export function ConsolaRevisionDocumentos() {
                       <div className="flex flex-col items-center">
                         <span className="text-xs font-semibold mb-1">{inst.documentosSubidos} / {inst.documentosRequeridos}</span>
                         <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#39A900]" style={{ width: `${(inst.documentosSubidos/inst.documentosRequeridos)*100}%` }}></div>
+                          <div 
+                            className={`h-full transition-all duration-500 ${
+                              (inst.documentosSubidos / inst.documentosRequeridos) === 1 ? 'bg-[#39A900]' :
+                              (inst.documentosSubidos / inst.documentosRequeridos) > 0.4 ? 'bg-amber-500' :
+                              'bg-red-500'
+                            }`} 
+                            style={{ width: `${(inst.documentosSubidos/inst.documentosRequeridos)*100}%` }}
+                          ></div>
                         </div>
                       </div>
                     </td>
@@ -204,6 +233,12 @@ export function ConsolaRevisionDocumentos() {
           )}
         </div>
       )}
+          </div>
+        </TabsContent>
+        <TabsContent active={activeTab === "cartas"}>
+          <GestorSolicitudesCartas />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

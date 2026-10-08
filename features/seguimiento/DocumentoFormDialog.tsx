@@ -56,11 +56,13 @@ export function DocumentoFormDialog({ documento, instituciones, onClose, onSucce
       }
     }
 
+    const institucionId = (formData.get("institucionId") as string) || undefined;
+    
     const data = {
       nombre: formData.get("nombre") as string,
       tipo: formData.get("tipo") as string,
       url: finalUrl,
-      institucionId: formData.get("institucionId") as string || undefined,
+      ...(institucionId ? { institucionId } : {})
     };
 
     try {

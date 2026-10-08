@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { getFichasSelectAction } from "@/actions/fichas.actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
-import { Activity, AlertTriangle, UserX, Loader2, FolderOpen, Users, BookCheck } from "lucide-react";
+import { Activity, AlertTriangle, UserX, Loader2, FolderOpen, Users, BookCheck, Shield } from "lucide-react";
+import { getRiesgosAction } from "@/actions/riesgos.actions";
+import { getAprendizPropioAction } from "@/actions/aprendices.actions";
 
 interface SeguimientoRiesgosConsolidadoProps {
   initialFichaId?: string;
@@ -22,6 +24,10 @@ export function SeguimientoRiesgosConsolidado({ initialFichaId = "", hideSelecto
   
   const [fichas, setFichas] = useState<any[]>([]);
   const [fichaId, setFichaId] = useState(initialFichaId);
+  const [aprendizId, setAprendizId] = useState<string | null>(null);
+
+  const [stats, setStats] = useState({ academico: 0, desercion: 0, general: 0 });
+  const [riesgosList, setRiesgosList] = useState<any[]>([]);
 
   useEffect(() => {
     if (hideSelector && initialFichaId) {
@@ -36,7 +42,39 @@ export function SeguimientoRiesgosConsolidado({ initialFichaId = "", hideSelecto
         }
       }
     });
+    // If aprendiz, load their own aprendizId so we can filter only their risks
+    if (isAprendiz) {
+      getAprendizPropioAction().then(res => {
+        if (res.success && res.data?.id) {
+          setAprendizId(res.data.id);
+        }
+      });
+    }
   }, [isAprendiz, hideSelector, initialFichaId]);
+
+  useEffect(() => {
+    if (fichaId) {
+      const filtros: any = { fichaIds: [fichaId], tamano: 1000 };
+      // If viewing as aprendiz, only load their OWN risks (not other students')
+      if (isAprendiz && aprendizId) {
+        filtros.aprendizId = aprendizId;
+      }
+      getRiesgosAction(filtros).then(res => {
+        if (res.success && res.data?.data) {
+           const items = res.data.data;
+           setRiesgosList(items);
+           setStats({
+             academico: items.filter((i: any) => i.motivo?.toLowerCase().includes("académico") || i.motivo?.toLowerCase().includes("académica") || (i.nivel === "ALTO" && !i.motivo?.toLowerCase().includes("inasistencia"))).length,
+             desercion: items.filter((i: any) => i.motivo?.toLowerCase().includes("deserción") || i.motivo?.toLowerCase().includes("ausentismo") || i.motivo?.toLowerCase().includes("inasistencia")).length,
+             general: items.filter((i: any) => !i.motivo?.toLowerCase().includes("académico") && !i.motivo?.toLowerCase().includes("académica") && !i.motivo?.toLowerCase().includes("deserción") && !i.motivo?.toLowerCase().includes("inasistencia")).length
+           });
+        }
+      });
+    } else {
+      setStats({ academico: 0, desercion: 0, general: 0 });
+      setRiesgosList([]);
+    }
+  }, [fichaId, isAprendiz, aprendizId]);
 
   if (!mounted || status === "loading") {
     return (
@@ -113,7 +151,7 @@ export function SeguimientoRiesgosConsolidado({ initialFichaId = "", hideSelecto
             </CardHeader>
             <CardContent>
               <p className="text-sm text-red-900 mb-4">Aprendices con 2 o más Resultados de Aprendizaje en estado "No Aprobado".</p>
-              <div className="text-3xl font-bold text-red-700">0</div>
+              <div className="text-3xl font-bold text-red-700">{stats.academico}</div>
             </CardContent>
           </Card>
 
@@ -125,7 +163,7 @@ export function SeguimientoRiesgosConsolidado({ initialFichaId = "", hideSelecto
             </CardHeader>
             <CardContent>
               <p className="text-sm text-orange-900 mb-4">Aprendices con ausentismo superior al 15% en las últimas dos semanas.</p>
-              <div className="text-3xl font-bold text-orange-700">0</div>
+              <div className="text-3xl font-bold text-orange-700">{stats.desercion}</div>
             </CardContent>
           </Card>
 
@@ -137,9 +175,63 @@ export function SeguimientoRiesgosConsolidado({ initialFichaId = "", hideSelecto
             </CardHeader>
             <CardContent>
               <p className="text-sm text-blue-900 mb-4">Casos remitidos a Comité de Evaluación y Seguimiento.</p>
-              <div className="text-3xl font-bold text-blue-700">0</div>
+              <div className="text-3xl font-bold text-blue-700">{stats.general}</div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {fichaId && (
+        <div className="mt-8 space-y-4 animate-in fade-in slide-in-from-bottom-4">
+          <h3 className="text-lg font-bold text-slate-800">Detalle de Alertas Activas</h3>
+          {riesgosList.length > 0 ? (
+            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-50 text-slate-600 border-b">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Aprendiz</th>
+                      <th className="px-4 py-3 font-semibold">Nivel de Riesgo</th>
+                      <th className="px-4 py-3 font-semibold">Motivo</th>
+                      <th className="px-4 py-3 font-semibold">Descripción del Riesgo</th>
+                      <th className="px-4 py-3 font-semibold">Fecha Detección</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {riesgosList.map((riesgo: any) => (
+                      <tr key={riesgo.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-medium text-slate-800">
+                          {riesgo.aprendiz?.nombres} {riesgo.aprendiz?.apellidos}
+                          <div className="text-xs text-slate-500 font-normal mt-0.5">{riesgo.aprendiz?.numeroDocumento}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border ${
+                            riesgo.nivel === "ALTO" ? "bg-red-50 text-red-700 border-red-200" :
+                            riesgo.nivel === "MEDIO" ? "bg-orange-50 text-orange-700 border-orange-200" :
+                            "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          }`}>
+                            {riesgo.nivel}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">{riesgo.motivo}</td>
+                        <td className="px-4 py-3 text-slate-600 max-w-sm">
+                          <p className="line-clamp-2" title={riesgo.descripcion}>{riesgo.descripcion}</p>
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
+                          {new Date(riesgo.fechaDeteccion).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="p-8 text-center border border-dashed rounded-xl bg-slate-50 text-slate-500 flex flex-col items-center">
+              <BookCheck className="w-8 h-8 mb-2 text-slate-400" />
+              <p>No hay alertas de riesgo registradas para esta ficha en este momento.</p>
+            </div>
+          )}
         </div>
       )}
     </div>

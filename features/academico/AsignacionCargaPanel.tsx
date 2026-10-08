@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Users, Save } from "lucide-react";
 import { asignarCargasMasivas } from "@/actions/academico.actions";

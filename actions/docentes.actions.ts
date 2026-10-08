@@ -43,8 +43,13 @@ export async function createDocenteAction(data: unknown) {
       return { success: false, error: "Datos inválidos", issues: result.error.errors };
     }
 
+    const dataObj = result.data;
     const docente = await DocenteRepository.create({
-      data: result.data,
+      data: {
+        ...dataObj,
+        telefono: dataObj.telefono || null,
+        profesion: dataObj.profesion || null,
+      },
     });
 
     await logAudit({
@@ -74,9 +79,14 @@ export async function updateDocenteAction(id: string, data: unknown) {
       return { success: false, error: "Datos inválidos", issues: result.error.errors };
     }
 
+    const dataObj = result.data;
     const docente = await DocenteRepository.update({
       where: { id },
-      data: result.data,
+      data: {
+        ...dataObj,
+        telefono: dataObj.telefono || null,
+        profesion: dataObj.profesion || null,
+      },
     });
 
     await logAudit({

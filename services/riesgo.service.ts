@@ -49,6 +49,18 @@ export async function recalcularRiesgoAprendiz(aprendizId: string) {
 
     const totalFallasAcademicas = evaluacionesDeficientes + entregasMalas;
 
+    // 3b. Calcular promedio real desde las notas de EvaluacionAprendiz
+    const evaluacionesConNota = await prisma.evaluacionAprendiz.findMany({
+      where: { aprendizId, nota: { not: null } },
+      select: { nota: true }
+    });
+
+    const promedioAcumulado = evaluacionesConNota.length > 0
+      ? parseFloat(
+          (evaluacionesConNota.reduce((sum, e) => sum + (e.nota ?? 0), 0) / evaluacionesConNota.length).toFixed(2)
+        )
+      : 0;
+
     // 4. Algoritmo de Decisión
     let nuevoRiesgo: NivelRiesgo = NivelRiesgo.BAJO;
     let motivoRiesgo = "";
@@ -65,7 +77,7 @@ export async function recalcularRiesgoAprendiz(aprendizId: string) {
         : `Presenta ${totalFallasAcademicas} falla(s) académica(s).`;
     }
 
-    // 5. Actualizar el Aprendiz
+    // 5. Actualizar el Aprendiz (incluyendo promedioAcumulado real)
     const aprendizActual = await prisma.aprendiz.findUnique({
       where: { id: aprendizId },
       include: { ficha: { include: { instructores: true } } }
@@ -77,9 +89,11 @@ export async function recalcularRiesgoAprendiz(aprendizId: string) {
       where: { id: aprendizId },
       data: {
         porcentajeAsistencia,
+        promedioAcumulado,
         nivelRiesgo: nuevoRiesgo
       }
     });
+
 
     // 6. Generar Alerta y Notificaciones si subió a Riesgo MEDIO o ALTO
     // Solo si el riesgo anterior era menor, o si no tenía una alerta abierta por este motivo

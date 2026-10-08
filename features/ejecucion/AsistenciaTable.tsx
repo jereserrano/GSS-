@@ -49,7 +49,8 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
       a.ficha?.codigo?.toLowerCase().includes(lower) ||
       a.instructor?.nombres?.toLowerCase().includes(lower) ||
       a.instructor?.apellidos?.toLowerCase().includes(lower) ||
-      a.tema?.toLowerCase().includes(lower) ||
+      a.instructor?.apellidos?.toLowerCase().includes(lower) ||
+      a.observaciones?.toLowerCase().includes(lower) ||
       a.estado?.toLowerCase().includes(lower)
     );
   }, [busqueda, asistencias]);
@@ -128,7 +129,6 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
       render: (a) => (
         <div className="flex flex-col">
           <span className="text-sm font-medium">{formatDateShort(a.fecha)}</span>
-          {a.tema && <span className="text-xs text-text-secondary truncate max-w-[150px]">{a.tema}</span>}
         </div>
       )
     },
@@ -136,6 +136,15 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
       key: "instructor",
       header: "Instructor",
       render: (a) => <span className="text-sm text-text-secondary">{a.instructor.nombres} {a.instructor.apellidos}</span>
+    },
+    {
+      key: "motivo",
+      header: "Motivo / Obs.",
+      render: (a) => (
+        <span className="text-xs text-text-secondary line-clamp-2 max-w-[200px]" title={a.observaciones || "Sin observaciones"}>
+          {a.observaciones || "N/A"}
+        </span>
+      )
     },
     {
       key: "asistencia",
@@ -253,8 +262,8 @@ export function AsistenciaTable({ initialData, fichas, instructores, fichaIdFijo
           asistencia={selectedAsistencia}
           fichas={fichas}
           instructores={instructores}
-          fichaIdFijo={fichaIdFijo}
-          instructorIdFijo={instructorIdFijo}
+          {...(fichaIdFijo ? { fichaIdFijo } : {})}
+          {...(instructorIdFijo ? { instructorIdFijo } : {})}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

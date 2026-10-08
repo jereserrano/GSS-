@@ -19,7 +19,7 @@ export async function buscarGlobalmente(query: string) {
     // el aprendiz solo en sus fichas, 
     // y los admins/coordinadores en todas.
 
-    let fichasIds = undefined;
+    let fichasIds: string[] | undefined = undefined;
 
     if (isInstructor) {
       const user = await prisma.user.findUnique({
@@ -62,7 +62,7 @@ export async function buscarGlobalmente(query: string) {
         where: {
           ...aprendizWhere,
           AND: aprendizTerms.length > 0 ? aprendizTerms : undefined
-        },
+        } as any,
         take: 15,
         include: { ficha: { select: { codigo: true } } }
       }),

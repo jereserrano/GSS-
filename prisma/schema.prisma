@@ -434,7 +434,7 @@ model User {
   nombre           String
   email            String     @unique
   passwordHash     String
-  rol              RolUsuario @default(APRENDIZ)
+  rol              String     @default("APRENDIZ")
   institucionId    String? // <-- Nuevo campo para multi-tenancy y prevención de IDOR
   sedeId           String? // <-- Campo para enlazar usuario a una sede específica (ej: APOYO_COORDINACION)
   estado           Estado     @default(ACTIVO)
@@ -442,11 +442,15 @@ model User {
   twoFactorSecret  String?
   twoFactorEnabled Boolean    @default(false)
   last2FADate      DateTime?
+  fotoPerfil       String?    @db.Text
   
   // Integración Google Drive
   googleDriveLinked    Boolean @default(false)
   googleDriveFolderId  String?
   googleRefreshToken   String? @db.Text
+
+  // Firma Digital para Documentos
+  firmaDigitalUrl      String? @db.Text
 
   creadoEn         DateTime   @default(now())
   actualizadoEn    DateTime   @updatedAt
@@ -647,6 +651,13 @@ model ConfiguracionSistema {
   intentosLogin       Int      @default(5)
   diasMaximoExcusa    Int      @default(3) // EX-2: días hábiles máx para radicar una excusa
 
+  // Campos de Marca Blanca (Branding)
+  nombreInstitucion   String   @default("SENA")
+  nombreSoftware      String   @default("GSS - Media Técnica")
+  colorPrincipal      String   @default("#39A900") // Verde SENA
+  colorSecundario     String   @default("#00304D") // Azul SENA
+  logoUrl             String?  @default("/logo-sena.png")
+
   actualizadoEn       DateTime @updatedAt
 
   @@map("configuracion_sistema")
@@ -700,15 +711,15 @@ model ClaseVirtual {
   @@map("clases_virtuales")
 }
 
-enum RolUsuario {
-  ADMINISTRADOR
-  INSTRUCTOR
-  APRENDIZ
-  APOYO_COORDINACION
-  COORDINADOR
-  COORDINADOR_REGIONAL
-  SUBDIRECTOR_REGIONAL
-  COORDINADOR_SEDE
+model Rol {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  descripcion String?  @db.Text
+  permisos    Json?
+  creadoEn    DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  @@map("roles")
 }
 
 model SessionLog {

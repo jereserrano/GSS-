@@ -210,8 +210,8 @@ export function EvaluacionesTable({ initialData, raps, aprendices, fichas, rapId
           raps={raps}
           aprendices={aprendices}
           fichas={fichas}
-          rapIdFijo={rapIdFijo}
-          fichaIdFijo={fichaIdFijo}
+          {...(rapIdFijo ? { rapIdFijo } : {})}
+          {...(fichaIdFijo ? { fichaIdFijo } : {})}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

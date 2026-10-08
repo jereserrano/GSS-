@@ -9,6 +9,7 @@ import { Loader2, Plus, Calendar, FileText, CheckCircle, Clock, Users, BookCheck
 import { useSession } from "next-auth/react";
 import { ActividadFormDialog } from "./ActividadFormDialog";
 import { EntregaFormDialog } from "./EntregaFormDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface GestorActividadesProps {
   initialFichaId?: string;
@@ -33,6 +34,7 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
   // States for expanding an activity
   const [expandedActividadId, setExpandedActividadId] = useState<string | null>(null);
   const [gradingEntrega, setGradingEntrega] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<string>("");
 
   // Fetch Fichas on load
   useEffect(() => {
@@ -172,9 +174,114 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
             )}
           </div>
           
-          {actividades
-            .filter(act => act.nombre.toLowerCase().includes(searchActividad.toLowerCase()))
-            .map((act) => (
+          {(() => {
+            const miEmail = session?.user?.email;
+            
+            // Filter by search string
+            const filteredActividades = actividades.filter(act => 
+              act.nombre.toLowerCase().includes(searchActividad.toLowerCase())
+            );
+
+            // If not apprentice, show instructor/admin smart tabs
+            if (!isAprendiz) {
+              const requiresAttention = filteredActividades.filter(act => 
+                act.entregas?.some((e: any) => e.estado === "PENDIENTE" || e.estado === "TARDIA")
+              );
+              
+              const now = new Date();
+              const activas = filteredActividades.filter(act => {
+                const hasPending = act.entregas?.some((e: any) => e.estado === "PENDIENTE" || e.estado === "TARDIA");
+                const vencimiento = new Date(act.fechaVencimiento || act.fechaFin);
+                return !hasPending && vencimiento >= now;
+              });
+
+              const finalizadas = filteredActividades.filter(act => {
+                const hasPending = act.entregas?.some((e: any) => e.estado === "PENDIENTE" || e.estado === "TARDIA");
+                const vencimiento = new Date(act.fechaVencimiento || act.fechaFin);
+                return !hasPending && vencimiento < now;
+              });
+
+              const currentTab = activeTab || (requiresAttention.length > 0 ? "atencion" : "activas");
+
+              return (
+                <Tabs className="w-full mt-4">
+                  <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsTrigger active={currentTab === "atencion"} onClick={() => setActiveTab("atencion")} className="relative flex items-center justify-center gap-1.5">
+                      Por Calificar
+                      {requiresAttention.length > 0 && (
+                        <span className="bg-red-600 text-white text-[10px] min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center font-bold shadow-md animate-pulse">
+                          {requiresAttention.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger active={currentTab === "activas"} onClick={() => setActiveTab("activas")}>En Curso</TabsTrigger>
+                    <TabsTrigger active={currentTab === "finalizadas"} onClick={() => setActiveTab("finalizadas")}>Finalizadas</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent active={currentTab === "atencion"} className="space-y-4">
+                    {requiresAttention.length > 0 ? renderActividadesList(requiresAttention) : (
+                      <div className="text-center py-8 text-slate-500 border rounded-lg bg-green-50/50">¡Todo al día! No hay entregas pendientes de calificación.</div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent active={currentTab === "activas"} className="space-y-4">
+                    {activas.length > 0 ? renderActividadesList(activas) : (
+                      <div className="text-center py-8 text-slate-500 border rounded-lg bg-slate-50">No hay actividades activas en este momento.</div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent active={currentTab === "finalizadas"} className="space-y-4">
+                    {finalizadas.length > 0 ? renderActividadesList(finalizadas) : (
+                      <div className="text-center py-8 text-slate-500 border rounded-lg bg-slate-50">Aún no hay actividades finalizadas.</div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              );
+            }
+
+            // If apprentice, split into Pendientes and Entregadas
+            const pendientes = filteredActividades.filter(act => {
+              const miEntrega = act.entregas?.find((e: any) => e.aprendiz?.user?.email === miEmail);
+              // It's pending if there's no submission or the submission is "DEVUELTA"
+              return !miEntrega || miEntrega.estado === "NO_APROBADA" || miEntrega.estado === "DEVUELTA";
+            });
+
+            const entregadas = filteredActividades.filter(act => {
+              const miEntrega = act.entregas?.find((e: any) => e.aprendiz?.user?.email === miEmail);
+              // It's delivered if there's a submission and it's not rejected
+              return miEntrega && miEntrega.estado !== "NO_APROBADA" && miEntrega.estado !== "DEVUELTA";
+            });
+
+            const currentTab = activeTab || "pendientes";
+
+            return (
+              <Tabs className="w-full mt-4">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger active={currentTab === "pendientes"} onClick={() => setActiveTab("pendientes")}>Pendientes por Entregar</TabsTrigger>
+                  <TabsTrigger active={currentTab === "entregadas"} onClick={() => setActiveTab("entregadas")}>Historial de Entregas</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent active={currentTab === "pendientes"} className="space-y-4">
+                  {pendientes.length > 0 ? renderActividadesList(pendientes) : (
+                    <div className="text-center py-8 text-slate-500 border rounded-lg bg-slate-50">No tienes actividades pendientes. ¡Excelente trabajo!</div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent active={currentTab === "entregadas"} className="space-y-4">
+                  {entregadas.length > 0 ? renderActividadesList(entregadas) : (
+                    <div className="text-center py-8 text-slate-500 border rounded-lg bg-slate-50">Aún no has entregado ninguna actividad.</div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            );
+
+            function renderActividadesList(list: any[]) {
+              return list.map((act) => {
+                const totalEntregas = act.entregas?.length || 0;
+                const pendientesEval = act.entregas?.filter((e: any) => e.estado === "PENDIENTE" || e.estado === "TARDIA").length || 0;
+                const miEntrega = isAprendiz ? act.entregas?.find((e: any) => e.aprendiz?.user?.email === miEmail) : null;
+
+                return (
             <Card key={act.id} className="overflow-hidden border shadow-sm">
               <div 
                 className="p-4 bg-white cursor-pointer hover:bg-gray-50 flex items-center justify-between"
@@ -189,10 +296,24 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 mt-1">
                       <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> Vence: {new Date(act.fechaVencimiento || act.fechaFin).toLocaleDateString()}</span>
                       <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> Estado: {act.estado}</span>
-                      {act.resultadoAprendizaje && (
-                        <span className="flex items-center gap-1 text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-100 font-medium">
-                          RA: {act.resultadoAprendizaje.codigo}
+                      
+                      {!isAprendiz && (
+                        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded border font-medium bg-slate-50 text-slate-600">
+                          📦 {totalEntregas} entregas {pendientesEval > 0 && <span className="text-red-500 font-bold ml-1">({pendientesEval} sin calificar)</span>}
                         </span>
+                      )}
+
+                      {act.resultadoAprendizaje && (
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1 text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-100 font-medium shrink-0">
+                            RA: {act.resultadoAprendizaje.codigo}
+                          </span>
+                          {act.resultadoAprendizaje.competencia && (
+                            <span className="text-[11px] text-purple-600/80 font-medium line-clamp-1 max-w-[300px]" title={act.resultadoAprendizaje.competencia.nombre}>
+                              {act.resultadoAprendizaje.competencia.nombre}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -233,10 +354,50 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
                     </h4>
                     
                     {isAprendiz ? (
-                      <div className="bg-white p-6 rounded-lg border shadow-sm flex flex-col items-center text-center">
-                         <p className="text-gray-500 mb-4">Haz clic abajo para subir tu evidencia para esta actividad.</p>
-                         <EntregaFormDialog actividadId={act.id} inlineMode={true} onClose={() => {}} onSuccess={() => fetchActividades(fichaId)} />
-                      </div>
+                      miEntrega && miEntrega.estado !== "NO_APROBADA" && miEntrega.estado !== "DEVUELTA" ? (
+                        <div className="bg-white p-6 rounded-lg border shadow-sm flex flex-col items-start text-left animate-in fade-in">
+                           <div className="flex items-center gap-2 mb-4">
+                              <CheckCircle className="w-6 h-6 text-green-600" />
+                              <h5 className="font-semibold text-green-700 text-lg">Evidencia Subida Exitosamente</h5>
+                           </div>
+                           <div className="w-full bg-slate-50 p-4 rounded-md border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                             <div>
+                               <p className="text-sm text-slate-500 mb-1">Estado de Calificación</p>
+                               <span className="inline-block px-3 py-1 bg-white border border-slate-200 rounded-full text-sm font-bold text-slate-700">
+                                 {miEntrega.estado}
+                               </span>
+                             </div>
+                             {miEntrega.urlArchivo && (
+                               <a href={miEntrega.urlArchivo} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-md text-sm font-medium transition-colors">
+                                  <FileText size={16} /> Ver evidencia entregada
+                               </a>
+                             )}
+                           </div>
+                           
+                           {miEntrega.calificacion && (
+                             <div className="mb-4">
+                               <p className="text-sm text-slate-500">Nota / Calificación asignada:</p>
+                               <p className="text-xl font-black text-slate-800">{miEntrega.calificacion}</p>
+                             </div>
+                           )}
+
+                           {miEntrega.retroalimentacion && (
+                             <div className="mt-2 p-4 bg-yellow-50 rounded-lg border border-yellow-200 w-full">
+                               <span className="text-xs font-bold text-yellow-800 uppercase tracking-wider">Retroalimentación del Instructor:</span>
+                               <p className="text-sm text-yellow-900 mt-2 whitespace-pre-wrap">{miEntrega.retroalimentacion}</p>
+                             </div>
+                           )}
+                        </div>
+                      ) : (
+                        <div className="bg-white p-6 rounded-lg border shadow-sm flex flex-col items-center text-center">
+                           <p className="text-gray-500 mb-4">
+                             {miEntrega?.estado === "NO_APROBADA" || miEntrega?.estado === "DEVUELTA" 
+                               ? "Tu entrega anterior requiere mejoras o fue devuelta. Por favor sube la evidencia corregida:" 
+                               : "Haz clic abajo para subir tu evidencia para esta actividad."}
+                           </p>
+                           <EntregaFormDialog actividadId={act.id} inlineMode={true} onClose={() => {}} onSuccess={() => fetchActividades(fichaId)} />
+                        </div>
+                      )
                     ) : (
                       <div className="bg-white p-4 rounded-lg border text-sm text-gray-500">
                         {act.entregas && act.entregas.length > 0 ? (
@@ -260,7 +421,10 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
                 </div>
               )}
             </Card>
-          ))}
+                );
+              });
+            }
+          })()}
         </div>
       )}
 

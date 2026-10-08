@@ -184,8 +184,8 @@ export async function disable2FAForUserAction(userId: string) {
     const user = await getCurrentUser();
     if (!user?.email) return { success: false, error: 'No autenticado' };
 
-    const currentUser = await prisma.user.findUnique({ where: { email: user.email }, include: { rol: true } });
-    if (!currentUser?.rol?.nombre?.toUpperCase().includes('ADMIN')) {
+    const currentUser = await prisma.user.findUnique({ where: { email: user.email } });
+    if (!(typeof currentUser?.rol === 'string' && currentUser.rol.toUpperCase().includes('ADMIN'))) {
        return { success: false, error: 'No tienes permisos' };
     }
 

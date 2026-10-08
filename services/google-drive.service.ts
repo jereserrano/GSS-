@@ -109,6 +109,7 @@ export class GoogleDriveService {
     });
 
     const folderId = folder.data.id;
+    if (!folderId) throw new Error("No se pudo obtener el ID de la carpeta creada");
 
     // Guardamos el ID de la carpeta en la base de datos
     await prisma.user.update({

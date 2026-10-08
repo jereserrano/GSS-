@@ -294,7 +294,7 @@ export function EntregasTable({ initialData, actividades, aprendices, fichaIdFij
           entrega={selectedEntrega}
           actividades={actividades}
           aprendices={aprendices}
-          fichaIdFijo={fichaIdFijo}
+          {...(fichaIdFijo ? { fichaIdFijo } : {})}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

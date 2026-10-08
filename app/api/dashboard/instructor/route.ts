@@ -182,12 +182,12 @@ export async function GET(request: NextRequest) {
         });
         
         heatmapData.push({
-          actividad: act.nombre,
+          actividad: (act.nombre || 'Actividad').substring(0, 30),
           entregas: diasSemana.map((dia, idx) => ({ dia, cantidad: entregasPorDia[idx] }))
         });
       }
 
-      const fechaV = new Date(act.fechaVencimiento);
+      const fechaV = act.fechaVencimiento ? new Date(act.fechaVencimiento) : new Date();
       const weekKey = `${fechaV.toLocaleString('es', { month: 'short' })} Sem ${Math.ceil(fechaV.getDate()/7)}`;
       
       if (!entregasPorSemana.has(weekKey)) {

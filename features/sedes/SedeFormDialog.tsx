@@ -25,6 +25,14 @@ export function SedeFormDialog({ sede, instituciones, onClose }: SedeFormDialogP
   const [loading, setLoading] = useState(false);
   const isEditing = !!sede;
 
+  let defaultTipo = "Coordinador";
+  let defaultNombre = sede?.coordinador || "";
+  if (sede?.coordinador?.includes(": ")) {
+    const parts = sede.coordinador.split(": ");
+    defaultTipo = parts[0];
+    defaultNombre = parts[1];
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -36,10 +44,10 @@ export function SedeFormDialog({ sede, instituciones, onClose }: SedeFormDialogP
       direccion:      formData.get("direccion") as string,
       barrio:         formData.get("barrio") as string,
       municipio:      formData.get("municipio") as string,
-      esPrincipal:    formData.get("esPrincipal") as string,
-      coordinador:    formData.get("coordinador") as string,
+      esPrincipal:    formData.get("esPrincipal") === "true",
+      coordinador:    formData.get("coordinador") ? `${formData.get("tipoEncargado")}: ${formData.get("coordinador")}` : null,
       telefono:       formData.get("telefono") as string,
-      estado:         formData.get("estado") as string,
+      estado:         (formData.get("estado") as "ACTIVO" | "INACTIVO") || "ACTIVO",
     };
 
     try {
@@ -118,16 +126,23 @@ export function SedeFormDialog({ sede, instituciones, onClose }: SedeFormDialogP
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-text-primary">Coordinador</label>
-              <Input name="coordinador" defaultValue={sede?.coordinador} placeholder="Nombre del coordinador" />
+              <label className="text-sm font-medium text-text-primary">Cargo del Encargado</label>
+              <select name="tipoEncargado" defaultValue={defaultTipo} className={selectClass}>
+                <option value="Coordinador">Coordinador</option>
+                <option value="Apoyo de Coordinación">Apoyo de Coordinación</option>
+              </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-text-primary">Teléfono</label>
-              <Input name="telefono" defaultValue={sede?.telefono} placeholder="300 000 0000" />
+              <label className="text-sm font-medium text-text-primary">Nombre de la persona</label>
+              <Input name="coordinador" defaultValue={defaultNombre} placeholder="Nombre del coordinador o apoyo" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text-primary">Teléfono</label>
+              <Input name="telefono" defaultValue={sede?.telefono} placeholder="300 000 0000" />
+            </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-text-primary">¿Es sede principal?</label>
               <select name="esPrincipal" defaultValue={sede?.esPrincipal ? "true" : "false"} className={selectClass}>

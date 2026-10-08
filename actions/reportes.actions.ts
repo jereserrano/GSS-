@@ -79,12 +79,33 @@ export async function getAuditLogsAction(filtros: any = {}) {
   }
 }
 
+/** Helper para obtener las fichas permitidas del usuario actual */
+async function getReporteFichaIds() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) throw new Error("No autenticado");
+  const user = await prisma.user.findUnique({ where: { email: session.user.email }, include: { instructor: true } });
+  if (!user) throw new Error("Usuario no encontrado");
+  
+  const rol = user.rol?.toUpperCase() || "";
+  if (rol === "INSTRUCTOR" && user.instructor) {
+    const fichas = await prisma.instructorFicha.findMany({ where: { instructorId: user.instructor.id } });
+    return { restricted: true, ids: fichas.map(f => f.fichaId), userId: user.id };
+  }
+  return { restricted: false, ids: [], userId: user.id };
+}
+
 /** Genera datos para un reporte y lo devuelve como CSV string */
 export async function generarReporteAprendicesCSV(filtros?: { fichaId?: string }) {
   try {
-    const whereClause = filtros?.fichaId && filtros.fichaId !== "all" 
-      ? { fichaId: filtros.fichaId } 
-      : {};
+    const auth = await getReporteFichaIds();
+    const whereClause: any = {};
+    
+    if (filtros?.fichaId && filtros.fichaId !== "all") {
+      if (auth.restricted && !auth.ids.includes(filtros.fichaId)) throw new Error("No tienes acceso a esta ficha");
+      whereClause.fichaId = filtros.fichaId;
+    } else if (auth.restricted) {
+      whereClause.fichaId = { in: auth.ids };
+    }
 
     const aprendices = await AprendizRepository.findMany({
       where: whereClause,
@@ -106,7 +127,7 @@ export async function generarReporteAprendicesCSV(filtros?: { fichaId?: string }
       orderBy: [{ ficha: { codigo: "asc" } }, { apellidos: "asc" }],
     });
 
-    const header = "Documento,Nombres,Apellidos,Estado,Nivel Riesgo,% Asistencia,Ficha,Programa,Institución";
+    const header = "Documento;Nombres;Apellidos;Estado;Nivel Riesgo;% Asistencia;Ficha;Programa;Institución";
     const rows = aprendices.map((a) =>
       [
         a.numeroDocumento,
@@ -114,26 +135,41 @@ export async function generarReporteAprendicesCSV(filtros?: { fichaId?: string }
         a.apellidos,
         a.estado,
         a.nivelRiesgo,
-        a.porcentajeAsistencia.toFixed(1),
+        a.porcentajeAsistencia.toFixed(1).replace(".", ","),
         a.ficha?.codigo || "",
         a.ficha?.programa?.nombre || "",
         a.ficha?.institucion?.nombre || "",
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(",")
+        .join(";")
     );
 
-    return { success: true, csv: [header, ...rows].join("\n") };
+    const csvContent = "\uFEFF" + [header, ...rows].join("\n");
+
+    await logAudit({
+      accion: "EXPORTAR",
+      modulo: "REPORTES",
+      descripcion: `Descargó reporte de Aprendices (${aprendices.length} registros)`,
+      usuarioId: auth.userId,
+    });
+
+    return { success: true, csv: csvContent };
   } catch (error: any) {
-    return { success: false, error: "Error al generar reporte" };
+    return { success: false, error: error.message || "Error al generar reporte" };
   }
 }
 
 export async function generarReporteRiesgosCSV(filtros?: { fichaId?: string }) {
   try {
-    const whereClause = filtros?.fichaId && filtros.fichaId !== "all" 
-      ? { aprendiz: { fichaId: filtros.fichaId } } 
-      : {};
+    const auth = await getReporteFichaIds();
+    const whereClause: any = {};
+
+    if (filtros?.fichaId && filtros.fichaId !== "all") {
+      if (auth.restricted && !auth.ids.includes(filtros.fichaId)) throw new Error("No tienes acceso a esta ficha");
+      whereClause.aprendiz = { fichaId: filtros.fichaId };
+    } else if (auth.restricted) {
+      whereClause.aprendiz = { fichaId: { in: auth.ids } };
+    }
 
     const alertas = await AlertaRiesgoRepository.findMany({
       where: whereClause,
@@ -150,7 +186,7 @@ export async function generarReporteRiesgosCSV(filtros?: { fichaId?: string }) {
       orderBy: [{ nivel: "desc" }, { fechaDeteccion: "desc" }],
     });
 
-    const header = "Documento,Aprendiz,Ficha,Institución,Motivo,Nivel,Fecha,Gestionada,Observaciones";
+    const header = "Documento;Aprendiz;Ficha;Institución;Motivo;Nivel;Fecha;Gestionada;Observaciones";
     const rows = alertas.map((a) =>
       [
         a.aprendiz.numeroDocumento,
@@ -164,20 +200,34 @@ export async function generarReporteRiesgosCSV(filtros?: { fichaId?: string }) {
         a.observaciones || "",
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(",")
+        .join(";")
     );
 
-    return { success: true, csv: [header, ...rows].join("\n") };
+    const csvContent = "\uFEFF" + [header, ...rows].join("\n");
+
+    await logAudit({
+      accion: "EXPORTAR",
+      modulo: "REPORTES",
+      descripcion: `Descargó reporte de Riesgos (${alertas.length} registros)`,
+      usuarioId: auth.userId,
+    });
+
+    return { success: true, csv: csvContent };
   } catch (error: any) {
-    return { success: false, error: "Error al generar reporte" };
+    return { success: false, error: error.message || "Error al generar reporte" };
   }
 }
 
 export async function generarReporteAsistenciaCSV(filtros?: { fichaId?: string, fechaInicio?: string, fechaFin?: string }) {
   try {
+    const auth = await getReporteFichaIds();
     let whereClause: any = {};
+    
     if (filtros?.fichaId && filtros.fichaId !== "all") {
+      if (auth.restricted && !auth.ids.includes(filtros.fichaId)) throw new Error("No tienes acceso a esta ficha");
       whereClause.fichaId = filtros.fichaId;
+    } else if (auth.restricted) {
+      whereClause.fichaId = { in: auth.ids };
     }
     if (filtros?.fechaInicio || filtros?.fechaFin) {
       whereClause.fecha = {};
@@ -200,7 +250,7 @@ export async function generarReporteAsistenciaCSV(filtros?: { fichaId?: string, 
       orderBy: [{ ficha: { codigo: "asc" } }, { fecha: "desc" }],
     });
 
-    const header = "Ficha,Institución,Programa,Instructor,Fecha,Presentes,Faltas,Excusas,Estado";
+    const header = "Ficha;Institución;Programa;Instructor;Fecha;Presentes;Faltas;Excusas;Estado";
     const rows = registros.map((r) =>
       [
         r.ficha?.codigo || "",
@@ -214,20 +264,35 @@ export async function generarReporteAsistenciaCSV(filtros?: { fichaId?: string, 
         r.estado,
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(",")
+        .join(";")
     );
 
-    return { success: true, csv: [header, ...rows].join("\n") };
+    const csvContent = "\uFEFF" + [header, ...rows].join("\n");
+
+    await logAudit({
+      accion: "EXPORTAR",
+      modulo: "REPORTES",
+      descripcion: `Descargó reporte de Asistencia (${registros.length} registros)`,
+      usuarioId: auth.userId,
+    });
+
+    return { success: true, csv: csvContent };
   } catch (error: any) {
-    return { success: false, error: "Error al generar reporte de asistencia" };
+    return { success: false, error: error.message || "Error al generar reporte de asistencia" };
   }
 }
 
 export async function generarReporteEvaluacionesCSV(filtros?: { fichaId?: string }) {
   try {
-    const whereClause = filtros?.fichaId && filtros.fichaId !== "all"
-      ? { aprendiz: { fichaId: filtros.fichaId } }
-      : {};
+    const auth = await getReporteFichaIds();
+    const whereClause: any = {};
+
+    if (filtros?.fichaId && filtros.fichaId !== "all") {
+      if (auth.restricted && !auth.ids.includes(filtros.fichaId)) throw new Error("No tienes acceso a esta ficha");
+      whereClause.aprendiz = { fichaId: filtros.fichaId };
+    } else if (auth.restricted) {
+      whereClause.aprendiz = { fichaId: { in: auth.ids } };
+    }
 
     const evaluaciones = await EvaluacionAprendizRepository.findMany({
       where: whereClause,
@@ -253,7 +318,7 @@ export async function generarReporteEvaluacionesCSV(filtros?: { fichaId?: string
       orderBy: [{ aprendiz: { ficha: { codigo: "asc" } } }, { aprendiz: { apellidos: "asc" } }],
     });
 
-    const header = "Ficha,Institución,Documento,Aprendiz,Competencia,Resultado de Aprendizaje,Juicio Valorativo,Fecha Evaluación";
+    const header = "Ficha;Institución;Documento;Aprendiz;Competencia;Resultado de Aprendizaje;Juicio Valorativo;Fecha Evaluación";
     const rows = evaluaciones.map((e) =>
       [
         e.aprendiz?.ficha?.codigo || "",
@@ -266,12 +331,21 @@ export async function generarReporteEvaluacionesCSV(filtros?: { fichaId?: string
         e.fecha ? new Date(e.fecha).toLocaleDateString("es-CO") : "Pendiente",
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(",")
+        .join(";")
     );
 
-    return { success: true, csv: [header, ...rows].join("\n") };
+    const csvContent = "\uFEFF" + [header, ...rows].join("\n");
+
+    await logAudit({
+      accion: "EXPORTAR",
+      modulo: "REPORTES",
+      descripcion: `Descargó reporte de Evaluaciones (${evaluaciones.length} registros)`,
+      usuarioId: auth.userId,
+    });
+
+    return { success: true, csv: csvContent };
   } catch (error: any) {
-    return { success: false, error: "Error al generar reporte de evaluaciones" };
+    return { success: false, error: error.message || "Error al generar reporte de evaluaciones" };
   }
 }
 

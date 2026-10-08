@@ -43,8 +43,8 @@ export async function enviarMensajeAction(data: {
           emisorId: session.user.id,
           esGlobal: true,
           contenido,
-          replyToId: data.replyToId,
-          adjuntoUrl: data.adjuntoUrl,
+          replyToId: data.replyToId || null,
+          adjuntoUrl: data.adjuntoUrl || null,
         },
       });
 
@@ -77,8 +77,8 @@ export async function enviarMensajeAction(data: {
         receptorId,
         esGlobal: false,
         contenido,
-        replyToId: data.replyToId,
-        adjuntoUrl: data.adjuntoUrl,
+        replyToId: data.replyToId || null,
+        adjuntoUrl: data.adjuntoUrl || null,
         leido: false,
       },
     });

@@ -140,6 +140,7 @@ export const authOptions: AuthOptions = {
           rolName: user.rol,
           hierarchyLevel,
           twoFactorEnabled: user.twoFactorEnabled,
+          fotoPerfil: user.fotoPerfil,
         };
       },
     }),
@@ -153,9 +154,10 @@ export const authOptions: AuthOptions = {
         token.rolName = user.rolName;
         token.hierarchyLevel = user.hierarchyLevel;
         token.id = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        token.twoFactorEnabled = (user as any).twoFactorEnabled;
+        token.name = user.name || null;
+        token.email = user.email || null;
+        token.twoFactorEnabled = !!(user as any).twoFactorEnabled;
+        token.fotoPerfil = (user as any).fotoPerfil || null;
       }
       // Actualización de sesión desde el cliente: SOLO campos seguros, NUNCA role/hierarchyLevel
       if (trigger === "update" && session) {
@@ -164,6 +166,9 @@ export const authOptions: AuthOptions = {
         }
         if (session.twoFactorEnabled !== undefined) {
           token.twoFactorEnabled = session.twoFactorEnabled;
+        }
+        if (session.fotoPerfil !== undefined) {
+          token.fotoPerfil = session.fotoPerfil;
         }
       }
       return token;
@@ -175,7 +180,8 @@ export const authOptions: AuthOptions = {
         session.user.rolName = token.rolName;
         session.user.hierarchyLevel = token.hierarchyLevel;
         session.user.id = token.id;
-        session.user.twoFactorEnabled = token.twoFactorEnabled;
+        session.user.twoFactorEnabled = !!token.twoFactorEnabled;
+        session.user.fotoPerfil = (token.fotoPerfil as string) || null;
         if (token.name) session.user.name = token.name;
         if (token.email) session.user.email = token.email;
       }

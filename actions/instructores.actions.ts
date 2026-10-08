@@ -124,7 +124,7 @@ export async function updateInstructor(id: string, data: z.infer<typeof instruct
         email: data.email,
         telefono: data.telefono || null,
         profesion: data.profesion || null,
-        estado: data.estado,
+        estado: data.estado as any,
       },
     });
 

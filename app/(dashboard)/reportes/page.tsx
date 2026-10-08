@@ -22,7 +22,9 @@ export default async function ReportesPage() {
       include: { instructor: true }
     });
 
-    if (user?.rol?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
+    const rol = user?.rol?.toUpperCase() || "";
+
+    if (rol === "INSTRUCTOR" && user?.instructor) {
       const instructorFichas = await prisma.instructorFicha.findMany({
         where: { instructorId: user.instructor.id },
         include: { ficha: { include: { programa: { select: { nombre: true } } } } }
@@ -31,6 +33,17 @@ export default async function ReportesPage() {
         id: f.ficha.id,
         codigo: f.ficha.codigo,
         programa: f.ficha.programa
+      }));
+    } else if (["ADMINISTRADOR", "COORDINADOR", "APOYO_COORDINACION"].includes(rol) || rol.includes("ADMIN")) {
+      const todasFichas = await prisma.ficha.findMany({
+        where: { estado: "ACTIVO" },
+        include: { programa: { select: { nombre: true } } },
+        orderBy: { codigo: "asc" }
+      });
+      fichas = todasFichas.map(f => ({
+        id: f.id,
+        codigo: f.codigo,
+        programa: f.programa
       }));
     }
   }

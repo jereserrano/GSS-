@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-declare const self: ServiceWorkerGlobalScope;
+declare const self: any;
 
 // Nunca cachear rutas de API (como NextAuth) para evitar el error de JSON.parse
 const noApiCache: RuntimeCaching = {

@@ -32,7 +32,7 @@ export default async function AprendicesFichaPage({ params, searchParams }: { pa
     getAprendicesAction({ 
       pagina: 1, 
       tamano: 10,
-      busqueda: (await searchParams).busqueda,
+      ...((await searchParams).busqueda ? { busqueda: (await searchParams).busqueda } : {}),
       fichaId: ficha.id
     }),
     prisma.ficha.findMany({

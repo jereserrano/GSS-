@@ -6,8 +6,14 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Check, X, ShieldAlert, Save } from "lucide-react";
-import { guardarAsistenciaMasiva } from "@/actions/asistencia.actions";
+import { Check, X, ShieldAlert, Save, RotateCcw } from "lucide-react";
+import { guardarAsistenciaMasiva, getAsistenciasAction } from "@/actions/asistencia.actions";
+
+const getLocalTodayDate = () => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().split('T')[0] as string;
+};
 
 interface Aprendiz {
   id: string;
@@ -50,7 +56,10 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
 
   const [fichaId, setFichaId] = useState(fichaIdFijo || "");
   const [instructorId, setInstructorId] = useState(instructorPreseleccionado?.id || currentInstructorRecord?.id || "");
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(getLocalTodayDate());
+  const [motivoRetraso, setMotivoRetraso] = useState("");
+  const isFechaPasada = (fecha || "") < getLocalTodayDate();
+  const [initialAsistencias, setInitialAsistencias] = useState<Record<string, "PRESENTE" | "FALLA" | "EXCUSA">>({});
   
   useEffect(() => {
     if (currentInstructorRecord && !instructorId) {
@@ -78,17 +87,51 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
 
   const selectedFicha = useMemo(() => fichas.find(f => f.id === fichaId), [fichas, fichaId]);
 
-  // Cuando se selecciona una ficha, inicializamos a todos como PRESENTES
+  useEffect(() => {
+    if (fichaId && fecha && selectedFicha) {
+      const cargarAsistencia = async () => {
+        setLoading(true);
+        const res = await getAsistenciasAction({ fichaId, tamano: 100 });
+        if (res.success && res.data?.data) {
+          const startDate = new Date(`${fecha}T00:00:00.000Z`).getTime();
+           const match: any = res.data.data.find((a: any) => new Date(a.fecha).getTime() === startDate);
+           if (match && match.detalles && match.detalles.length > 0) {
+              const loadedAsist: Record<string, "PRESENTE" | "FALLA" | "EXCUSA"> = {};
+              const loadedObs: Record<string, string> = {};
+              match.detalles.forEach((d: any) => {
+                 loadedAsist[d.aprendizId] = d.estado;
+                 if (d.observaciones) loadedObs[d.aprendizId] = d.observaciones;
+              });
+              setAsistencias(loadedAsist);
+              setObservaciones(loadedObs);
+              setInitialAsistencias(loadedAsist);
+              
+              if (match.tema && typeof match.tema === 'string' && match.tema.includes("Motivo:")) {
+                const parts = match.tema.split("Motivo:");
+                if (parts.length > 1) setMotivoRetraso(parts[1].trim());
+              } else {
+                setMotivoRetraso("");
+              }
+              
+              toast.info("Asistencia previa cargada. Puede editarla.");
+           } else {
+              const initial: Record<string, "PRESENTE" | "FALLA" | "EXCUSA"> = {};
+              selectedFicha.aprendices.forEach((a: any) => initial[a.id] = "PRESENTE");
+              setAsistencias(initial);
+              setObservaciones({});
+              setInitialAsistencias(initial);
+              setMotivoRetraso("");
+           }
+        }
+        setLoading(false);
+      };
+      cargarAsistencia();
+    }
+  }, [fichaId, fecha, selectedFicha]);
+
   const handleFichaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
     setFichaId(id);
-    const ficha = fichas.find(f => f.id === id);
-    if (ficha) {
-      const initial: Record<string, "PRESENTE" | "FALLA" | "EXCUSA"> = {};
-      ficha.aprendices.forEach(a => initial[a.id] = "PRESENTE");
-      setAsistencias(initial);
-      setObservaciones({});
-    }
   };
 
   const setEstado = (aprendizId: string, estado: "PRESENTE" | "FALLA" | "EXCUSA") => {
@@ -106,6 +149,11 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
       return;
     }
 
+    if (isFechaPasada && !motivoRetraso) {
+      toast.error("Debe especificar el motivo por el cual toma la asistencia de un día anterior.");
+      return;
+    }
+
     setLoading(true);
 
     const detalles = selectedFicha.aprendices.map(a => ({
@@ -118,6 +166,7 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
       fichaId,
       instructorId,
       fecha,
+      tema: isFechaPasada ? `Registro tardío. Motivo: ${motivoRetraso}` : undefined,
       detalles
     });
 
@@ -169,8 +218,21 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">Fecha de Sesión</label>
-          <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
+          <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required max={getLocalTodayDate()} />
         </div>
+        
+        {isFechaPasada && (
+          <div className="md:col-span-3 space-y-2 animate-in fade-in">
+            <label className="text-sm font-medium text-red-600">Motivo de registro tardío *</label>
+            <Input 
+              value={motivoRetraso} 
+              onChange={(e) => setMotivoRetraso(e.target.value)} 
+              placeholder="Especifique por qué está tomando la asistencia de un día anterior..."
+              className="border-red-200 focus:ring-red-500 bg-red-50/50"
+              required 
+            />
+          </div>
+        )}
       </div>
 
       {/* Grid de Aprendices */}
@@ -181,19 +243,32 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
               <h3 className="font-semibold text-text-primary text-lg">Listado de Aprendices ({selectedFicha.aprendices.length})</h3>
               <p className="text-sm text-text-secondary">Marque la inasistencia o excusa si corresponde.</p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                const updated: Record<string, "PRESENTE" | "FALLA" | "EXCUSA"> = {};
-                selectedFicha.aprendices.forEach(a => updated[a.id] = "PRESENTE");
-                setAsistencias(updated);
-              }}
-              className="hidden sm:flex text-green-600 border-green-200 hover:bg-green-50"
-            >
-              <Check className="w-4 h-4 mr-1" />
-              Marcar todos como Presente
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setAsistencias({...initialAsistencias});
+                }}
+                className="hidden sm:flex text-blue-600 border-blue-200 hover:bg-blue-50"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Restaurar
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  const updated: Record<string, "PRESENTE" | "FALLA" | "EXCUSA"> = {};
+                  selectedFicha.aprendices.forEach(a => updated[a.id] = "PRESENTE");
+                  setAsistencias(updated);
+                }}
+                className="hidden sm:flex text-green-600 border-green-200 hover:bg-green-50"
+              >
+                <Check className="w-4 h-4 mr-1" />
+                Marcar todos como Presente
+              </Button>
+            </div>
           </div>
 
           {/* Botón para móvil */}

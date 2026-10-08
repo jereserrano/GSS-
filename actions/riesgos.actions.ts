@@ -6,8 +6,11 @@ import { TransactionRepository } from "@/repositories/transaction.repository";
 import { alertaSchema } from "@/schemas";
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
-import { logAudit } from "./reportes.actions";
+import { logAudit } from "@/lib/audit.service";
 import { requireRole } from "@/lib/auth-helpers";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export async function getRiesgosAction(filtros: any = {}) {
   try {
@@ -15,7 +18,29 @@ export async function getRiesgosAction(filtros: any = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
-    const where = {
+    // --- SECURITY: if the caller is an APRENDIZ, ALWAYS restrict to their OWN records only ---
+    // This cannot be bypassed from the client side.
+    const session = await getServerSession(authOptions);
+    const rol = session?.user?.role?.toUpperCase();
+    let forcedAprendizId: string | null = null;
+
+    if (rol === "APRENDIZ" && session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true }
+      });
+      if (userRecord) {
+        const aprendizRecord = await prisma.aprendiz.findUnique({
+          where: { userId: userRecord.id },
+          select: { id: true }
+        });
+        if (aprendizRecord) {
+          forcedAprendizId = aprendizRecord.id;
+        }
+      }
+    }
+
+    const where: any = {
       ...(filtros.busqueda ? {
         OR: [
           { aprendiz: { nombres: { contains: filtros.busqueda } } },
@@ -29,6 +54,12 @@ export async function getRiesgosAction(filtros: any = {}) {
 
     if (filtros.fichaIds && filtros.fichaIds.length > 0) {
       where.aprendiz = { ...where.aprendiz, fichaId: { in: filtros.fichaIds } };
+    }
+
+    // Force aprendiz filter: if APRENDIZ role, use their own ID (ignore any client-supplied value)
+    const effectiveAprendizId = forcedAprendizId ?? filtros.aprendizId ?? null;
+    if (effectiveAprendizId) {
+      where.aprendizId = effectiveAprendizId;
     }
 
     const [data, total] = await TransactionRepository.$transaction([
@@ -62,8 +93,7 @@ export async function createRiesgo(data: any) {
   try {
     const parsed = alertaSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
-    const userId = await getSessionUserId();
-    const user = await requireRole("ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR");
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"] as any);
     const riesgo = await AlertaRiesgoRepository.create({
       data: {
         aprendizId: data.aprendizId,
@@ -75,15 +105,13 @@ export async function createRiesgo(data: any) {
       },
     });
 
-    
     await logAudit({
-      userId,
+      userId: user.id,
       modulo: "Riesgos",
       accion: "CREAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Alerta registrada para aprendiz ID: ${data.aprendizId}`,
     });
     revalidatePath("/riesgos");
-    await logAudit({ accion: "CREAR", modulo: "RIESGOS", descripcion: `Alerta registrada para aprendiz ID: ${data.aprendizId}`, usuarioId: user.id });
     return { success: true, riesgo };
   } catch (error: any) {
     console.error("Error creating riesgo:", error);
@@ -95,8 +123,7 @@ export async function updateRiesgo(id: string, data: any) {
   try {
     const parsed = alertaSchema.safeParse(data);
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
-    const userId = await getSessionUserId();
-    const user = await requireRole("ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR");
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"] as any);
     const dataToUpdate: any = {
         motivo: data.descripcion || data.motivo,
         nivel: data.nivel,
@@ -110,15 +137,13 @@ export async function updateRiesgo(id: string, data: any) {
       data: dataToUpdate,
     });
 
-    
     await logAudit({
-      userId,
+      userId: user.id,
       modulo: "Riesgos",
       accion: "ACTUALIZAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Alerta actualizada ID: ${id}`,
     });
     revalidatePath("/riesgos");
-    await logAudit({ accion: "EDITAR", modulo: "RIESGOS", descripcion: `Alerta actualizada ID: ${id}`, usuarioId: user.id });
     return { success: true, riesgo };
   } catch (error: any) {
     console.error("Error updating riesgo:", error);
@@ -128,18 +153,16 @@ export async function updateRiesgo(id: string, data: any) {
 
 export async function deleteRiesgo(id: string) {
   try {
-    const userId = await getSessionUserId();
-    const user = await requireRole("ADMINISTRADOR", "COORDINADOR"); // Solo admins/coordinadores borran alertas
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"] as any);
     await AlertaRiesgoRepository.delete({ where: { id } });
     
     await logAudit({
-      userId,
+      userId: user.id,
       modulo: "Riesgos",
       accion: "ELIMINAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Alerta eliminada ID: ${id}`,
     });
     revalidatePath("/riesgos");
-    await logAudit({ accion: "ELIMINAR", modulo: "RIESGOS", descripcion: `Alerta eliminada ID: ${id}`, usuarioId: user.id });
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting riesgo:", error);

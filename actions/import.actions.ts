@@ -54,7 +54,7 @@ export async function importAprendicesMasivo(data: any) {
     await logAudit({
       userId: user.id,
       modulo: "Aprendices",
-      accion: "IMPORTAR",
+      accion: "OTRO",
       detalle: `Se importaron ${result} aprendices masivamente.`,
     });
     
@@ -102,7 +102,7 @@ export async function importInstructoresMasivo(data: any) {
     await logAudit({
       userId: user.id,
       modulo: "Instructores",
-      accion: "IMPORTAR",
+      accion: "OTRO",
       detalle: `Se importaron ${result} instructores masivamente.`,
     });
     
@@ -164,7 +164,7 @@ export async function importCompetenciasMasivo(data: any) {
     await logAudit({
       userId: user.id,
       modulo: "Competencias",
-      accion: "IMPORTAR",
+      accion: "OTRO",
       detalle: `Importación masiva de ${result} competencias`,
     });
     revalidatePath("/competencias");
@@ -217,7 +217,7 @@ export async function importResultadosMasivo(data: any) {
     await logAudit({
       userId: user.id,
       modulo: "Resultados de Aprendizaje",
-      accion: "IMPORTAR",
+      accion: "OTRO",
       detalle: `Importación masiva de ${result} resultados de aprendizaje`,
     });
     revalidatePath("/resultados-aprendizaje");

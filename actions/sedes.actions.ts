@@ -81,7 +81,7 @@ export async function createSede(data: z.infer<typeof sedeSchema>) {
         direccion: data.direccion || null,
         barrio: data.barrio || null,
         municipio: data.municipio || null,
-        esPrincipal: data.esPrincipal,
+        esPrincipal: data.esPrincipal === true || (data.esPrincipal as unknown as string) === "true",
         coordinador: data.coordinador || null,
         telefono: data.telefono || null,
         estado: data.estado || "ACTIVO",
@@ -116,10 +116,10 @@ export async function updateSede(id: string, data: z.infer<typeof sedeSchema>) {
         direccion: data.direccion || null,
         barrio: data.barrio || null,
         municipio: data.municipio || null,
-        esPrincipal: data.esPrincipal,
+        esPrincipal: data.esPrincipal === true || (data.esPrincipal as unknown as string) === "true",
         coordinador: data.coordinador || null,
         telefono: data.telefono || null,
-        estado: data.estado,
+        estado: data.estado as any,
       },
     });
     

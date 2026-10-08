@@ -337,7 +337,7 @@ export function ActividadesTable({ initialData, fichas, fichaIdFijo }: Actividad
         <ActividadFormDialog 
           actividad={selectedActividad}
           fichas={fichas}
-          fichaIdFijo={fichaIdFijo}
+          {...(fichaIdFijo ? { fichaIdFijo } : {})}
           onClose={() => setDialogOpen(false)}
           onSuccess={() => router.refresh()}
         />

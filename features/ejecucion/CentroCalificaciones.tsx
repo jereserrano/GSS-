@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { getFichasSelectAction } from "@/actions/fichas.actions";
 import { getSabanaNotasAction, calificarMasivoAction } from "@/actions/evaluaciones.actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, CheckCircle, XCircle, Clock, BookOpen, Target, ChevronRight, ChevronDown, Users, BookCheck, FolderOpen, Save, ListChecks, Table } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Clock, BookOpen, Target, ChevronRight, ChevronDown, Users, BookCheck, FolderOpen, Save, ListChecks, Table, Download } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 interface CentroCalificacionesProps {
@@ -14,7 +14,10 @@ interface CentroCalificacionesProps {
 
 export function CentroCalificaciones({ initialFichaId = "", hideSelector = false }: CentroCalificacionesProps = {}) {
   const { data: session, status } = useSession();
-  const isAprendiz = session?.user?.role?.toUpperCase() === "APRENDIZ";
+  const userRole = (session?.user as any)?.role?.toUpperCase() || "";
+  const isAprendiz = userRole === "APRENDIZ";
+  const isApoyo = userRole === "APOYO_COORDINACION";
+  const canGrade = !isAprendiz && !isApoyo;
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -111,6 +114,61 @@ export function CentroCalificaciones({ initialFichaId = "", hideSelector = false
     }
   };
 
+  const handleDownloadExcel = () => {
+    if (!sabanaData) return;
+    
+    const competencias = sabanaData.programa?.competencias || [];
+    const aprendices = sabanaData.aprendices || [];
+    
+    // Extraer todos los RAs en orden
+    const allRAs: any[] = [];
+    competencias.forEach((comp: any) => {
+      comp.resultadosAprendizaje?.forEach((ra: any) => {
+        allRAs.push(ra);
+      });
+    });
+
+    const header = [
+      "Documento",
+      "Nombres",
+      "Apellidos",
+      ...allRAs.map(ra => `"${ra.codigo} - ${ra.nombre.replace(/"/g, '""')}"`),
+      "Total Aprobados",
+      "Progreso (%)"
+    ].join(";");
+
+    const rows = aprendices.map((ap: any) => {
+      let aprobados = 0;
+      const raCols = allRAs.map(ra => {
+        const evaluacion = ap.evaluaciones?.find((e: any) => e.resultadoAprendizajeId === ra.id);
+        const juicio = evaluacion?.juicio || "PENDIENTE";
+        if (juicio === "APROBADO") aprobados++;
+        return `"${juicio}"`;
+      });
+      const progreso = allRAs.length > 0 ? ((aprobados / allRAs.length) * 100).toFixed(1).replace(".", ",") : "0";
+      
+      return [
+        `"${ap.numeroDocumento}"`,
+        `"${ap.nombres}"`,
+        `"${ap.apellidos}"`,
+        ...raCols,
+        aprobados,
+        `"${progreso}%"`
+      ].join(";");
+    });
+
+    const csvContent = "\uFEFF" + [header, ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sabana_notas_ficha_${sabanaData.codigo || "completa"}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (!mounted || status === "loading") {
     return (
       <div className="flex justify-center p-12">
@@ -186,20 +244,32 @@ export function CentroCalificaciones({ initialFichaId = "", hideSelector = false
         <div className="space-y-6">
           {isAprendiz ? renderAprendizView() : (
             <div className="space-y-4">
-              <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+                  <button
+                    onClick={() => setActiveTab('sabana')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'sabana' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    <Table className="w-4 h-4" />
+                    Sábana de Progreso
+                  </button>
+                  {canGrade && (
+                    <button
+                      onClick={() => setActiveTab('masiva')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'masiva' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      <ListChecks className="w-4 h-4" />
+                      Calificación Masiva
+                    </button>
+                  )}
+                </div>
+
                 <button
-                  onClick={() => setActiveTab('sabana')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'sabana' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  onClick={handleDownloadExcel}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm"
                 >
-                  <Table className="w-4 h-4" />
-                  Sábana de Progreso
-                </button>
-                <button
-                  onClick={() => setActiveTab('masiva')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'masiva' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  <ListChecks className="w-4 h-4" />
-                  Calificación Masiva
+                  <Download className="w-4 h-4" />
+                  Descargar Sábana Completa
                 </button>
               </div>
               {activeTab === 'sabana' ? renderInstructorView() : renderCalificacionMasivaView()}

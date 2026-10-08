@@ -77,7 +77,7 @@ export async function crearNotificacionSistema(userId: string, titulo: string, m
         titulo,
         mensaje,
         tipo,
-        enlace,
+        enlace: enlace || null,
       },
     });
   } catch (error) {

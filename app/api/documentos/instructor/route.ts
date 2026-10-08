@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.id) return NextResponse.json({ success: false, error: "No autorizado" }, { status: 401 });
 
     const instructor = await prisma.instructor.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
+      include: { user: true }
     });
 
     if (!instructor) return NextResponse.json({ success: false, error: "Instructor no encontrado" }, { status: 404 });
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
       fechaNacimiento: instructor.fechaNacimiento ? instructor.fechaNacimiento.toISOString().split("T")[0] : "",
       estadoCivil: instructor.estadoCivil || "",
       telefono: instructor.telefono || "",
+      fotoPerfil: instructor.user?.fotoPerfil || "",
     };
 
     return NextResponse.json({ success: true, data });
@@ -57,6 +59,13 @@ export async function PUT(request: NextRequest) {
         fechaNacimiento: body.fechaNacimiento ? new Date(body.fechaNacimiento) : null,
       }
     });
+
+    if (body.fotoPerfil !== undefined) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { fotoPerfil: body.fotoPerfil }
+      });
+    }
 
     return NextResponse.json({ success: true, message: "Datos actualizados correctamente" });
   } catch (error: any) {

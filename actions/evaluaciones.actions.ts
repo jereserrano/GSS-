@@ -10,6 +10,8 @@ import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit.service";
 import { requireRole } from "@/lib/rbac";
 import { recalcularRiesgoAprendiz } from "@/services/riesgo.service";
+import { sendEmail } from "@/lib/mail";
+import { getEvaluacionEmailTemplate } from "@/lib/email-templates";
 
 export async function getEvaluacionesAction(filtros: any = {}) {
   try {
@@ -96,6 +98,31 @@ export async function createEvaluacion(data: any) {
     // Disparar cálculo de riesgo en segundo plano (Fire and Forget)
     recalcularRiesgoAprendiz(data.aprendizId).catch(console.error);
 
+    // Notificación por correo al aprendiz
+    try {
+      const info = await prisma.aprendiz.findUnique({
+        where: { id: data.aprendizId },
+        select: { nombres: true, emailSena: true, emailPersonal: true }
+      });
+      const rap = await prisma.resultadoAprendizaje.findUnique({
+        where: { id: data.resultadoAprendizajeId },
+        select: { nombre: true }
+      });
+
+      const email = info?.emailSena || info?.emailPersonal;
+      if (email && info && rap) {
+        const template = getEvaluacionEmailTemplate(
+          info.nombres, 
+          rap.nombre, 
+          evaluacion.juicio, 
+          evaluacion.observaciones || undefined
+        );
+        sendEmail({ to: email, subject: "Nueva calificación registrada - GSS", html: template }).catch(console.error);
+      }
+    } catch (mailError) {
+      console.error("Error sending evaluacion email:", mailError);
+    }
+
     revalidatePath("/evaluaciones");
     return { success: true, evaluacion };
   } catch (error: any) {
@@ -128,6 +155,31 @@ export async function updateEvaluacion(id: string, data: any) {
 
     // Disparar cálculo de riesgo en segundo plano (Fire and Forget)
     recalcularRiesgoAprendiz(evaluacion.aprendizId).catch(console.error);
+
+    // Notificación por correo al aprendiz
+    try {
+      const info = await prisma.aprendiz.findUnique({
+        where: { id: evaluacion.aprendizId },
+        select: { nombres: true, emailSena: true, emailPersonal: true }
+      });
+      const rap = await prisma.resultadoAprendizaje.findUnique({
+        where: { id: evaluacion.resultadoAprendizajeId },
+        select: { nombre: true }
+      });
+
+      const email = info?.emailSena || info?.emailPersonal;
+      if (email && info && rap) {
+        const template = getEvaluacionEmailTemplate(
+          info.nombres, 
+          rap.nombre, 
+          evaluacion.juicio, 
+          evaluacion.observaciones || undefined
+        );
+        sendEmail({ to: email, subject: "Actualización de calificación - GSS", html: template }).catch(console.error);
+      }
+    } catch (mailError) {
+      console.error("Error sending update evaluacion email:", mailError);
+    }
 
     revalidatePath("/evaluaciones");
     return { success: true, evaluacion };
@@ -269,6 +321,35 @@ export async function calificarMasivoAction(fichaId: string, raId: string, calif
       detalle: `Calificación masiva para RAP ID: ${raId} en Ficha ID: ${fichaId} (${calificaciones.length} aprendices)`,
     });
     
+    // Notificar masivamente a los aprendices en background
+    (async () => {
+      try {
+        const rap = await prisma.resultadoAprendizaje.findUnique({
+          where: { id: raId },
+          select: { nombre: true }
+        });
+        if (!rap) return;
+
+        const aprendicesIds = calificaciones.map(c => c.aprendizId);
+        const aprendicesInfo = await prisma.aprendiz.findMany({
+          where: { id: { in: aprendicesIds } },
+          select: { id: true, nombres: true, emailSena: true, emailPersonal: true }
+        });
+
+        for (const cal of calificaciones) {
+          const info = aprendicesInfo.find(a => a.id === cal.aprendizId);
+          const email = info?.emailSena || info?.emailPersonal;
+          if (info && email) {
+            const juicio = cal.nota >= 3.5 ? "APROBADO" : "DEFICIENTE";
+            const template = getEvaluacionEmailTemplate(info.nombres, rap.nombre, juicio);
+            await sendEmail({ to: email, subject: "Calificación registrada - GSS", html: template });
+          }
+        }
+      } catch (err) {
+        console.error("Error enviando notificaciones masivas:", err);
+      }
+    })();
+
     revalidatePath("/evaluaciones");
     
     return { success: true };

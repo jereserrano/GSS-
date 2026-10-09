@@ -267,9 +267,22 @@ export async function evaluarEntregaAction(
 
     const entregaPrevia = await prisma.entrega.findUnique({
       where: { id },
-      select: { estado: true }
+      select: { estado: true, actividad: { select: { fichaId: true } } }
     });
-    const fueEvaluadaAntes = entregaPrevia && (entregaPrevia.estado === "APROBADA" || entregaPrevia.estado === "NO_APROBADA" || entregaPrevia.estado === "CALIFICADA");
+    if (!entregaPrevia) throw new Error("Entrega no encontrada");
+
+    if ((user as any).rol?.toUpperCase().includes("INSTRUCT")) {
+      if (!instructorRecord) throw new Error("Perfil de instructor no encontrado");
+      const fichaId = entregaPrevia.actividad?.fichaId;
+      if (fichaId) {
+        const asig = await prisma.instructorFicha.findFirst({
+          where: { instructorId: instructorRecord.id, fichaId }
+        });
+        if (!asig) throw new Error("No tienes permiso para evaluar entregas de esta ficha.");
+      }
+    }
+
+    const fueEvaluadaAntes = (entregaPrevia.estado === "APROBADA" || entregaPrevia.estado === "NO_APROBADA" || entregaPrevia.estado === "CALIFICADA");
 
     const entrega = await EntregaRepository.update({
       where: { id },

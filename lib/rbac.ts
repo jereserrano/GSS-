@@ -60,14 +60,22 @@ export async function requireRole(allowedRoles?: UserRole[] | UserRole, ...extra
 export function requireInstitutionAccess(user: any, targetInstitucionId: string) {
   const role = user.rol.toUpperCase();
   
-  // Los administradores pueden tocar cualquier institución.
-  if (role === "ADMINISTRADOR") {
+  if (role === "ADMINISTRADOR" || role === "COORDINADOR_REGIONAL" || role === "SUBDIRECTOR_REGIONAL" || role.includes("ADMIN") || role.includes("REGIONAL")) {
     return;
   }
 
-  // Para los demás (Coordinadores, Instructores), si tienen una institución asignada,
-  // solo pueden acceder a recursos de esa institución.
   if (user.institucionId && user.institucionId !== targetInstitucionId) {
     throw new Error("Acceso denegado: No tienes permisos sobre registros de otra institución");
+  }
+}
+
+export function requireSedeAccess(user: any, targetSedeId: string) {
+  const role = user.rol.toUpperCase();
+  if (role === "ADMINISTRADOR" || role === "COORDINADOR_REGIONAL" || role === "COORDINADOR_ACADEMICO" || role.includes("ADMIN") || role.includes("REGIONAL") || role.includes("ACADEMICO")) {
+    return;
+  }
+
+  if (user.sedeId && user.sedeId !== targetSedeId) {
+    throw new Error("Acceso denegado: No tienes permisos sobre registros de otra sede");
   }
 }

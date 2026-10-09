@@ -105,6 +105,7 @@ model Ficha {
   instructores       InstructorFicha[]
   asignacionesCarga  AsignacionCarga[]
   visitasSeguimiento VisitaSeguimiento[]
+  clasesVirtuales    ClaseVirtual[]
 
   @@map("fichas")
 }
@@ -177,6 +178,7 @@ model Instructor {
   fichas            InstructorFicha[]
   asignacionesCarga AsignacionCarga[]
   excusasRevisadas  Excusa[]
+  clasesVirtuales   ClaseVirtual[]
 
   @@map("instructores")
 }
@@ -452,6 +454,10 @@ model User {
   // Firma Digital para Documentos
   firmaDigitalUrl      String? @db.Text
 
+  // Integración Zoom
+  zoomAccessToken      String? @db.Text
+  zoomRefreshToken     String? @db.Text
+
   creadoEn         DateTime   @default(now())
   actualizadoEn    DateTime   @updatedAt
 
@@ -467,8 +473,21 @@ model User {
   documentoEmpleados DocumentoEmpleado[]
   solicitudCartas    SolicitudCarta[]
   lecturasGlobales   MensajeLeido[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  creadoEn  DateTime @default(now())
+
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 model AuditLog {
@@ -698,15 +717,20 @@ model MensajeLeido {
 }
 
 model ClaseVirtual {
-  id          String   @id @default(cuid())
-  titulo      String
-  descripcion String?  @db.Text
-  enlaceUrl   String
-  fechaInicio DateTime
-  duracionMin Int
-  fichaId     String
-  estado      Estado   @default(ACTIVO)
-  creadoEn    DateTime @default(now())
+  id                 String   @id @default(cuid())
+  titulo             String
+  descripcion        String?  @db.Text
+  enlaceUrl          String?  @db.Text
+  zoomMeetingId      String?
+  fechaInicio        DateTime
+  duracionMin        Int
+  fichaId            String
+  instructorId       String
+  estado             Estado   @default(ACTIVO)
+  creadoEn           DateTime @default(now())
+
+  ficha      Ficha      @relation(fields: [fichaId], references: [id], onDelete: Cascade)
+  instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 
   @@map("clases_virtuales")
 }

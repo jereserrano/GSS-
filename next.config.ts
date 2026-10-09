@@ -5,7 +5,7 @@ const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
   reloadOnOnline: true,
-  disable: true, // Forzar desactivar caché de PWA
+  disable: process.env.NODE_ENV === "development", // Habilitado en produccion
 });
 
 /** @type {import('next').NextConfig} */

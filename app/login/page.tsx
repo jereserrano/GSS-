@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AlertCircle, Lock, Mail, Eye, EyeOff, ShieldCheck, MonitorSmartphone } from "lucide-react";
 
 const BACKGROUND_IMAGES = [
@@ -261,8 +262,11 @@ export default function LoginPage() {
                 </button>
               </div>
               
-              <div className="text-center">
-                <p className="text-xs font-medium text-white/70 tracking-wide">
+              <div className="text-center mt-4">
+                <Link href="/olvido-clave" className="text-xs font-medium text-white/70 tracking-wide hover:text-white hover:underline transition-colors block mb-2">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+                <p className="text-[10px] font-medium text-white/40 tracking-wide">
                   Acceso al Sistema
                 </p>
               </div>

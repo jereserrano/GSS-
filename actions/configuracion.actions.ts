@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/rbac";
 
 export async function getConfiguracionAction() {
   try {
+    await requireRole(["ADMINISTRADOR"]);
     let config = await ConfiguracionRepository.findUnique({
       where: { id: "global" },
     });

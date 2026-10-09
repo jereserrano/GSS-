@@ -4,7 +4,7 @@
 export type UserRole = "ADMINISTRADOR" | "SUBDIRECTOR" | "COORDINADOR" | "APCOORDINADOR" | "INSTRUCTOR" | "APRENDIZ" | string;
 
 // Rutas base comunes para todos los roles permitidos en el dashboard
-const RUTAS_COMUNES = ["/dashboard", "/perfil", "/notificaciones", "/mensajes", "/usuarios", "/seguridad"];
+const RUTAS_COMUNES = ["/dashboard", "/perfil", "/notificaciones", "/mensajes", "/usuarios", "/seguridad", "/clases-virtuales"];
 
 // Listas Blancas (Whitelists) estrictas por Rol:
 
@@ -201,7 +201,9 @@ export function canAccessRoute(role: string | undefined | null, pathname: string
   }
 
   if (normalRole === "COORDINADOR" || normalRole.includes("COORD")) {
-    // Si incluye 'APCOORDINADOR' entra en la siguiente, así que validamos exactamente
+    if (normalRole.includes("REGIONAL")) {
+      return isAllowed(RUTAS_SUBDIRECTOR);
+    }
     if (!normalRole.includes("APCOORD")) {
       return isAllowed(RUTAS_COORDINADOR);
     }

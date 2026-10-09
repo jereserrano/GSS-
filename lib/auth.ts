@@ -201,38 +201,4 @@ export const authOptions: AuthOptions = {
 
   secret: process.env.NEXTAUTH_SECRET as string,
 
-  // Desactivar cookies seguras para entorno HTTP en red local
-  // Esto permite que funcione tanto en localhost como desde la IP de la red
-  useSecureCookies: false,
-
-  // Configuración de cookies para aceptar peticiones desde cualquier host en la LAN
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",       // "lax" en vez de "strict" para permitir redirecciones cross-origin
-        path: "/",
-        secure: false,         // false porque estamos en HTTP (no HTTPS)
-      },
-    },
-    callbackUrl: {
-      name: `next-auth.callback-url`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: false,
-      },
-    },
-    csrfToken: {
-      name: `next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: false,
-      },
-    },
-  },
 };

@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       email: user.email,
       fotoPerfil: user.fotoPerfil || "",
       rol: user.rol,
+      zoomVinculado: !!user.zoomAccessToken,
     };
 
     if (user.instructor) {

@@ -59,6 +59,24 @@ export async function getActividadesAction(filtros: any = {}) {
       return { success: true, data: paginatedResponse([], 0, pagina, tamano) };
     }
 
+    const isAdminOrCoordRegional = rolNombre === "ADMINISTRADOR" || rolNombre === "COORDINADOR_REGIONAL" || rolNombre.includes("ADMIN") || rolNombre.includes("REGIONAL");
+    const isCoordAcademico = rolNombre === "COORDINADOR_ACADEMICO" || (rolNombre.includes("COORD") && !rolNombre.includes("SEDE"));
+    const isCoordSede = rolNombre === "COORDINADOR_SEDE" || rolNombre.includes("SEDE");
+
+    const baseFichaWhere: any = {};
+    if (!isAdminOrCoordRegional && !isAprendiz && !isInstructor) {
+      if (isCoordAcademico && userContext?.institucionId) {
+        baseFichaWhere.institucionId = userContext.institucionId;
+      }
+      if (isCoordSede && userContext?.sedeId) {
+        baseFichaWhere.sedeId = userContext.sedeId;
+      }
+    }
+
+    if (filtros.institucionId) baseFichaWhere.institucionId = filtros.institucionId;
+    if (filtros.sedeId) baseFichaWhere.sedeId = filtros.sedeId;
+    if (filtros.programaId) baseFichaWhere.programaId = filtros.programaId;
+
     const where: any = {
       ...(filtros.busqueda ? {
         OR: [
@@ -68,7 +86,8 @@ export async function getActividadesAction(filtros: any = {}) {
       } : {}),
       ...(fichaFiltro ? { fichaId: fichaFiltro } : {}),
       ...(isAprendiz ? { estado: { in: ["ACTIVA", "PUBLICADA"] } } : {}),
-      ...(isInstructor ? { instructorId: userContext.instructor.id } : {}),
+      ...(isInstructor ? { instructorId: userContext.instructor.id } : (filtros.instructorId ? { instructorId: filtros.instructorId } : {})),
+      ...(Object.keys(baseFichaWhere).length > 0 ? { ficha: baseFichaWhere } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([

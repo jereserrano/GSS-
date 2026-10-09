@@ -8,6 +8,7 @@ import { Force2FAWrapper } from "@/features/auth/Force2FAWrapper";
 import { SessionHydration } from "@/components/SessionHydration";
 import { ThemeInjector } from "@/components/layout/ThemeInjector";
 import { prisma } from "@/lib/prisma";
+import { OfflineSyncManager } from "@/components/OfflineSyncManager";
 
 // El dashboard siempre requiere sesión — nunca pre-renderizar estáticamente
 export const dynamic = "force-dynamic";
@@ -38,6 +39,7 @@ export default async function DashboardLayout({
   return (
     <SessionHydration session={session}>
       <ThemeInjector />
+      <OfflineSyncManager />
       <div className="flex min-h-screen bg-app">
         <Sidebar branding={{
           ...(config?.nombreSoftware ? { nombreSoftware: config.nombreSoftware } : {}),

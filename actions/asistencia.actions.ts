@@ -17,11 +17,19 @@ import { recalcularRiesgoFicha } from "@/services/riesgo.service";
 
 export async function getAsistenciasAction(filtros: any = {}) {
   try {
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
     const pagina = filtros.pagina || 1;
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
-    const where = {
+    let instructorFiltroId: string | undefined;
+    if ((user as any).rol?.toUpperCase().includes("INSTRUCT")) {
+      const instructorRecord = await prisma.instructor.findUnique({ where: { userId: user.id } });
+      if (!instructorRecord) return { success: false, error: "No tienes perfil de instructor." };
+      instructorFiltroId = instructorRecord.id;
+    }
+
+    const where: any = {
       ...(filtros.busqueda ? {
         OR: [
           { ficha: { codigo: { contains: filtros.busqueda } } },
@@ -30,7 +38,7 @@ export async function getAsistenciasAction(filtros: any = {}) {
         ]
       } : {}),
       ...(filtros.fichaId ? { fichaId: filtros.fichaId } : {}),
-      ...(filtros.instructorId ? { instructorId: filtros.instructorId } : {}),
+      ...(instructorFiltroId ? { instructorId: instructorFiltroId } : (filtros.instructorId ? { instructorId: filtros.instructorId } : {})),
     };
 
     const [data, total] = await TransactionRepository.$transaction([

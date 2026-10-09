@@ -6,8 +6,10 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Check, X, ShieldAlert, Save, RotateCcw } from "lucide-react";
+import { Check, X, ShieldAlert, Save, RotateCcw, Wifi, WifiOff } from "lucide-react";
 import { guardarAsistenciaMasiva, getAsistenciasAction } from "@/actions/asistencia.actions";
+import { useNetworkStatus } from "@/hooks/use-network";
+import { saveAsistenciaOffline } from "@/lib/offline-store";
 
 const getLocalTodayDate = () => {
   const d = new Date();
@@ -47,6 +49,8 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
   const userRole = ((session?.user as any)?.role || "").toUpperCase();
   const isInstructor = userRole.includes("INSTRUCTOR");
   const currentUserId = (session?.user as any)?.id;
+  
+  const isOnline = useNetworkStatus();
   
   // Usar el instructor preseleccionado del servidor si está disponible
   const currentInstructorRecord = useMemo(() => {
@@ -162,13 +166,23 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
       observaciones: observaciones[a.id] || "",
     }));
 
-    const result = await guardarAsistenciaMasiva({
+    const payload = {
       fichaId,
       instructorId,
       fecha,
       tema: isFechaPasada ? `Registro tardío. Motivo: ${motivoRetraso}` : undefined,
       detalles
-    });
+    };
+
+    if (!isOnline) {
+      await saveAsistenciaOffline(fichaId, fecha, payload);
+      setLoading(false);
+      toast.success("Modo Offline: Asistencia guardada localmente. Se sincronizará cuando recupere la conexión.");
+      router.push(`/asistencia/ficha/${fichaId}`);
+      return;
+    }
+
+    const result = await guardarAsistenciaMasiva(payload);
 
     setLoading(false);
 
@@ -184,6 +198,14 @@ export function TomaAsistenciaForm({ fichas, instructores, instructorPreseleccio
 
   return (
     <div className="space-y-8">
+      {/* Indicador de red */}
+      <div className={`flex items-center gap-2 p-3 rounded-lg border ${isOnline ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+        {isOnline ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
+        <span className="text-sm font-medium">
+          {isOnline ? "Conectado a Internet - Modo Normal" : "Sin conexión - Modo Offline (Las asistencias se guardarán en tu dispositivo)"}
+        </span>
+      </div>
+
       {/* Encabezado */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-2">

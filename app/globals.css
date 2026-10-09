@@ -580,10 +580,6 @@
 }
 
 /* ── Responsive: mobile-first overrides ── */
-/* Forzar modales sobre cualquier elemento fijo (header, sidebar) */
-[class*="fixed"][class*="inset-0"] {
-  z-index: 9999 !important;
-}
 
 @media (max-width: 768px) {
   /* En mobile el sidebar es off-canvas (se maneja con JS) */

@@ -9,6 +9,9 @@ import { z } from "zod";
 import { logAudit } from "@/lib/audit.service";
 import { getServerSession } from "next-auth/next";
 import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
+import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/mail";
+import { getCompetenciaCreadaEmailTemplate } from "@/lib/email-templates";
 
 async function getSessionUserId() {
   try {
@@ -96,6 +99,51 @@ export async function createCompetencia(data: z.infer<typeof competenciaSchema>)
       accion: "CREAR",
       detalle: "Acción completada exitosamente.",
     });
+
+    // Notificar en background a instructores y aprendices de las fichas afectadas
+    (async () => {
+      try {
+        const programasInfo = await prisma.programa.findMany({
+          where: { id: { in: data.programasIds } },
+          select: { nombre: true }
+        });
+        const nombresProgramas = programasInfo.map(p => p.nombre).join(", ");
+
+        const fichas = await prisma.ficha.findMany({
+          where: { programaId: { in: data.programasIds } },
+          include: {
+            aprendices: { select: { emailPersonal: true, emailSena: true } },
+            instructores: { include: { instructor: { select: { email: true } } } }
+          }
+        });
+
+        const emails = new Set<string>();
+        fichas.forEach(ficha => {
+          ficha.aprendices.forEach(a => {
+            if (a.emailSena) emails.add(a.emailSena);
+            else if (a.emailPersonal) emails.add(a.emailPersonal);
+          });
+          ficha.instructores.forEach(i => {
+            if (i.instructor?.email) emails.add(i.instructor.email);
+          });
+        });
+
+        if (emails.size > 0) {
+          const template = getCompetenciaCreadaEmailTemplate(competencia.nombre, competencia.codigo, nombresProgramas);
+          // Enviar los correos de manera masiva o en bucle
+          for (const email of Array.from(emails)) {
+            await sendEmail({
+              to: email,
+              subject: "Nueva Competencia Agregada - GSS",
+              html: template
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error enviando notificaciones de competencia creada:", err);
+      }
+    })();
+
     revalidatePath("/competencias");
     return { success: true, competencia };
   } catch (error: any) {

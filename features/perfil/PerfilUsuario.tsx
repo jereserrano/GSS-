@@ -17,7 +17,7 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [datos, setDatos] = useState<any>({});
-  
+
   // Para las cartas de aprendices
   const [cartas, setCartas] = useState<any[]>([]);
   const [solicitandoCarta, setSolicitandoCarta] = useState(false);
@@ -34,6 +34,14 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
   ];
 
   const isAprendiz = role.toUpperCase().includes("APRENDIZ");
+
+  useEffect(() => {
+    if (searchParams.get("success") === "zoom_linked") {
+      toast.success("Cuenta de Zoom vinculada exitosamente.");
+    } else if (searchParams.get("error")) {
+      toast.error("Error al vincular cuenta de Zoom.");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchDatos = async () => {
@@ -122,14 +130,14 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-[#00304D]/10">
       <div className="flex space-x-4 mb-6 border-b pb-2">
-        <button 
+        <button
           className={`flex items-center pb-2 px-1 border-b-2 font-medium transition-colors ${activeTab === 'datos' ? 'border-[#39A900] text-[#00304D]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
           onClick={() => setActiveTab("datos")}
         >
           <User className="mr-2 h-4 w-4" /> Datos Personales
         </button>
         {isAprendiz && (
-          <button 
+          <button
             className={`flex items-center pb-2 px-1 border-b-2 font-medium transition-colors ${activeTab === 'tramites' ? 'border-[#39A900] text-[#00304D]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab("tramites")}
           >
@@ -155,7 +163,7 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
                 <User size={40} className="text-slate-400" />
               )}
             </div>
-            
+
             <div className="flex-1 space-y-4 w-full">
               <div>
                 <h3 className="font-semibold text-lg">{datos.nombre || (datos.nombres + " " + datos.apellidos)}</h3>
@@ -177,29 +185,29 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
                     </button>
                   ))}
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                   <div className="flex-1">
                     <label className="text-xs font-medium text-slate-500 block mb-1">O escribe cualquier otro emoticon:</label>
-                    <Input 
-                      value={!datos.fotoPerfil?.startsWith("http") && !datos.fotoPerfil?.startsWith("/") && !datos.fotoPerfil?.startsWith("data:") ? datos.fotoPerfil : ""} 
-                      onChange={(e) => setDatos({...datos, fotoPerfil: e.target.value})}
+                    <Input
+                      value={!datos.fotoPerfil?.startsWith("http") && !datos.fotoPerfil?.startsWith("/") && !datos.fotoPerfil?.startsWith("data:") ? datos.fotoPerfil : ""}
+                      onChange={(e) => setDatos({ ...datos, fotoPerfil: e.target.value })}
                       placeholder="Ej: 🚀"
                       className="w-32 bg-white"
                       maxLength={5}
                     />
                   </div>
-                  
+
                   <div className="flex-1">
                     <label className="text-xs font-medium text-slate-500 block mb-1">O sube una imagen desde tu dispositivo:</label>
                     <div className="flex items-center gap-2">
-                      <Input 
-                        type="file" 
+                      <Input
+                        type="file"
                         accept="image/*"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          
+
                           // Validar tamaño (máximo 5MB)
                           if (file.size > 5 * 1024 * 1024) {
                             toast.error("La imagen es muy pesada. Máximo 5MB.");
@@ -211,19 +219,19 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
                           const toastId = toast.loading("Subiendo imagen...");
                           try {
                             const res = await fetch("/api/upload", { method: "POST", body: formData });
-                            
+
                             const textResponse = await res.text();
-                            
+
                             if (!res.ok) {
                               console.error("Upload error response:", textResponse);
                               toast.error(`Error del servidor (${res.status})`, { id: toastId });
                               return;
                             }
-                            
+
                             try {
                               const result = JSON.parse(textResponse);
                               if (result.success) {
-                                setDatos({...datos, fotoPerfil: result.url});
+                                setDatos({ ...datos, fotoPerfil: result.url });
                                 toast.success("Imagen subida", { id: toastId });
                               } else {
                                 toast.error(result.error || "Error al subir", { id: toastId });
@@ -234,10 +242,10 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
                           } catch (error: any) {
                             toast.error(`Error de conexión: ${error.message}`, { id: toastId });
                           }
-                        }} 
-                        className="max-w-[250px] bg-white text-xs file:bg-slate-100 file:text-slate-700 file:border-0 file:rounded-md file:px-3 file:py-1 hover:file:bg-slate-200 cursor-pointer" 
+                        }}
+                        className="max-w-[250px] bg-white text-xs file:bg-slate-100 file:text-slate-700 file:border-0 file:rounded-md file:px-3 file:py-1 hover:file:bg-slate-200 cursor-pointer"
                       />
-                      <Button type="button" variant="outline" size="sm" onClick={() => setDatos({...datos, fotoPerfil: ""})} className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setDatos({ ...datos, fotoPerfil: "" })} className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50">
                         <XCircle size={14} className="mr-1" /> Quitar
                       </Button>
                     </div>
@@ -250,16 +258,16 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-medium">Nombre Completo</label>
-              <Input 
-                value={datos.nombre || (datos.nombres + " " + datos.apellidos) || ""} 
+              <Input
+                value={datos.nombre || (datos.nombres + " " + datos.apellidos) || ""}
                 readOnly
                 className="bg-slate-50 opacity-80 cursor-not-allowed"
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Correo Electrónico</label>
-              <Input 
-                value={datos.email || ""} 
+              <Input
+                value={datos.email || ""}
                 readOnly
                 className="bg-slate-50 opacity-80 cursor-not-allowed"
               />
@@ -276,14 +284,14 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
                 </div>
               </>
             )}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Teléfono</label>
-                <Input 
-                  value={datos.telefono || ""} 
-                  onChange={(e) => setDatos({...datos, telefono: e.target.value})} 
-                  placeholder="Ej: 300 123 4567"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Teléfono</label>
+              <Input
+                value={datos.telefono || ""}
+                onChange={(e) => setDatos({ ...datos, telefono: e.target.value })}
+                placeholder="Ej: 300 123 4567"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end pt-4 border-t">
@@ -291,6 +299,64 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
               {saving ? "Guardando..." : "Guardar Cambios"}
             </Button>
           </div>
+
+          {!isAprendiz && (
+            <div className="pt-8 mt-8 border-t border-slate-200">
+              <h3 className="font-semibold text-lg mb-2">Integraciones</h3>
+              <p className="text-sm text-slate-500 mb-4">
+                Conecta tus cuentas institucionales para habilitar funciones avanzadas como la creación de clases virtuales.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-slate-50 border rounded-lg gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="bg-[#2D8CFF] p-2 rounded-md text-white shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M14 6H4V16H14V6Z" fill="currentColor" />
+                      <path d="M21 7L16 10V12L21 15V7Z" fill="currentColor" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-slate-800">Zoom</h4>
+                    <p className="text-xs text-slate-500">Permite agendar clases virtuales automáticamente.</p>
+                  </div>
+                </div>
+
+                {datos.zoomVinculado ? (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100 py-1.5 px-3">
+                      <CheckCircle className="w-4 h-4 mr-2" /> Vinculado
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                      onClick={async () => {
+                        const toastId = toast.loading("Desvinculando...");
+                        try {
+                          const res = await fetch("/api/auth/zoom/unlink", { method: "POST" });
+                          if (res.ok) {
+                            setDatos({ ...datos, zoomVinculado: false });
+                            toast.success("Cuenta desvinculada", { id: toastId });
+                          } else {
+                            toast.error("Error al desvincular", { id: toastId });
+                          }
+                        } catch (e) {
+                          toast.error("Error de conexión", { id: toastId });
+                        }
+                      }}
+                    >
+                      Desvincular
+                    </Button>
+                  </div>
+                ) : (
+                  <Button type="button" variant="outline" className="text-[#2D8CFF] border-[#2D8CFF] hover:bg-[#2D8CFF]/10" onClick={() => window.location.href = "/api/auth/zoom"}>
+                    Vincular Cuenta
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </form>
       ) : activeTab === "tramites" ? (
         <div className="animate-in fade-in space-y-6">
@@ -304,7 +370,7 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
                 Puedes solicitar un certificado de estudio activo. La coordinación lo aprobará en los próximos 2 días hábiles.
               </p>
             </div>
-            <Button 
+            <Button
               onClick={() => {
                 setSolMotivo("");
                 setSolDirigido("");
@@ -321,15 +387,15 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
           {openSol && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
-                <button onClick={() => setOpenSol(false)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"><XCircle size={20}/></button>
+                <button onClick={() => setOpenSol(false)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"><XCircle size={20} /></button>
                 <h2 className="text-lg font-bold mb-4">Solicitar Certificado</h2>
                 <form onSubmit={handleSolicitarCarta} className="space-y-4">
                   {/* Tipo de Certificado */}
                   <div>
                     <label className="text-sm font-medium">Tipo de Certificado</label>
-                    <select 
-                      className="w-full border rounded-md p-2 mt-1" 
-                      value={solTipo} 
+                    <select
+                      className="w-full border rounded-md p-2 mt-1"
+                      value={solTipo}
                       onChange={e => setSolTipo(e.target.value)}
                     >
                       {TIPOS_CERTIFICADO.map(t => (

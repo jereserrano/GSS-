@@ -10,7 +10,7 @@ import {
   Target, FileText, BookCheck, 
   CalendarCheck, TrendingUp, 
   PieChart, FolderOpen, Bell, Settings, Shield,
-  Menu, ChevronLeft, Activity, Search, User, Mail, Archive
+  Menu, ChevronLeft, Activity, Search, User, Mail, Archive, VideoIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessRoute } from "@/lib/permissions";
@@ -47,6 +47,7 @@ const navAprendiz: NavSection[] = [
     items: [
       { icon: BookOpen, label: "Mi formación", href: "/fichas" },
       { icon: BookCheck, label: "Mis Actividades", href: "/gestor-actividades" },
+      { icon: VideoIcon, label: "Clases Virtuales", href: "/clases-virtuales" },
       { icon: FolderOpen, label: "Mis Entregas", href: "/entregas" },
       { icon: TrendingUp, label: "Mis Calificaciones", href: "/centro-calificaciones" },
       { icon: Archive, label: "Mi Portafolio", href: "/portafolio" },
@@ -85,6 +86,7 @@ const navInstructor: NavSection[] = [
     title: "Ejecución y Evaluación",
     items: [
       { icon: BookCheck, label: "Gestor de Actividades", href: "/gestor-actividades" },
+      { icon: VideoIcon, label: "Clases Virtuales", href: "/clases-virtuales" },
       { icon: CalendarCheck, label: "Asistencia", href: "/asistencia" },
       { icon: TrendingUp, label: "Centro de Calificaciones", href: "/centro-calificaciones" },
     ],
@@ -135,6 +137,7 @@ const navCoordinador: NavSection[] = [
     title: "Ejecución",
     items: [
       { icon: BookCheck, label: "Gestor de Actividades", href: "/gestor-actividades" },
+      { icon: VideoIcon, label: "Clases Virtuales", href: "/clases-virtuales" },
       { icon: CalendarCheck, label: "Asistencia", href: "/asistencia" },
       { icon: TrendingUp, label: "Centro de Calificaciones", href: "/centro-calificaciones" },
       ],

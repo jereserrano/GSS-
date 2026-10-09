@@ -17,7 +17,7 @@ export async function importAprendicesMasivo(data: any) {
       return { success: false, error: "Estructura de datos inválida", issues: parsed.error.errors };
     }
 
-    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "COORDINADOR_REGIONAL", "COORDINADOR_ACADEMICO", "COORDINADOR_SEDE"]);
 
     // Atomic transaction
     const result = await TransactionRepository.$transaction(async (tx) => {
@@ -31,6 +31,15 @@ export async function importAprendicesMasivo(data: any) {
           if (!ficha) {
             throw new Error(`La ficha con código ${codigo} no existe en el sistema.`);
           }
+          
+          const rol = user.rol?.toUpperCase() || "";
+          if (rol === "COORDINADOR_ACADEMICO" && user.institucionId && ficha.institucionId !== user.institucionId) {
+            throw new Error(`No tienes permisos para importar a la ficha ${codigo} (Institución diferente).`);
+          }
+          if (rol === "COORDINADOR_SEDE" && user.sedeId && ficha.sedeId !== user.sedeId) {
+            throw new Error(`No tienes permisos para importar a la ficha ${codigo} (Sede diferente).`);
+          }
+
           fichasCache.set(codigo, ficha.id);
         }
 

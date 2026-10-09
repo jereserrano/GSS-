@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireRole } from "@/lib/rbac";
 
 // --- Documentos de Empleados ---
 
@@ -109,7 +110,14 @@ export async function getSolicitudesCartasAction(userId: string) {
 
 export async function getTodasSolicitudesCartasAction() {
   try {
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
+    const whereClause: any = {};
+    if ((user as any).rol !== "ADMINISTRADOR" && user.institucionId) {
+      whereClause.user = { institucionId: user.institucionId };
+    }
+
     const sols = await prisma.solicitudCarta.findMany({
+      where: whereClause,
       include: {
         user: { select: { nombre: true, email: true, instructor: { select: { numeroDocumento: true } } } }
       },
@@ -247,7 +255,14 @@ export async function deleteDocumento(id: string) {
 
 export async function exportDocumentosCSV() {
   try {
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
+    const whereClause: any = {};
+    if ((user as any).rol !== "ADMINISTRADOR" && user.institucionId) {
+      whereClause.institucionId = user.institucionId;
+    }
+
     const docs = await prisma.documento.findMany({
+      where: whereClause,
       include: { institucion: true }
     });
     const header = `"ID","Nombre","Tipo","Institución","URL","Creado En"` + "\n";

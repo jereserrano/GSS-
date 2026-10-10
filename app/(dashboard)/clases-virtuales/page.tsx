@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { VideoIcon, Clock, Users } from "lucide-react";
 import { ClaseVirtualFormDialog } from "@/features/clases-virtuales/ClaseVirtualFormDialog";
+import { DeleteClaseButton } from "@/features/clases-virtuales/DeleteClaseButton";
 
 export const metadata = {
   title: "Clases Virtuales | GSS SENA",
@@ -19,7 +20,7 @@ export default async function ClasesVirtualesPage() {
 
   if (!user) return null;
 
-  let clases = [];
+  let clases: any[] = [];
   let fichasMapped: { id: string; codigo: string; programa: string }[] = [];
   
   if (user.rol.includes("INSTRUCT") && user.instructor) {
@@ -58,21 +59,10 @@ export default async function ClasesVirtualesPage() {
               : "Encuentra los enlaces a tus próximas sesiones sincrónicas."}
           </p>
         </div>
-        {user.rol.includes("INSTRUCT") && user.zoomAccessToken && (
+        {user.rol.includes("INSTRUCT") && (
           <ClaseVirtualFormDialog fichas={fichasMapped} />
         )}
       </div>
-
-      {user.rol.includes("INSTRUCT") && !user.zoomAccessToken && (
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-700">Cuenta de Zoom No Vinculada</CardTitle>
-            <CardDescription className="text-red-600">
-              Para programar clases en Zoom, primero debes vincular tu cuenta de Zoom en tu perfil.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {clases.length === 0 ? (
@@ -87,7 +77,12 @@ export default async function ClasesVirtualesPage() {
                   <Badge variant={clase.estado === "ACTIVO" ? "default" : "secondary"}>
                     {clase.estado}
                   </Badge>
-                  <VideoIcon className="h-5 w-5 text-sena-green" />
+                  <div className="flex items-center gap-2">
+                    <VideoIcon className="h-5 w-5 text-sena-green" />
+                    {user.rol.includes("INSTRUCT") && (
+                      <DeleteClaseButton claseId={clase.id} />
+                    )}
+                  </div>
                 </div>
                 <CardTitle className="text-xl mt-2">{clase.titulo}</CardTitle>
                 {clase.descripcion && <CardDescription>{clase.descripcion}</CardDescription>}

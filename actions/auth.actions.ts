@@ -7,7 +7,10 @@ import bcrypt from "bcryptjs";
 
 export async function forgotPasswordAction(email: string) {
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      include: { instructor: true, aprendiz: true }
+    });
     if (!user) {
       // Retornar success para no revelar si el correo existe (prevención de enumeración)
       return { success: true };
@@ -41,8 +44,15 @@ export async function forgotPasswordAction(email: string) {
       </div>
     `;
 
+    let targetEmail = email;
+    if (user.instructor?.emailPersonal) {
+      targetEmail = user.instructor.emailPersonal;
+    } else if (user.aprendiz?.emailPersonal) {
+      targetEmail = user.aprendiz.emailPersonal;
+    }
+
     await sendEmail({
-      to: email,
+      to: targetEmail,
       subject: "Recuperación de Contraseña - GSS",
       html,
     });

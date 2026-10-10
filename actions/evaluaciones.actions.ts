@@ -109,7 +109,7 @@ export async function createEvaluacion(data: any) {
         select: { nombre: true }
       });
 
-      const email = info?.emailSena || info?.emailPersonal;
+      const email = info?.emailPersonal || info?.emailSena;
       if (email && info && rap) {
         const template = getEvaluacionEmailTemplate(
           info.nombres, 
@@ -167,7 +167,7 @@ export async function updateEvaluacion(id: string, data: any) {
         select: { nombre: true }
       });
 
-      const email = info?.emailSena || info?.emailPersonal;
+      const email = info?.emailPersonal || info?.emailSena;
       if (email && info && rap) {
         const template = getEvaluacionEmailTemplate(
           info.nombres, 
@@ -338,7 +338,7 @@ export async function calificarMasivoAction(fichaId: string, raId: string, calif
 
         for (const cal of calificaciones) {
           const info = aprendicesInfo.find(a => a.id === cal.aprendizId);
-          const email = info?.emailSena || info?.emailPersonal;
+          const email = info?.emailPersonal || info?.emailSena;
           if (info && email) {
             const juicio = cal.nota >= 3.5 ? "APROBADO" : "DEFICIENTE";
             const template = getEvaluacionEmailTemplate(info.nombres, rap.nombre, juicio);

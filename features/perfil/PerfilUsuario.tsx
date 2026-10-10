@@ -35,13 +35,7 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
 
   const isAprendiz = role.toUpperCase().includes("APRENDIZ");
 
-  useEffect(() => {
-    if (searchParams.get("success") === "zoom_linked") {
-      toast.success("Cuenta de Zoom vinculada exitosamente.");
-    } else if (searchParams.get("error")) {
-      toast.error("Error al vincular cuenta de Zoom.");
-    }
-  }, [searchParams]);
+
 
   useEffect(() => {
     const fetchDatos = async () => {
@@ -265,11 +259,20 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Correo Electrónico</label>
+              <label className="text-sm font-medium">Correo Institucional (Acceso)</label>
               <Input
                 value={datos.email || ""}
                 readOnly
                 className="bg-slate-50 opacity-80 cursor-not-allowed"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Correo Personal</label>
+              <Input
+                type="email"
+                value={datos.emailPersonal || ""}
+                onChange={(e) => setDatos({ ...datos, emailPersonal: e.target.value })}
+                placeholder="Ej: tu-correo@gmail.com"
               />
             </div>
             {isAprendiz && (
@@ -300,63 +303,7 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
             </Button>
           </div>
 
-          {!isAprendiz && (
-            <div className="pt-8 mt-8 border-t border-slate-200">
-              <h3 className="font-semibold text-lg mb-2">Integraciones</h3>
-              <p className="text-sm text-slate-500 mb-4">
-                Conecta tus cuentas institucionales para habilitar funciones avanzadas como la creación de clases virtuales.
-              </p>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-slate-50 border rounded-lg gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="bg-[#2D8CFF] p-2 rounded-md text-white shrink-0">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M14 6H4V16H14V6Z" fill="currentColor" />
-                      <path d="M21 7L16 10V12L21 15V7Z" fill="currentColor" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-slate-800">Zoom</h4>
-                    <p className="text-xs text-slate-500">Permite agendar clases virtuales automáticamente.</p>
-                  </div>
-                </div>
-
-                {datos.zoomVinculado ? (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100 py-1.5 px-3">
-                      <CheckCircle className="w-4 h-4 mr-2" /> Vinculado
-                    </Badge>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-                      onClick={async () => {
-                        const toastId = toast.loading("Desvinculando...");
-                        try {
-                          const res = await fetch("/api/auth/zoom/unlink", { method: "POST" });
-                          if (res.ok) {
-                            setDatos({ ...datos, zoomVinculado: false });
-                            toast.success("Cuenta desvinculada", { id: toastId });
-                          } else {
-                            toast.error("Error al desvincular", { id: toastId });
-                          }
-                        } catch (e) {
-                          toast.error("Error de conexión", { id: toastId });
-                        }
-                      }}
-                    >
-                      Desvincular
-                    </Button>
-                  </div>
-                ) : (
-                  <Button type="button" variant="outline" className="text-[#2D8CFF] border-[#2D8CFF] hover:bg-[#2D8CFF]/10" onClick={() => window.location.href = "/api/auth/zoom"}>
-                    Vincular Cuenta
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
         </form>
       ) : activeTab === "tramites" ? (
         <div className="animate-in fade-in space-y-6">

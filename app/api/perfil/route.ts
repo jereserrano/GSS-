@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     };
 
     if (user.instructor) {
+      data.emailPersonal = user.instructor.emailPersonal || "";
       data.direccionResidencia = user.instructor.direccionResidencia || "";
       data.municipioResidencia = user.instructor.municipioResidencia || "";
       data.eps = user.instructor.eps || "";
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (user.aprendiz) {
+      data.emailPersonal = user.aprendiz.emailPersonal || "";
       data.nombres = user.aprendiz.nombres;
       data.apellidos = user.aprendiz.apellidos;
       data.telefono = user.aprendiz.telefono || "";
@@ -84,6 +86,7 @@ export async function PUT(request: NextRequest) {
     if (rol.includes("INSTRUCT")) {
       const updateData: any = {};
       if (body.telefono !== undefined) updateData.telefono = body.telefono;
+      if (body.emailPersonal !== undefined) updateData.emailPersonal = body.emailPersonal;
       if (body.direccionResidencia !== undefined) updateData.direccionResidencia = body.direccionResidencia;
       if (body.municipioResidencia !== undefined) updateData.municipioResidencia = body.municipioResidencia;
       if (body.eps !== undefined) updateData.eps = body.eps;
@@ -100,10 +103,14 @@ export async function PUT(request: NextRequest) {
         });
       }
     } else if (rol.includes("APRENDIZ")) {
-      if (body.telefono !== undefined) {
+      const updateData: any = {};
+      if (body.telefono !== undefined) updateData.telefono = body.telefono;
+      if (body.emailPersonal !== undefined) updateData.emailPersonal = body.emailPersonal;
+      
+      if (Object.keys(updateData).length > 0) {
         await prisma.aprendiz.update({
           where: { userId: session.user.id },
-          data: { telefono: body.telefono }
+          data: updateData
         });
       }
     }

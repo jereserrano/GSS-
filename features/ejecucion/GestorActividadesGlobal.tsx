@@ -25,7 +25,7 @@ export function GestorActividadesGlobal() {
 
   useEffect(() => {
     getSedesAction().then(res => {
-      if(res.success) setSedes(res.data || []);
+      if(res.success && res.data) setSedes(res.data.data || []);
     });
     getInstructoresAction({ tamano: 100 }).then(res => {
       if(res.success && res.data) setInstructores(res.data.data || []);

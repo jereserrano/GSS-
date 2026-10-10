@@ -16,12 +16,18 @@ const noApiCache: RuntimeCaching = {
   handler: new NetworkOnly(),
 };
 
+// Evitar cachear peticiones POST (Server Actions)
+const noPostCache: RuntimeCaching = {
+  matcher: ({ request }) => request.method === 'POST',
+  handler: new NetworkOnly(),
+};
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: [noApiCache, ...defaultCache],
+  runtimeCaching: [noPostCache, noApiCache, ...defaultCache],
 });
 
 serwist.addEventListeners();

@@ -101,14 +101,14 @@ export default function LoginPage() {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
       {/* Tarjeta Glassmorphism Principal */}
-      <div className="relative z-10 w-full max-w-[900px] mx-4 p-1 rounded-[2rem] bg-white/5 border border-white/20 shadow-2xl backdrop-blur-lg animate-in fade-in zoom-in-95 duration-700">
+      <div className="relative z-10 w-full max-w-[900px] mx-4 p-1 rounded-[2rem] bg-white/5 border border-white/20 shadow-2xl backdrop-blur-lg transform-gpu animate-in fade-in zoom-in-95 duration-700">
         
         {/* Contenedor Interno de la Tarjeta */}
         <div className="flex flex-col lg:flex-row h-full rounded-[1.9rem] overflow-hidden bg-gradient-to-br from-white/0 to-transparent">
           
           {/* LADO IZQUIERDO - Branding */}
           <div className="flex-1 p-10 lg:p-14 flex flex-col justify-center items-center text-center lg:border-r lg:border-white/10 border-b lg:border-b-0 border-white/10">
-            <div className="mb-8 p-4 bg-white/10 rounded-full backdrop-blur-md border border-white/20 shadow-inner">
+            <div className="mb-8 p-4 bg-white/10 rounded-full backdrop-blur-md transform-gpu border border-white/20 shadow-inner">
               <img src="/logo.png" alt="GSS Logo" className="h-16 object-contain drop-shadow-md" />
             </div>
             <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow-lg mb-4 uppercase">

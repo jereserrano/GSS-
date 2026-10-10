@@ -27,9 +27,7 @@ export async function crearClaseVirtualAction(data: z.infer<typeof claseVirtualS
       return { success: false, error: "Tu usuario no está vinculado a un perfil de Instructor válido." };
     }
 
-    if (!user.zoomAccessToken) {
-      return { success: false, error: "No tienes tu cuenta de Zoom vinculada. Ve a tu perfil y conecta tu cuenta." };
-    }
+
 
     const { titulo, descripcion, fechaInicio, duracionMin, fichaId } = parsed.data;
     
@@ -46,54 +44,22 @@ export async function crearClaseVirtualAction(data: z.infer<typeof claseVirtualS
     const startDate = new Date(fechaInicio);
     const endDate = new Date(startDate.getTime() + duracionMin * 60000);
 
-    // Importar función para renovar token
-    const { getZoomAccessTokenFromRefreshToken } = await import("@/lib/zoom-api");
-
-    // Conectar a Zoom API para agendar la reunión
+    // Conectar a Zoom API para agendar la reunión (ahora usa Server-to-Server internamente)
     let zoomResponse = await createZoomMeeting(
-      user.zoomAccessToken,
       titulo,
       startDate,
       duracionMin
     );
 
-    // Si el token expiró, intentar renovarlo
-    if (!zoomResponse.success && zoomResponse.error?.includes("Invalid access token") && user.zoomRefreshToken) {
-      try {
-        const tokenData = await getZoomAccessTokenFromRefreshToken(user.zoomRefreshToken);
-        
-        if (tokenData.access_token) {
-          // Guardar el nuevo token
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              zoomAccessToken: tokenData.access_token,
-              zoomRefreshToken: tokenData.refresh_token || user.zoomRefreshToken,
-            }
-          });
-
-          // Reintentar la llamada con el nuevo token
-          zoomResponse = await createZoomMeeting(
-            tokenData.access_token,
-            titulo,
-            startDate,
-            duracionMin
-          );
-        }
-      } catch (refreshError) {
-        console.error("Error renovando token de Zoom:", refreshError);
-      }
-    }
-
     if (!zoomResponse.success || !zoomResponse.joinUrl) {
-      return { success: false, error: zoomResponse.error || "La sesión de Zoom expiró. Por favor ve a tu perfil, desconecta tu cuenta de Zoom y vuelve a conectarla." };
+      return { success: false, error: zoomResponse.error || "No se pudo crear la reunión en Zoom con las credenciales del servidor." };
     }
 
     // Guardar la Clase en Base de Datos
     const nuevaClase = await prisma.claseVirtual.create({
       data: {
         titulo,
-        descripcion,
+        descripcion: descripcion || null,
         fechaInicio: startDate,
         duracionMin,
         enlaceUrl: zoomResponse.joinUrl,
@@ -119,7 +85,7 @@ export async function crearClaseVirtualAction(data: z.infer<typeof claseVirtualS
 
     // Enviar correos masivos a los aprendices
     const emailsToNotify = ficha.aprendices
-      .map(a => a.emailSena || a.emailPersonal)
+      .map(a => a.emailPersonal || (a as any).emailSena || a.user?.email)
       .filter((email): email is string => !!email);
 
     if (emailsToNotify.length > 0) {
@@ -153,6 +119,43 @@ export async function crearClaseVirtualAction(data: z.infer<typeof claseVirtualS
 
   } catch (error: any) {
     console.error("Error al crear clase virtual:", error);
+    return { success: false, error: error.message || "Error interno del servidor" };
+  }
+}
+
+export async function eliminarClaseVirtualAction(claseId: string) {
+  try {
+    const sessionUser = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+
+    const clase = await prisma.claseVirtual.findUnique({
+      where: { id: claseId }
+    });
+
+    if (!clase) {
+      return { success: false, error: "Clase no encontrada." };
+    }
+
+    if (sessionUser.rol === "INSTRUCTOR") {
+      const user = await prisma.user.findUnique({
+        where: { id: sessionUser.id },
+        include: { instructor: true }
+      });
+      if (user?.instructor?.id !== clase.instructorId) {
+        return { success: false, error: "No tienes permiso para eliminar esta clase." };
+      }
+    }
+
+    // Aquí podríamos intentar cancelar la reunión en Zoom, 
+    // pero requeriría una API en zoom-api.ts. Por ahora borramos de DB.
+    
+    await prisma.claseVirtual.delete({
+      where: { id: claseId }
+    });
+
+    revalidatePath("/clases-virtuales");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error al eliminar clase virtual:", error);
     return { success: false, error: error.message || "Error interno del servidor" };
   }
 }

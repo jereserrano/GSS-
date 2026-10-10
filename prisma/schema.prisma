@@ -160,6 +160,7 @@ model Instructor {
   estado          Estado        @default(ACTIVO)
   
   // Datos Personales Extendidos
+  emailPersonal       String?
   direccionResidencia String?
   municipioResidencia String?
   eps                 String?
@@ -454,9 +455,7 @@ model User {
   // Firma Digital para Documentos
   firmaDigitalUrl      String? @db.Text
 
-  // Integración Zoom
-  zoomAccessToken      String? @db.Text
-  zoomRefreshToken     String? @db.Text
+
 
   creadoEn         DateTime   @default(now())
   actualizadoEn    DateTime   @updatedAt

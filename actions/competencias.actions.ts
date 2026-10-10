@@ -120,8 +120,8 @@ export async function createCompetencia(data: z.infer<typeof competenciaSchema>)
         const emails = new Set<string>();
         fichas.forEach(ficha => {
           ficha.aprendices.forEach(a => {
-            if (a.emailSena) emails.add(a.emailSena);
-            else if (a.emailPersonal) emails.add(a.emailPersonal);
+            if (a.emailPersonal) emails.add(a.emailPersonal);
+            else if (a.emailSena) emails.add(a.emailSena);
           });
           ficha.instructores.forEach(i => {
             if (i.instructor?.email) emails.add(i.instructor.email);

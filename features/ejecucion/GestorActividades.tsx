@@ -230,8 +230,6 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
           </div>
           
           {(() => {
-            const miEmail = session?.user?.email;
-            
             // Filter by search string
             const filteredActividades = actividades.filter(act => 
               act.nombre.toLowerCase().includes(searchActividad.toLowerCase())
@@ -294,15 +292,28 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
               );
             }
 
+            const userEmail = (session?.user?.email || "").toLowerCase();
+            const userId = session?.user?.id;
+            const isMyEntrega = (e: any) => {
+              if (!isAprendiz) return false;
+              if (userId && (e.aprendizId === userId || e.aprendiz?.userId === userId || e.aprendiz?.user?.id === userId)) return true;
+              if (userEmail) {
+                if (e.aprendiz?.user?.email?.toLowerCase() === userEmail) return true;
+                if (e.aprendiz?.emailSena?.toLowerCase() === userEmail) return true;
+                if (e.aprendiz?.emailPersonal?.toLowerCase() === userEmail) return true;
+              }
+              return false;
+            };
+
             // If apprentice, split into Pendientes and Entregadas
             const pendientes = filteredActividades.filter(act => {
-              const miEntrega = act.entregas?.find((e: any) => e.aprendiz?.user?.email === miEmail);
+              const miEntrega = act.entregas?.find(isMyEntrega);
               // It's pending if there's no submission or the submission is "DEVUELTA"
               return !miEntrega || miEntrega.estado === "NO_APROBADA" || miEntrega.estado === "DEVUELTA";
             });
 
             const entregadas = filteredActividades.filter(act => {
-              const miEntrega = act.entregas?.find((e: any) => e.aprendiz?.user?.email === miEmail);
+              const miEntrega = act.entregas?.find(isMyEntrega);
               // It's delivered if there's a submission and it's not rejected
               return miEntrega && miEntrega.estado !== "NO_APROBADA" && miEntrega.estado !== "DEVUELTA";
             });
@@ -334,7 +345,7 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
               return list.map((act) => {
                 const totalEntregas = act.entregas?.length || 0;
                 const pendientesEval = act.entregas?.filter((e: any) => e.estado === "PENDIENTE" || e.estado === "TARDIA").length || 0;
-                const miEntrega = isAprendiz ? act.entregas?.find((e: any) => e.aprendiz?.user?.email === miEmail) : null;
+                const miEntrega = isAprendiz ? act.entregas?.find(isMyEntrega) : null;
 
                 return (
             <Card key={act.id} className="overflow-hidden border shadow-sm">

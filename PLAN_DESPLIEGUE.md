@@ -85,6 +85,11 @@ Este documento servirá como bitácora de registro de cada paso ejecutado para d
   3. Solución en frontend: Se mejoró `CentroCalificaciones.tsx` para incluir búsqueda resiliente de la cuenta de aprendiz (por `userId` y `email`), expansión automática de competencias por defecto en la vista de aprendiz, y alertas informativas mediante `sonner` `toast` tras la calificación masiva.
   4. Sincronización retroactiva: Se sincronizaron las evaluaciones existentes en base de datos para que actividades previas queden en estado `CALIFICADA` con su nota correspondiente.
   5. Despliegue en servidor Linux remoto mediante Git y reinicio de servicio PM2. ✅ Exitoso.
+- **[2026-10-11 10:35]** (Fase 2 y 4 - Infraestructura y Robustez) Ampliación de memoria RAM en servidor Linux a 4.3GB y optimización de detección de entregas en Gestor de Actividades:
+  1. Verificación de infraestructura: Se comprobó por SSH el incremento de memoria RAM en la máquina virtual a 4281 MB (~4.3 GB) y disponibilidad de 3.1 GB de RAM libre, asegurando compilaciones fluidas sin riesgo de OOM.
+  2. Mejora en `GestorActividades.tsx`: Implementación de la función `isMyEntrega` con validación multi-criterio (`userId`, `emailSena`, `emailPersonal`, `user.email`) insensible a mayúsculas/minúsculas para garantizar que el aprendiz siempre visualice sus entregas en "Historial de Entregas" y nunca pierda visibilidad de su nota.
+  3. Ejecución de suite de pruebas automatizadas (`test_calificar_masivo.ts`) confirmando que la calificación masiva actualiza instantáneamente las entregas a `CALIFICADA`, deja en 0 las entregas pendientes de evaluar en el Gestor de Actividades y refleja la nota en la vista del aprendiz.
+  4. Despliegue en el servidor Linux con PM2 operativo. ✅ Exitoso.
 
 
 

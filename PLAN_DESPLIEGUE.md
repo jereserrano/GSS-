@@ -117,3 +117,34 @@ Este documento servirá como bitácora de registro de cada paso ejecutado para d
      - Diagnóstico: En `prisma/schema.prisma` el campo `porcentajeAsistencia` tenía `@default(100.0)`, en `services/riesgo.service.ts` se retornaba `100` si `totalSesiones === 0`, y en `actions/dashboard.actions.ts` se usaba `|| 100` (evaluando `0` como falso y mostrando 100%). Por ello, aprendices recién creados o sin registros como José Leonardo aparecían con 100% de asistencia.
      - Solución: Si un aprendiz tiene 0 sesiones registradas, su asistencia real es `0.0%`. Se ajustó `schema.prisma` (`@default(0.0)`), `services/riesgo.service.ts` (`0%` si no hay sesiones, sin disparar falso riesgo si la ficha aún no tiene clases), y los fallbacks de dashboard a `?? 0`.
      - Actualización retroactiva: Se ejecutó el recálculo en la base de datos de producción, fijando la asistencia de José Leonardo en `0%` y preservando el `100%` de Iván (1/1 asistencias).
+- **[2026-10-11 16:05]** (Fase 4 - Seguridad, RBAC y Alcance / Rol Coordinador de Sede):
+  1. **Restricción de Rutas y Menú:**
+     - En lib/permissions.ts se retiró /usuarios de las rutas comunes universales y se definió la lista blanca estricta RUTAS_COORDINADOR_SEDE omitiendo /usuarios, /roles y /configuracion.
+     - En Sidebar.tsx se creó la sección de navegación 
+avCoordinadorSede, excluyendo los submódulos de administración global (Usuarios, Roles y Permisos, Configuración Global) y dejando únicamente Supervisión/Auditoría, Notificaciones y Seguridad.
+     - En pp/(dashboard)/usuarios/page.tsx, 
+oles/page.tsx, configuracion/page.tsx y en ctions/user.actions.ts se agregaron redirecciones y validaciones en servidor para denegar acceso a COORDINADOR_SEDE.
+  2. **Clases Virtuales (/clases-virtuales):**
+     - Se añadió la rama de consulta para coordinadores en pp/(dashboard)/clases-virtuales/page.tsx, filtrando las sesiones sincrónicas programadas por instructores cuyas fichas pertenecen a la sede asignada (icha.sedeId === user.sedeId), mostrando ficha e instructor a cargo.
+  3. **Centro de Calificaciones (Modo Solo Lectura):**
+     - En eatures/ejecucion/CentroCalificaciones.tsx se definió canGrade = false para COORDINADOR_SEDE, deshabilitando la pestaña de Calificación Masiva y manteniendo visible la Sábana de Progreso y la descarga en Excel.
+     - En ctions/evaluaciones.actions.ts se blindaron calificarMasivoAction, createEvaluacion, updateEvaluacion y deleteEvaluacion para rechazar modificaciones por parte de coordinadores de sede.
+     - En ctions/fichas.actions.ts (getFichasSelectAction) se añadió el filtro automático por sedeId.
+  4. **Documentos (/documentos):**
+     - En pp/(dashboard)/documentos/page.tsx se integró COORDINADOR_SEDE como rol revisor para renderizar ConsolaRevisionDocumentos.
+     - En /api/documentos/admin y /api/documentos/admin/[instructorId] se habilitó el acceso a COORDINADOR_SEDE filtrando los instructores asignados a las fichas de su sede.
+     - En ctions/documentos.actions.ts se acotaron las solicitudes de cartas al sedeId del coordinador.
+  5. **Gestor de Excusas (/gestor-excusas):**
+     - En pp/(dashboard)/gestor-excusas/page.tsx se incluyó COORDINADOR_SEDE en los roles con acceso con bandera canEdit = false (modo solo lectura, ocultando botones de aprobar y rechazar).
+     - En ctions/excusas.actions.ts (getExcusasPorRolAction) se filtraron las excusas radicadas por aprendices de fichas pertenecientes a su sede.
+  6. **Mensajería (/mensajes):**
+     - En ctions/mensajes.actions.ts (getContactosDisponiblesAction) se configuró la población de contactos para COORDINADOR_SEDE, cargando administradores, coordinadores, instructores y aprendices de las fichas de su sede, enriquecidos con su ichaId, ichaCodigo y programaNombre.
+     - En eatures/mensajeria/MensajeriaView.tsx se habilitó el selector directo de fichas para filtrar instantáneamente los contactos de la ficha seleccionada.
+  7. **Auditoría (/auditoria):**
+     - En ctions/reportes.actions.ts (getAuditLogsAction) se agregó verificación de sesión e inyección de filtro estricto where.user = { sedeId: sessionUser.sedeId } para que el coordinador de sede únicamente visualice acciones realizadas por usuarios de su propia subsede.
+  8. **Dashboard (/dashboard):**
+     - En pp/(dashboard)/dashboard/page.tsx se incluyó COORDINADOR_SEDE en isAdminOrCoord para renderizar el panel analítico AdminDashboard con filtros en cascada.
+     - En /api/dashboard/admin se autorizó al coordinador de sede y se filtraron los programas y fichas a los asignados a su sede.
+     - En ctions/dashboard.actions.ts (getDashboardKpis) se acotaron los totales de aprendices, fichas, instituciones y aprendices en riesgo al sedeId del usuario en sesión.
+  9. **Compilación y Despliegue:**
+     - Validación de tipos limpia con TypeScript, compilación exitosa en servidor remoto con Next.js y reinicio de proceso PM2 gss-backend (PID 6875, status online). ✅ Exitoso.

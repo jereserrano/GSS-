@@ -90,6 +90,13 @@ Este documento servirá como bitácora de registro de cada paso ejecutado para d
   2. Mejora en `GestorActividades.tsx`: Implementación de la función `isMyEntrega` con validación multi-criterio (`userId`, `emailSena`, `emailPersonal`, `user.email`) insensible a mayúsculas/minúsculas para garantizar que el aprendiz siempre visualice sus entregas en "Historial de Entregas" y nunca pierda visibilidad de su nota.
   3. Ejecución de suite de pruebas automatizadas (`test_calificar_masivo.ts`) confirmando que la calificación masiva actualiza instantáneamente las entregas a `CALIFICADA`, deja en 0 las entregas pendientes de evaluar en el Gestor de Actividades y refleja la nota en la vista del aprendiz.
   4. Despliegue en el servidor Linux con PM2 operativo. ✅ Exitoso.
+- **[2026-10-11 14:18]** (Fase 4 - Administración y Seguridad / Control de Sedes) Soporte integral de asignación de Sede para Coordinadores de Sede y Apoyos:
+  1. Frontend en Gestión de Usuarios: Se añadió el selector reactivo de "Sede Asignada" (`sedeId`) en `UsuarioFormDialog.tsx`, con validación obligatoria para los roles `COORDINADOR_SEDE` y `APOYO_COORDINACION`, y filtrado contextual por institución seleccionada.
+  2. Proveedor de datos en `/usuarios`: Se actualizó `usuarios/page.tsx` para cargar las sedes educativas desde Prisma y suministrarlas a `UsuariosTable` y a los diálogos.
+  3. Visualización en tabla: Se incorporó la relación `sede` en `getUsers()` y el distintivo visual (badge `🏛️ Sede` / alerta `⚠️ Sin Sede`) en `UsuariosTable.tsx` para supervisión inmediata del Administrador.
+  4. Persistencia en Backend: Se ajustaron las mutaciones `createUser` y `updateUser` en `actions/user.actions.ts` para persistir `sedeId` en el repositorio de usuarios.
+  5. Contexto de Sesión JWT: Se integraron `sedeId` e `institucionId` en los callbacks de `authorize`, `jwt` y `session` de `lib/auth.ts` y en las extensiones de tipos de NextAuth (`types/next-auth.d.ts`), permitiendo que los filtros de seguridad por sede operen desde el inicio de sesión.
+  6. Despliegue y verificación: Sincronización vía Git hacia el servidor Linux remoto, compilación limpia de producción con Next.js y reinicio del proceso PM2 `gss-backend`. ✅ Exitoso.
 
 
 

@@ -246,6 +246,8 @@ export async function createAprendiz(data: z.infer<typeof aprendizSchema>) {
         direccion: data.direccion || null,
         fichaId: data.fichaId,
         estado: (data.estado as any) || "EN_FORMACION",
+        porcentajeAsistencia: 0.0,
+        promedioAcumulado: 0.0,
         userId: linkedUserId,
       },
     });

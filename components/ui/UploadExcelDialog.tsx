@@ -17,10 +17,12 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+      setErrorDetails(null);
     }
   };
 
@@ -28,6 +30,7 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
     if (!file) return;
 
     setLoading(true);
+    setErrorDetails(null);
     try {
       // Leer el archivo como ArrayBuffer y procesarlo con exceljs (sin vulnerabilidades de xlsx)
       const arrayBuffer = await file.arrayBuffer();
@@ -43,8 +46,8 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
 
       // Extraer encabezados de la primera fila
       const headers: string[] = [];
-      worksheet.getRow(1).eachCell((cell) => {
-        headers.push(String(cell.value ?? ""));
+      worksheet.getRow(1).eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        headers[colNumber - 1] = String(cell.value ?? "").trim();
       });
 
       // Convertir filas a objetos JSON
@@ -54,10 +57,18 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
         const rowObj: any = {};
         row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
           const header = headers[colNumber - 1];
-          if (header) rowObj[header] = cell.value ?? "";
+          if (header) {
+            let val = cell.value;
+            // Si la celda contiene un objeto de ExcelJS (fórmula, hipervínculo, richText)
+            if (val && typeof val === "object") {
+              if ("text" in val) val = (val as any).text;
+              else if ("result" in val) val = (val as any).result;
+            }
+            rowObj[header] = val ?? "";
+          }
         });
         // Solo añadir filas que no estén completamente vacías
-        if (Object.values(rowObj).some((v) => v !== "" && v !== null && v !== undefined)) {
+        if (Object.values(rowObj).some((v) => String(v ?? "").trim() !== "")) {
           rawJson.push(rowObj);
         }
       });
@@ -71,7 +82,7 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
       });
 
       if (json.length === 0) {
-        toast.error("El archivo está vacío");
+        toast.error("El archivo está vacío o no contiene filas con datos.");
         setLoading(false);
         return;
       }
@@ -82,10 +93,14 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
         toast.success(`Carga exitosa: ${res.count} registros insertados.`);
         setOpen(false);
         setFile(null);
+        setErrorDetails(null);
       } else {
-        toast.error(res.error || "Error en la validación de los datos. Operación abortada.");
+        const errorMsg = res.error || "Error en la validación de los datos. Operación abortada.";
+        setErrorDetails(errorMsg);
+        toast.error("Se detectaron inconsistencias en el archivo.");
       }
     } catch (err: any) {
+      setErrorDetails(err.message || "Error al procesar el archivo Excel.");
       toast.error("Error al procesar el archivo Excel.");
     } finally {
       setLoading(false);
@@ -94,7 +109,7 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
 
   return (
     <>
-      <Button variant="outline" className="gap-2" onClick={() => setOpen(true)}>
+      <Button variant="outline" className="gap-2" onClick={() => { setOpen(true); setErrorDetails(null); }}>
         <Upload className="w-4 h-4" />
         Carga Masiva
       </Button>
@@ -104,7 +119,7 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
           <div className="bg-white border border-border shadow-2xl rounded-xl w-full max-w-lg p-6 relative animate-in zoom-in-95 duration-200">
             
             <button 
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); setErrorDetails(null); }}
               className="absolute right-4 top-4 text-text-secondary hover:text-text-primary transition-colors"
             >
               <X size={20} />
@@ -142,9 +157,21 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
                 </div>
               )}
               
+              {errorDetails && (
+                <div className="flex flex-col gap-1.5 text-xs text-red-800 bg-red-50 p-3.5 rounded-lg border border-red-200 max-h-56 overflow-y-auto">
+                  <div className="flex items-center gap-2 font-semibold text-red-900">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>Inconsistencias detectadas en el archivo:</span>
+                  </div>
+                  <pre className="whitespace-pre-wrap font-sans text-xs text-red-700 leading-relaxed mt-1">
+                    {errorDetails}
+                  </pre>
+                </div>
+              )}
+
               <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 p-3 rounded-md border border-amber-200">
                 <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
-                <p>La carga es <strong>atómica</strong>. Si un solo registro contiene errores (ej. documento duplicado), se abortará toda la operación.</p>
+                <p>La carga es <strong>atómica</strong>. Si un solo registro contiene errores (ej. documento duplicado o ficha inexistente), se abortará toda la operación.</p>
               </div>
             </div>
 
@@ -157,7 +184,7 @@ export function UploadExcelDialog({ title, description, onUpload, templateUrl }:
                 )}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                <Button variant="outline" onClick={() => { setOpen(false); setErrorDetails(null); }} disabled={loading}>
                   Cancelar
                 </Button>
                 <Button onClick={handleUpload} disabled={!file || loading}>

@@ -136,7 +136,7 @@ export function SaludAcademicaAprendiz() {
   const StatusIcon = config.icon;
   const recs = RECOMMENDATIONS[nivel] || RECOMMENDATIONS.BAJO;
 
-  const asistencia = Math.round(aprendiz.porcentajeAsistencia ?? 100);
+  const asistencia = Math.round(aprendiz.porcentajeAsistencia ?? 0);
   const promedio = (aprendiz.promedioAcumulado ?? 0).toFixed(1);
   const pendientes = aprendiz.entregas?.length ?? 0;
   

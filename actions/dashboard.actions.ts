@@ -89,7 +89,7 @@ export async function getDashboardKpis() {
             totalAprendices: totalActividades, // Para aprendiz: total actividades
             totalInstituciones: entregasUnicas, // Total evidencias entregadas
             totalFichas: misJuicios, // Juicios (Evaluaciones) aprobados
-            asistenciaPromedio: Number(Number(userContext.aprendiz.porcentajeAsistencia || 100).toFixed(1)),
+            asistenciaPromedio: Number(Number(userContext.aprendiz.porcentajeAsistencia ?? 0).toFixed(1)),
           },
           labels: {
             kpi1: { title: "Actividades de Ficha", sub: "Asignadas a tu grupo" },

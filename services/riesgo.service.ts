@@ -28,7 +28,7 @@ export async function recalcularRiesgoAprendiz(aprendizId: string) {
 
     const porcentajeAsistencia = totalSesiones > 0 
       ? parseFloat(((asistenciasYExcusas / totalSesiones) * 100).toFixed(2))
-      : 100;
+      : 0;
 
     // 3. Analizar Rendimiento Académico (Entregas y Evaluaciones)
     const evaluacionesDeficientes = await prisma.evaluacionAprendiz.count({
@@ -65,15 +65,19 @@ export async function recalcularRiesgoAprendiz(aprendizId: string) {
     let nuevoRiesgo: NivelRiesgo = NivelRiesgo.BAJO;
     let motivoRiesgo = "";
 
-    if (porcentajeAsistencia < asistenciaMinima || totalFallasAcademicas >= 3) {
+    // Solo evaluar inasistencia si la ficha ha tenido al menos una sesión de asistencia
+    const hayInasistenciaCritica = totalSesiones > 0 && porcentajeAsistencia < asistenciaMinima;
+    const hayInasistenciaMedia = totalSesiones > 0 && porcentajeAsistencia < asistenciaMedia;
+
+    if (hayInasistenciaCritica || totalFallasAcademicas >= 3) {
       nuevoRiesgo = NivelRiesgo.ALTO;
-      motivoRiesgo = porcentajeAsistencia < asistenciaMinima 
-        ? `Inasistencia crítica (${porcentajeAsistencia}%).` 
+      motivoRiesgo = hayInasistenciaCritica 
+        ? `Inasistencia crítica (${porcentajeAsistencia}% en ${totalSesiones} sesión(es)).` 
         : `Múltiples fallas académicas (${totalFallasAcademicas} actividades/evaluaciones perdidas).`;
-    } else if (porcentajeAsistencia < asistenciaMedia || totalFallasAcademicas >= 1) {
+    } else if (hayInasistenciaMedia || totalFallasAcademicas >= 1) {
       nuevoRiesgo = NivelRiesgo.MEDIO;
-      motivoRiesgo = porcentajeAsistencia < asistenciaMedia
-        ? `Inasistencia en nivel de advertencia (${porcentajeAsistencia}%).`
+      motivoRiesgo = hayInasistenciaMedia
+        ? `Inasistencia en nivel de advertencia (${porcentajeAsistencia}% en ${totalSesiones} sesión(es)).`
         : `Presenta ${totalFallasAcademicas} falla(s) académica(s).`;
     }
 

@@ -129,7 +129,7 @@ model Aprendiz {
   fichaId              String
   estado               EstadoAprendiz @default(EN_FORMACION)
   nivelRiesgo          NivelRiesgo    @default(BAJO)
-  porcentajeAsistencia Float          @default(100.0)
+  porcentajeAsistencia Float          @default(0.0)
   promedioAcumulado    Float          @default(0.0)
   userId               String?        @unique
   creadoEn             DateTime       @default(now())

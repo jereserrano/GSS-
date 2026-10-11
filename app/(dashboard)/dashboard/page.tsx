@@ -56,7 +56,7 @@ export default async function DashboardPage() {
     },
     {
       titulo: labels?.kpi4?.title ?? (isAprendiz ? "Promedio Asistencia" : "Asistencia Global"),
-      valor: kpisData ? `${kpisData.asistenciaPromedio}%` : "100%",
+      valor: kpisData ? `${kpisData.asistenciaPromedio}%` : "0%",
       subtitulo: labels?.kpi4?.sub ?? (isAprendiz ? "Mi asistencia a sesiones" : "Promedio general registrado"),
       icono: "TrendingUp",
       color: "bg-[#39A900]",

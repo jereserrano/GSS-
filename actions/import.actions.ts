@@ -11,11 +11,87 @@ import { requireRole } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 
+function normalizeAprendizRow(row: any) {
+  if (!row || typeof row !== "object") return {};
+  const cleanKeys: Record<string, any> = {};
+  for (const [k, v] of Object.entries(row)) {
+    const norm = String(k)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+    cleanKeys[norm] = v;
+  }
+
+  const numDoc = cleanKeys["numerodocumento"] ?? cleanKeys["documento"] ?? cleanKeys["identificacion"] ?? cleanKeys["numdoc"] ?? cleanKeys["nodocumento"] ?? row.numeroDocumento;
+  const tipoDoc = cleanKeys["tipodocumento"] ?? cleanKeys["tipodoc"] ?? row.tipoDocumento ?? "CC";
+  const nombres = cleanKeys["nombres"] ?? cleanKeys["nombre"] ?? row.nombres;
+  const apellidos = cleanKeys["apellidos"] ?? cleanKeys["apellido"] ?? row.apellidos;
+  const emailSena = cleanKeys["emailsena"] ?? cleanKeys["correosena"] ?? cleanKeys["emailsenaeduco"] ?? row.emailSena;
+  const emailPersonal = cleanKeys["emailpersonal"] ?? cleanKeys["correopersonal"] ?? cleanKeys["email"] ?? cleanKeys["correo"] ?? row.emailPersonal;
+  const telefono = cleanKeys["telefono"] ?? cleanKeys["celular"] ?? cleanKeys["tel"] ?? row.telefono;
+  const codigoFicha = cleanKeys["codigoficha"] ?? cleanKeys["ficha"] ?? cleanKeys["fichaid"] ?? cleanKeys["numficha"] ?? cleanKeys["idficha"] ?? row.codigoFicha;
+
+  return {
+    tipoDocumento: tipoDoc ? String(tipoDoc).trim().toUpperCase() : "CC",
+    numeroDocumento: numDoc !== undefined && numDoc !== null ? String(numDoc).trim() : "",
+    nombres: nombres !== undefined && nombres !== null ? String(nombres).trim() : "",
+    apellidos: apellidos !== undefined && apellidos !== null ? String(apellidos).trim() : "",
+    emailSena: emailSena !== undefined && emailSena !== null ? String(emailSena).trim() : "",
+    emailPersonal: emailPersonal !== undefined && emailPersonal !== null ? String(emailPersonal).trim() : "",
+    telefono: telefono !== undefined && telefono !== null ? String(telefono).trim() : "",
+    codigoFicha: codigoFicha !== undefined && codigoFicha !== null ? String(codigoFicha).trim() : "",
+  };
+}
+
 export async function importAprendicesMasivo(data: any) {
   try {
-    const parsed = importAprendicesSchema.safeParse(data);
+    if (!Array.isArray(data) || data.length === 0) {
+      return { success: false, error: "El archivo no contiene filas para importar." };
+    }
+
+    const normalizedData = data.map(normalizeAprendizRow).filter(
+      (r) => r.numeroDocumento || r.nombres || r.apellidos || r.codigoFicha
+    );
+
+    if (normalizedData.length === 0) {
+      return { success: false, error: "No se encontraron filas con datos de aprendices en el archivo." };
+    }
+
+    const parsed = importAprendicesSchema.safeParse(normalizedData);
     if (!parsed.success) {
-      return { success: false, error: "Estructura de datos inválida", issues: parsed.error.errors };
+      const fieldLabels: Record<string, string> = {
+        numeroDocumento: "Número de Documento",
+        nombres: "Nombres",
+        apellidos: "Apellidos",
+        codigoFicha: "Código de Ficha",
+        emailSena: "Email SENA",
+        emailPersonal: "Email Personal",
+        tipoDocumento: "Tipo de Documento",
+        telefono: "Teléfono",
+      };
+
+      const errorLines = parsed.error.errors.slice(0, 5).map((err) => {
+        const rowIdx = typeof err.path[0] === "number" ? err.path[0] + 2 : "?";
+        const fieldKey = String(err.path[1] || err.path[0]);
+        const fieldLabel = fieldLabels[fieldKey] || fieldKey;
+        let motive = err.message;
+        if (err.code === "invalid_string" && (err as any).validation === "email") {
+          motive = "no tiene un formato de correo válido (ej: usuario@correo.com)";
+        } else if (err.code === "too_small") {
+          motive = "es obligatorio y se encuentra vacío";
+        }
+        return `• Fila ${rowIdx}: El campo '${fieldLabel}' ${motive}.`;
+      });
+
+      const total = parsed.error.errors.length;
+      const extra = total > 5 ? `\n... y ${total - 5} errores adicionales.` : "";
+
+      return {
+        success: false,
+        error: `Inconsistencias en el archivo Excel:\n${errorLines.join("\n")}${extra}`,
+        issues: parsed.error.errors,
+      };
     }
 
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "COORDINADOR_REGIONAL", "COORDINADOR_ACADEMICO", "COORDINADOR_SEDE"]);
@@ -26,11 +102,11 @@ export async function importAprendicesMasivo(data: any) {
       const fichasCache = new Map<string, string>();
       
       for (const row of parsed.data) {
-        const codigo = String(row.codigoFicha);
+        const codigo = String(row.codigoFicha).trim();
         if (!fichasCache.has(codigo)) {
           const ficha = await tx.ficha.findUnique({ where: { codigo } });
           if (!ficha) {
-            throw new Error(`La ficha con código ${codigo} no existe en el sistema.`);
+            throw new Error(`La ficha con código '${codigo}' no existe en el sistema. Asegúrate de crearla previamente.`);
           }
           
           const rol = user.rol?.toUpperCase() || "";
@@ -77,6 +153,8 @@ export async function importAprendicesMasivo(data: any) {
             emailSena: row.emailSena || email,
             emailPersonal: row.emailPersonal || null,
             telefono: row.telefono || null,
+            porcentajeAsistencia: 0.0,
+            promedioAcumulado: 0.0,
             userId: targetUserId,
           }
         });

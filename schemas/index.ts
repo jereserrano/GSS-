@@ -203,17 +203,31 @@ export const asistenciaMasivaSchema = z.object({
   detalles: z.array(detalleAsistenciaSchema),
 });
 
+// Helper schemas para importaciones resilientes
+const optionalEmailImportSchema = z.preprocess((val) => {
+  if (val === null || val === undefined) return "";
+  const s = String(val).trim();
+  if (!s || s.toLowerCase() === "n/a" || s === "-") return "";
+  return s;
+}, z.string().email("Correo electrónico no válido").or(z.literal("")).optional());
+
+const requiredStringImportSchema = (fieldName: string) => z.preprocess((val) => {
+  if (val === null || val === undefined) return "";
+  return String(val).trim();
+}, z.string().min(1, `${fieldName} es obligatorio`));
+
 // Importación
 export const importAprendicesSchema = z.array(z.object({
-  tipoDocumento: z.coerce.string().optional(),
-  numeroDocumento: z.coerce.string().min(1),
-  nombres: z.coerce.string().min(1),
-  apellidos: z.coerce.string().min(1),
-  emailSena: z.coerce.string().email().optional().or(z.literal("")),
-  emailPersonal: z.coerce.string().email().optional().or(z.literal("")),
-  telefono: z.coerce.string().optional(),
-  codigoFicha: z.coerce.string().min(1),
+  tipoDocumento: z.preprocess((v) => (v ? String(v).trim().toUpperCase() : "CC"), z.string().optional()),
+  numeroDocumento: requiredStringImportSchema("El número de documento"),
+  nombres: requiredStringImportSchema("Los nombres"),
+  apellidos: requiredStringImportSchema("Los apellidos"),
+  emailSena: optionalEmailImportSchema,
+  emailPersonal: optionalEmailImportSchema,
+  telefono: z.preprocess((v) => (v ? String(v).trim() : ""), z.string().optional()),
+  codigoFicha: requiredStringImportSchema("El código de la ficha"),
 }));
+
 
 export const importInstructoresSchema = z.array(z.object({
   tipoDocumento: z.coerce.string().optional(),

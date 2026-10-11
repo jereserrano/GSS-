@@ -6,6 +6,7 @@ import { TransactionRepository } from "@/repositories/transaction.repository";
 
 import { aprendizSchema } from "@/schemas";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { logAudit } from "@/lib/audit.service";
 import { getServerSession } from "next-auth/next";
 import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
@@ -35,7 +36,7 @@ export async function getAprendizPropioAction() {
     if (!session?.user?.email) return { success: false, error: "No autenticado" };
     const user = await UserRepository.findUnique({ where: { email: session.user.email } });
     if (!user) return { success: false, error: "Usuario no encontrado" };
-    const aprendiz = await prisma.aprendiz.findUnique({
+    let aprendiz = await prisma.aprendiz.findUnique({
       where: { userId: user.id },
       select: {
         id: true,
@@ -67,7 +68,56 @@ export async function getAprendizPropioAction() {
         }
       }
     });
-    if (!aprendiz) return { success: false, error: "Perfil de aprendiz no encontrado" };
+
+    // Auto-reparación preventiva si existe por correo pero no tenía userId vinculado
+    if (!aprendiz && user.email) {
+      const byEmail = await prisma.aprendiz.findFirst({
+        where: {
+          OR: [{ emailSena: user.email }, { emailPersonal: user.email }],
+          userId: null
+        }
+      });
+      if (byEmail) {
+        await prisma.aprendiz.update({
+          where: { id: byEmail.id },
+          data: { userId: user.id }
+        });
+        aprendiz = await prisma.aprendiz.findUnique({
+          where: { userId: user.id },
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+            fichaId: true,
+            porcentajeAsistencia: true,
+            promedioAcumulado: true,
+            nivelRiesgo: true,
+            estado: true,
+            ficha: {
+              select: {
+                codigo: true,
+                programa: { select: { nombre: true } },
+                _count: { select: { actividades: true } }
+              }
+            },
+            entregas: {
+              select: { estado: true, actividad: { select: { nombre: true } } },
+              where: { estado: { in: ["PENDIENTE", "NO_APROBADA", "TARDIA"] } }
+            },
+            alertas: {
+              where: { gestionada: false },
+              orderBy: { fechaDeteccion: "desc" },
+              select: { id: true, motivo: true, nivel: true, observaciones: true, fechaDeteccion: true, gestionada: true }
+            },
+            evaluaciones: {
+              select: { nota: true, juicio: true, resultadoAprendizaje: { select: { nombre: true } } }
+            }
+          }
+        });
+      }
+    }
+
+    if (!aprendiz) return { success: false, error: "Perfil de aprendiz no encontrado. Por favor solicita a tu instructor o coordinador que asigne tu ficha de formación." };
 
     // Calculate live promedio and filter failed items
     let promedioReal = aprendiz.promedioAcumulado;
@@ -156,6 +206,32 @@ export async function createAprendiz(data: z.infer<typeof aprendizSchema>) {
       return { error: "Ya existe un aprendiz con ese número de documento" };
     }
 
+    // ── Vincular o generar cuenta de usuario para el aprendiz ──────────────────
+    let linkedUserId: string | null = null;
+    const emailToUse = (data.emailSena || data.emailPersonal || `${data.numeroDocumento}@soy.sena.edu.co`).trim().toLowerCase();
+
+    if (emailToUse) {
+      const existingUser = await UserRepository.findUnique({
+        where: { email: emailToUse },
+      });
+
+      if (existingUser) {
+        linkedUserId = existingUser.id;
+      } else {
+        const passwordHash = await bcrypt.hash(data.numeroDocumento, 10);
+        const newUser = await UserRepository.create({
+          data: {
+            nombre: `${data.nombres} ${data.apellidos}`.trim(),
+            email: emailToUse,
+            passwordHash,
+            rol: "APRENDIZ",
+            estado: "ACTIVO",
+          },
+        });
+        linkedUserId = newUser.id;
+      }
+    }
+
     const aprendiz = await AprendizRepository.create({
       data: {
         tipoDocumento: data.tipoDocumento as any,
@@ -163,17 +239,17 @@ export async function createAprendiz(data: z.infer<typeof aprendizSchema>) {
         nombres: data.nombres,
         apellidos: data.apellidos,
         emailPersonal: data.emailPersonal || null,
-        emailSena: data.emailSena || null,
+        emailSena: data.emailSena || emailToUse,
         telefono: data.telefono || null,
         fechaNacimiento: data.fechaNacimiento ? new Date(data.fechaNacimiento) : null,
         genero: data.genero || null,
         direccion: data.direccion || null,
         fichaId: data.fichaId,
         estado: (data.estado as any) || "EN_FORMACION",
+        userId: linkedUserId,
       },
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Aprendices",
@@ -194,17 +270,47 @@ export async function updateAprendiz(id: string, data: z.infer<typeof aprendizSc
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    
+    const currentAprendiz = await AprendizRepository.findUnique({ where: { id } });
+    if (!currentAprendiz) {
+      return { error: "No se encontró el registro del aprendiz a actualizar" };
+    }
+
+    let linkedUserId = currentAprendiz.userId;
+    const emailToUse = (data.emailSena || data.emailPersonal || `${data.numeroDocumento}@soy.sena.edu.co`).trim().toLowerCase();
+
+    // Si no tenía cuenta vinculada, intentar vincularla o crearla
+    if (!linkedUserId && emailToUse) {
+      const existingUser = await UserRepository.findUnique({ where: { email: emailToUse } });
+      if (existingUser) {
+        linkedUserId = existingUser.id;
+      } else {
+        const passwordHash = await bcrypt.hash(data.numeroDocumento, 10);
+        const newUser = await UserRepository.create({
+          data: {
+            nombre: `${data.nombres} ${data.apellidos}`.trim(),
+            email: emailToUse,
+            passwordHash,
+            rol: "APRENDIZ",
+            estado: "ACTIVO",
+          },
+        });
+        linkedUserId = newUser.id;
+      }
+    }
+
     const updateData: any = {
       tipoDocumento: data.tipoDocumento,
       numeroDocumento: data.numeroDocumento,
       nombres: data.nombres,
       apellidos: data.apellidos,
       emailPersonal: data.emailPersonal || null,
-      emailSena: data.emailSena || null,
+      emailSena: data.emailSena || emailToUse,
       telefono: data.telefono || null,
       genero: data.genero || null,
       direccion: data.direccion || null,
       estado: data.estado,
+      userId: linkedUserId,
     };
 
     if (data.fechaNacimiento) {
@@ -219,7 +325,6 @@ export async function updateAprendiz(id: string, data: z.infer<typeof aprendizSc
       data: updateData,
     });
 
-    
     await logAudit({
       userId: user.id,
       modulo: "Aprendices",

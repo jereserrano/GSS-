@@ -20,8 +20,49 @@ export default async function EntregasProgramasPage() {
     if (user?.rol?.toUpperCase() === "INSTRUCTOR" && user.instructor) {
       instructorId = user.instructor.id;
     }
-    if (isAprendiz && user?.aprendiz?.fichaId) {
-      redirect(`/entregas/ficha/${user.aprendiz.fichaId}`);
+    if (isAprendiz) {
+      let fichaId = user?.aprendiz?.fichaId;
+      if (!user?.aprendiz && user?.email) {
+        const candidate = await prisma.aprendiz.findFirst({
+          where: {
+            OR: [{ emailSena: user.email }, { emailPersonal: user.email }],
+            userId: null
+          }
+        });
+        if (candidate) {
+          await prisma.aprendiz.update({
+            where: { id: candidate.id },
+            data: { userId: user.id }
+          });
+          fichaId = candidate.fichaId;
+        }
+      }
+      if (fichaId) {
+        redirect(`/entregas/ficha/${fichaId}`);
+      }
+
+      return (
+        <div className="page-container space-y-6 page-enter">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-text-primary">Evidencias y Entregas</h1>
+            <p className="text-text-secondary mt-1">Portal de entrega de evidencias para aprendices.</p>
+          </div>
+          <div className="p-8 bg-amber-50 border border-amber-200 rounded-xl flex flex-col md:flex-row items-center gap-5 text-center md:text-left">
+            <div className="p-4 bg-amber-100 text-amber-800 rounded-full shrink-0">
+              <FolderOpen size={36} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-amber-950">Cuenta de Aprendiz sin Ficha Asignada</h2>
+              <p className="text-sm text-amber-800 mt-1">
+                Tu usuario está registrado como Aprendiz, pero aún no tienes una ficha de formación vinculada en la plataforma.
+              </p>
+              <p className="text-xs text-amber-700 mt-2 font-medium">
+                👉 Contacta a tu Instructor Líder o al Coordinador Académico para que asigne tu ficha correspondiente y puedas ver tus actividades.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
     }
   }
 

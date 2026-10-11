@@ -22,6 +22,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canManageUser, getAssignableRoles, type CurrentUserCtx } from "@/lib/hierarchy";
 import { getRolesWithStats } from "./roles.actions";
+import { prisma } from "@/lib/prisma";
 
 const STATIC_ROLES = {
   ADMINISTRADOR: { id: "ADMINISTRADOR", nombre: "Administrador", descripcion: "Acceso total al sistema" },
@@ -92,6 +93,24 @@ export async function getUsers() {
     }
 
     const users = await UserRepository.findMany({
+      include: {
+        aprendiz: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+            numeroDocumento: true,
+            fichaId: true,
+            ficha: {
+              select: {
+                id: true,
+                codigo: true,
+                programa: { select: { nombre: true } }
+              }
+            }
+          }
+        }
+      },
       orderBy: {
         creadoEn: "desc",
       },
@@ -195,42 +214,101 @@ export async function createUser(data: any) {
       },
     });
 
-    // ── 5.1 Crear perfiles automáticos según el rol ─────────────────────────
+    // ── 5.1 Crear / Vincular perfiles según el rol ───────────────────────────
     const rolNombreUpper = rolToAssign.nombre.toUpperCase();
     
     try {
       if (rolNombreUpper.includes("APRENDIZ")) {
-        const { PrismaClient } = require("@prisma/client");
-        const prismaLocal = new PrismaClient();
-        await prismaLocal.aprendiz.create({
-          data: {
-            userId: user.id,
-            nombres: nombre,
-            apellidos: "Pendiente",
-            numeroDocumento: user.id.slice(-10), // Dummy para que sea único
-            emailSena: email,
-            estado: "EN_FORMACION",
-            nivelRiesgo: "BAJO"
+        let vinculado = false;
+
+        // Caso 1: Vincular a un Aprendiz existente explícitamente seleccionado
+        if (data.aprendizId) {
+          await prisma.aprendiz.update({
+            where: { id: data.aprendizId },
+            data: { userId: user.id }
+          });
+          vinculado = true;
+        }
+
+        // Caso 2: Buscar si ya existe un aprendiz con este email y sin usuario
+        if (!vinculado) {
+          const aprendizPorEmail = await prisma.aprendiz.findFirst({
+            where: {
+              OR: [
+                { emailSena: email },
+                { emailPersonal: email }
+              ],
+              userId: null
+            }
+          });
+          if (aprendizPorEmail) {
+            await prisma.aprendiz.update({
+              where: { id: aprendizPorEmail.id },
+              data: { userId: user.id }
+            });
+            vinculado = true;
           }
-        });
-        await prismaLocal.$disconnect();
+        }
+
+        // Caso 3: Si no fue vinculado, se crea nuevo expediente de aprendiz con la Ficha
+        if (!vinculado) {
+          if (!data.fichaId) {
+            // Revertir usuario creado para evitar cuentas huérfanas
+            await UserRepository.delete({ where: { id: user.id } }).catch(() => {});
+            return { error: "Para crear un usuario con rol APRENDIZ es obligatorio asignar una Ficha de formación o vincular un aprendiz existente." };
+          }
+
+          const partesNombre = (nombre || "").trim().split(" ");
+          const nombres = partesNombre.slice(0, Math.max(1, partesNombre.length - 1)).join(" ");
+          const apellidos = partesNombre.length > 1 ? partesNombre.slice(-1).join(" ") : "Aprendiz";
+
+          await prisma.aprendiz.create({
+            data: {
+              userId: user.id,
+              fichaId: data.fichaId,
+              nombres: data.nombres || nombres || nombre,
+              apellidos: data.apellidos || apellidos,
+              tipoDocumento: data.tipoDocumento || "CC",
+              numeroDocumento: data.numeroDocumento || user.id.slice(-10),
+              emailSena: email,
+              estado: "EN_FORMACION",
+              nivelRiesgo: "BAJO"
+            }
+          });
+        }
       } else if (rolNombreUpper.includes("INSTRUCTOR")) {
-        const { PrismaClient } = require("@prisma/client");
-        const prismaLocal = new PrismaClient();
-        await prismaLocal.instructor.create({
-          data: {
-            userId: user.id,
-            nombres: nombre,
-            apellidos: "Pendiente",
-            numeroDocumento: user.id.slice(-10), // Dummy para que sea único
-            email: email,
-            estado: "ACTIVO"
-          }
+        const existingInstructor = await prisma.instructor.findFirst({
+          where: { email: email }
         });
-        await prismaLocal.$disconnect();
+        if (existingInstructor) {
+          await prisma.instructor.update({
+            where: { id: existingInstructor.id },
+            data: { userId: user.id }
+          });
+        } else {
+          const partesNombre = (nombre || "").trim().split(" ");
+          const nombres = partesNombre.slice(0, Math.max(1, partesNombre.length - 1)).join(" ");
+          const apellidos = partesNombre.length > 1 ? partesNombre.slice(-1).join(" ") : "Instructor";
+
+          await prisma.instructor.create({
+            data: {
+              userId: user.id,
+              nombres: data.nombres || nombres || nombre,
+              apellidos: data.apellidos || apellidos,
+              numeroDocumento: data.numeroDocumento || user.id.slice(-10),
+              email: email,
+              estado: "ACTIVO"
+            }
+          });
+        }
       }
-    } catch (profileError) {
-      console.error("Error creando perfil automático:", profileError);
+    } catch (profileError: any) {
+      console.error("Error gestionando perfil vinculado:", profileError);
+      // Revertir usuario si falló la creación del aprendiz para mantener integridad referencial
+      if (rolNombreUpper.includes("APRENDIZ")) {
+        await UserRepository.delete({ where: { id: user.id } }).catch(() => {});
+        return { error: `Error vinculando ficha o expediente de aprendiz: ${profileError.message || "Verifique los datos ingresados"}` };
+      }
     }
 
     // ── 6. Registrar auditoría exitosa ───────────────────────────────────────
@@ -335,6 +413,49 @@ export async function updateUser(id: string, data: any) {
       where: { id },
       data: updateData,
     });
+
+    // ── 5.1 Sincronizar o vincular Aprendiz si aplica ────────────────────────
+    const rolActual = (newRolNombre || targetUser.rol).toUpperCase();
+    if (rolActual.includes("APRENDIZ")) {
+      try {
+        if (data.aprendizId) {
+          await prisma.aprendiz.update({
+            where: { id: data.aprendizId },
+            data: { userId: targetUser.id }
+          });
+        } else if (data.fichaId) {
+          const aprendizExistente = await prisma.aprendiz.findUnique({
+            where: { userId: targetUser.id }
+          });
+          if (aprendizExistente) {
+            await prisma.aprendiz.update({
+              where: { id: aprendizExistente.id },
+              data: { fichaId: data.fichaId }
+            });
+          } else {
+            const partesNombre = (nombre || targetUser.nombre || "").trim().split(" ");
+            const nombres = partesNombre.slice(0, Math.max(1, partesNombre.length - 1)).join(" ");
+            const apellidos = partesNombre.length > 1 ? partesNombre.slice(-1).join(" ") : "Aprendiz";
+
+            await prisma.aprendiz.create({
+              data: {
+                userId: targetUser.id,
+                fichaId: data.fichaId,
+                nombres,
+                apellidos,
+                tipoDocumento: "CC",
+                numeroDocumento: targetUser.id.slice(-10),
+                emailSena: email || targetUser.email,
+                estado: "EN_FORMACION",
+                nivelRiesgo: "BAJO"
+              }
+            });
+          }
+        }
+      } catch (syncErr: any) {
+        console.error("Error actualizando expediente de aprendiz:", syncErr);
+      }
+    }
 
     // ── 6. Registrar auditoría exitosa con diff ──────────────────────────────
     await logAudit({

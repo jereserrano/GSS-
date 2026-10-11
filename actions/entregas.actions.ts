@@ -113,11 +113,33 @@ export async function createEntrega(data: z.infer<typeof entregaSchema>) {
     let aprendizId = data.aprendizId;
     const isAprendiz = user.rol.toUpperCase().includes("APRENDIZ");
     if (isAprendiz) {
-      const aprendizRecord = await prisma.aprendiz.findUnique({
+      let aprendizRecord = await prisma.aprendiz.findUnique({
         where: { userId: user.id }
       });
+
+      // Auto-reparación preventiva: si existe en aprendices por correo pero sin userId
+      if (!aprendizRecord && user.email) {
+        const candidate = await prisma.aprendiz.findFirst({
+          where: {
+            OR: [
+              { emailSena: user.email },
+              { emailPersonal: user.email }
+            ],
+            userId: null
+          }
+        });
+        if (candidate) {
+          aprendizRecord = await prisma.aprendiz.update({
+            where: { id: candidate.id },
+            data: { userId: user.id }
+          });
+        }
+      }
+
       if (!aprendizRecord) {
-        return { error: "No se encontró el registro de aprendiz vinculado a tu cuenta." };
+        return { 
+          error: "No se encontró el registro de aprendiz vinculado a tu cuenta. Por favor contacta a tu instructor o administrador para que vincule tu cuenta a tu ficha de formación." 
+        };
       }
       aprendizId = aprendizRecord.id; // Protección Anti-IDOR
     }

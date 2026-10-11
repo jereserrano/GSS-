@@ -9,6 +9,7 @@ import { logAudit } from "@/lib/audit.service";
 import { getServerSession } from "next-auth/next";
 import { requireRole } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
+import bcrypt from "bcryptjs";
 
 export async function importAprendicesMasivo(data: any) {
   try {
@@ -43,16 +44,40 @@ export async function importAprendicesMasivo(data: any) {
           fichasCache.set(codigo, ficha.id);
         }
 
+        const numDoc = String(row.numeroDocumento).trim();
+        const email = (row.emailSena || row.emailPersonal || `${numDoc}@soy.sena.edu.co`).trim().toLowerCase();
+
+        let targetUserId: string | null = null;
+        if (email) {
+          const existingUser = await tx.user.findUnique({ where: { email } });
+          if (existingUser) {
+            targetUserId = existingUser.id;
+          } else {
+            const passwordHash = await bcrypt.hash(numDoc, 10);
+            const newUser = await tx.user.create({
+              data: {
+                nombre: `${row.nombres} ${row.apellidos}`.trim(),
+                email,
+                passwordHash,
+                rol: "APRENDIZ",
+                estado: "ACTIVO",
+              }
+            });
+            targetUserId = newUser.id;
+          }
+        }
+
         await tx.aprendiz.create({
           data: {
-            numeroDocumento: String(row.numeroDocumento),
+            numeroDocumento: numDoc,
             nombres: row.nombres,
             apellidos: row.apellidos,
             fichaId: fichasCache.get(codigo)!,
             tipoDocumento: (row.tipoDocumento as any) || "CC",
-            emailSena: row.emailSena || null,
+            emailSena: row.emailSena || email,
             emailPersonal: row.emailPersonal || null,
             telefono: row.telefono || null,
+            userId: targetUserId,
           }
         });
         count++;

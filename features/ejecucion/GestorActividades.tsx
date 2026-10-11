@@ -5,7 +5,7 @@ import { getFichasSelectAction } from "@/actions/fichas.actions";
 import { getActividadesByFichaAction } from "@/actions/actividades.actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, Calendar, FileText, CheckCircle, Clock, Users, BookCheck, FolderOpen } from "lucide-react";
+import { Loader2, Plus, Calendar, FileText, CheckCircle, Clock, Users, BookCheck, FolderOpen, AlertTriangle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { ActividadFormDialog } from "./ActividadFormDialog";
 import { EntregaFormDialog } from "./EntregaFormDialog";
@@ -35,6 +35,7 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
   const [expandedActividadId, setExpandedActividadId] = useState<string | null>(null);
   const [gradingEntrega, setGradingEntrega] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<string>("");
+  const [unlinkedAprendiz, setUnlinkedAprendiz] = useState(false);
 
   // Fetch Fichas on load
   useEffect(() => {
@@ -42,12 +43,15 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
       setFichaId(initialFichaId);
       return;
     }
-    getFichasSelectAction().then(res => {
+    getFichasSelectAction().then((res: any) => {
       if (res.success && res.data) {
         setFichas(res.data);
-        if (isAprendiz && res.data.length > 0) {
-          // If Apprentice, auto-select their first/only Ficha
-          setFichaId(res.data[0]?.id || "");
+        if (isAprendiz) {
+          if (res.unlinkedAprendiz || res.data.length === 0) {
+            setUnlinkedAprendiz(true);
+          } else {
+            setFichaId(res.data[0]?.id || "");
+          }
         }
       }
     });
@@ -133,6 +137,25 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
           </CardContent>
         )}
       </Card>
+
+      {isAprendiz && unlinkedAprendiz && (
+        <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl shadow-sm flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+          <div className="p-3 bg-amber-100 text-amber-700 rounded-full shrink-0">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-amber-900">
+              Cuenta de Aprendiz sin Ficha Formativa Vinculada
+            </h3>
+            <p className="text-sm text-amber-800">
+              Tu cuenta de usuario está activa con el rol de <strong>Aprendiz</strong>, pero aún no tiene un expediente académico ni una ficha de formación asociada en el sistema.
+            </p>
+            <p className="text-xs text-amber-700 font-medium pt-1">
+              👉 Por favor comunícate con tu Instructor Líder o Coordinación Académica para que vinculen tu cuenta a tu ficha de formación correspondiente.
+            </p>
+          </div>
+        </div>
+      )}
 
       {loading && (
         <div className="flex justify-center p-12">

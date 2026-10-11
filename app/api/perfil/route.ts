@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       email: user.email,
       fotoPerfil: user.fotoPerfil || "",
       rol: user.rol,
-      zoomVinculado: !!user.zoomAccessToken,
+      zoomVinculado: !!(user as any).zoomAccessToken,
     };
 
     if (user.instructor) {

@@ -241,14 +241,20 @@ export async function getFichasSelectAction() {
   try {
     const session = await getServerSession(authOptions);
     let where = {};
+    let unlinkedAprendiz = false;
     if (session?.user?.email) {
       const userRecord = await prisma.user.findUnique({
         where: { email: session.user.email },
         include: { instructor: true, aprendiz: true }
       });
       const rolNombre = userRecord?.rol?.toUpperCase() || "";
-      if (rolNombre.includes("APRENDIZ") && userRecord?.aprendiz?.fichaId) {
-        where = { id: userRecord.aprendiz.fichaId };
+      if (rolNombre.includes("APRENDIZ")) {
+        if (userRecord?.aprendiz?.fichaId) {
+          where = { id: userRecord.aprendiz.fichaId };
+        } else {
+          // El aprendiz no tiene ficha asociada
+          return { success: true, data: [], unlinkedAprendiz: true };
+        }
       }
     }
     const fichas = await prisma.ficha.findMany({
@@ -261,7 +267,7 @@ export async function getFichasSelectAction() {
       },
       orderBy: { codigo: "desc" }
     });
-    return { success: true, data: fichas };
+    return { success: true, data: fichas, unlinkedAprendiz };
   } catch (error: any) {
     return { success: false, error: "Error al cargar fichas" };
   }

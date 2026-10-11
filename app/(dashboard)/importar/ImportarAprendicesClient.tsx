@@ -27,6 +27,7 @@ export function ImportarAprendicesClient() {
       const wsname = wb.SheetNames[0];
       if (!wsname) return;
       const ws = wb.Sheets[wsname];
+      if (!ws) return;
       const data = utils.sheet_to_json(ws);
       setPreview(data.slice(0, 5)); // show first 5 rows
     };
@@ -46,6 +47,7 @@ export function ImportarAprendicesClient() {
         const wsname = wb.SheetNames[0];
         if (!wsname) return;
         const ws = wb.Sheets[wsname];
+        if (!ws) return;
         const data = utils.sheet_to_json(ws);
 
         // Normalize data to match schema

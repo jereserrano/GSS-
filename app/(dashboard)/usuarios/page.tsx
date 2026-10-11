@@ -26,6 +26,25 @@ export default async function UsuariosPage() {
   }
   const { prisma } = await import("@/lib/prisma");
   const instituciones = await prisma.institucion.findMany({ select: { id: true, nombre: true }, orderBy: { nombre: "asc" } });
+  const fichas = await prisma.ficha.findMany({
+    select: {
+      id: true,
+      codigo: true,
+      programa: { select: { nombre: true } }
+    },
+    orderBy: { codigo: "asc" }
+  });
+  const aprendicesSinUsuario = await prisma.aprendiz.findMany({
+    where: { userId: null },
+    select: {
+      id: true,
+      nombres: true,
+      apellidos: true,
+      numeroDocumento: true,
+      ficha: { select: { codigo: true } }
+    },
+    orderBy: { apellidos: "asc" }
+  });
 
   return (
     <div className="page-container space-y-6 page-enter">
@@ -39,6 +58,8 @@ export default async function UsuariosPage() {
         initialUsers={usuarios}
         roles={roles}
         instituciones={instituciones}
+        fichas={fichas}
+        aprendicesSinUsuario={aprendicesSinUsuario}
         currentUserSession={currentUserSession}
       />
     </div>

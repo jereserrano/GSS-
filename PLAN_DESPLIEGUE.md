@@ -62,3 +62,8 @@ Este documento servirá como bitácora de registro de cada paso ejecutado para d
 - **[2026-10-10 09:57]** (Fase 5) Puesta en marcha de la aplicación con PM2 (`pm2 start npm --name "gss-app" -- run start`) y guardado de estado (`pm2 save`). ✅ Exitoso.
 - **[2026-10-10 10:17]** (Fase 4 - Corrección) Limpieza del caché estático de Next.js (`rm -rf .next`) y recompilación del proyecto tras reparar el error de autenticación del usuario root en MySQL, para eliminar el error 28000 persistente. Reinicio de PM2. ✅ Exitoso.
 - **[2026-10-10 10:29]** (Fase 3 - Corrección) Resolución de error de "Tabla no existe" en Linux debido a la sensibilidad a mayúsculas/minúsculas de MySQL (`lower_case_table_names=0`). Se renombró la tabla `_competenciatoprograma` a `_CompetenciaToPrograma` para coincidir con el esquema exacto de Prisma. Reinicio de PM2. ✅ Exitoso.
+- **[2026-10-10 19:10]** (Fase 4 - Corrección / Robustez) Corrección del enlace referencial obligatorio entre `User` y `Aprendiz` (`fichaId`):
+  1. Integración en `actions/user.actions.ts` y `UsuarioFormDialog.tsx` de selector obligatorio de Ficha o vinculación a aprendiz existente para evitar usuarios huérfanos.
+  2. Generación automática y enlace bidireccional de cuentas de usuario en `createAprendiz` y en la importación masiva (`importAprendicesMasivo`).
+  3. Lógica de auto-reparación preventiva y mensajes amigables e instructivos en `createEntrega`, `getAprendizPropioAction` y en las interfaces de `GestorActividades` y `entregas/page.tsx`. ✅ Exitoso.
+

@@ -21,12 +21,15 @@ interface Usuario {
   ultimoAcceso: string;
   estado: "activo" | "inactivo" | "bloqueado";
   hierarchyLevel: number;
+  aprendiz?: any;
 }
 
 interface UsuariosTableProps {
   initialUsers: any[];
   roles: any[];
   instituciones: any[];
+  fichas?: any[];
+  aprendicesSinUsuario?: any[];
   /** Sesión del usuario en sesión (pasado desde el Server Component padre). */
   currentUserSession: {
     id: string;
@@ -35,7 +38,7 @@ interface UsuariosTableProps {
   };
 }
 
-export function UsuariosTable({ initialUsers, roles, instituciones, currentUserSession }: UsuariosTableProps) {
+export function UsuariosTable({ initialUsers, roles, instituciones, fichas = [], aprendicesSinUsuario = [], currentUserSession }: UsuariosTableProps) {
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -99,6 +102,7 @@ export function UsuariosTable({ initialUsers, roles, instituciones, currentUserS
     ultimoAcceso: u.ultimoAcceso ? new Date(u.ultimoAcceso).toISOString() : new Date().toISOString(),
     estado: u.estado.toLowerCase() as any,
     hierarchyLevel: getHierarchyLevel(u.rol?.nombre),
+    aprendiz: u.aprendiz,
   }));
 
   /**
@@ -139,11 +143,27 @@ export function UsuariosTable({ initialUsers, roles, instituciones, currentUserS
     {
       key: "rol",
       header: "Rol de Acceso",
-      render: (u) => (
-        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-          {u.rol}
-        </span>
-      )
+      render: (u) => {
+        const isAprendiz = u.rol.toUpperCase().includes("APRENDIZ");
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 w-fit">
+              {u.rol}
+            </span>
+            {isAprendiz && (
+              u.aprendiz?.ficha?.codigo ? (
+                <span className="text-[11px] text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 font-medium w-fit">
+                  Ficha: {u.aprendiz.ficha.codigo}
+                </span>
+              ) : (
+                <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-semibold w-fit">
+                  ⚠️ Sin Ficha
+                </span>
+              )
+            )}
+          </div>
+        );
+      }
     },
     {
       key: "ultimoAcceso",
@@ -236,6 +256,8 @@ export function UsuariosTable({ initialUsers, roles, instituciones, currentUserS
           user={selectedUser} 
           roles={roles}
           instituciones={instituciones}
+          fichas={fichas}
+          aprendicesSinUsuario={aprendicesSinUsuario}
           currentUserSession={currentUserSession}
           onClose={() => setDialogOpen(false)} 
         />

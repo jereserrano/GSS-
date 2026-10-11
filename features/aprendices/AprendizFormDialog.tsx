@@ -65,7 +65,7 @@ export function AprendizFormDialog({ aprendiz, fichas, fichaIdFijo, onClose, onS
       } else {
         const res = await createAprendiz(data);
         if (res.error) throw new Error(res.error);
-        toast.success("Aprendiz registrado correctamente");
+        toast.success("Aprendiz registrado y cuenta de acceso vinculada");
       }
       onSuccess?.();
       onClose();

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { PortafolioInstructor } from "@/features/documentos/instructor/PortafolioInstructor";
-import { ConsolaRevisionDocumentos } from "@/features/documentos/admin/ConsolaRevisionDocumentos";
+import { ConsolaDocumentosRevisor } from "@/features/documentos/admin/ConsolaDocumentosRevisor";
 import { DocumentosAprendiz } from "@/features/documentos/aprendiz/DocumentosAprendiz";
 
 export default async function DocumentosPage() {
@@ -16,13 +16,13 @@ export default async function DocumentosPage() {
   const isInstructor = rol.includes("INSTRUCT");
 
   const titulo = isRevisor
-    ? "Revisión de Documentación Institucional"
+    ? "Gestión y Documentación Institucional"
     : isAprendiz
       ? "Mis Documentos"
       : "Mi Portafolio Docente";
 
   const subtitulo = isRevisor
-    ? "Supervisa y verifica el estado de la documentación de los instructores."
+    ? "Supervisa los portafolios del equipo docente y gestiona tu propio portafolio de empleado."
     : isAprendiz
       ? "Consulta y solicita tus certificados de estudio."
       : "Gestiona tu información personal y los soportes documentales requeridos.";
@@ -38,8 +38,8 @@ export default async function DocumentosPage() {
         </p>
       </div>
 
-      {isRevisor && <ConsolaRevisionDocumentos />}
-      {isInstructor && <PortafolioInstructor userId={session.user.id} />}
+      {isRevisor && <ConsolaDocumentosRevisor userId={session.user.id} userRole={rol} />}
+      {!isRevisor && isInstructor && <PortafolioInstructor userId={session.user.id} />}
       {isAprendiz && <DocumentosAprendiz userId={session.user.id} />}
     </div>
   );

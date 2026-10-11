@@ -203,9 +203,12 @@ export function DocumentosEmpleado({ userId }: { userId: string }) {
                     <label className="text-sm font-medium">Tipo</label>
                     <select className="w-full border rounded-md p-2 mt-1" value={docTipo} onChange={e => setDocTipo(e.target.value)}>
                       <option value="HV">Hoja de Vida (HV)</option>
-                      <option value="CERTIFICADO_ACADEMICO">Certificado Académico</option>
-                      <option value="DOCUMENTO_IDENTIDAD">Documento de Identidad</option>
-                      <option value="OTRO">Otro</option>
+                      <option value="DOCUMENTO_IDENTIDAD">Documento de Identidad (Cédula)</option>
+                      <option value="RUT">RUT</option>
+                      <option value="CERTIFICADO_ACADEMICO">Certificado Académico / Título</option>
+                      <option value="CERTIFICADO_LABORAL">Certificado Laboral</option>
+                      <option value="CONTRATO">Contrato / Acta de Inicio</option>
+                      <option value="OTRO">Otro Documento / Soporte</option>
                     </select>
                   </div>
                   <div>

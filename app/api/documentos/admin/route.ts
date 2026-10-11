@@ -14,16 +14,19 @@ export async function GET(request: NextRequest) {
       where: { email: session.user.email },
     });
 
-    if (!user || (user.rol !== "ADMINISTRADOR" && user.rol !== "COORDINADOR" && user.rol !== "APOYO_COORDINACION")) {
+    const rolUpper = user?.rol?.toUpperCase() || "";
+    const isCoordSede = rolUpper === "COORDINADOR_SEDE" || (rolUpper.includes("COORD") && rolUpper.includes("SEDE"));
+
+    if (!user || (!rolUpper.includes("ADMIN") && !rolUpper.includes("COORD") && rolUpper !== "APOYO_COORDINACION")) {
       return NextResponse.json({ success: false, error: "Rol no autorizado" }, { status: 403 });
     }
 
     let instructoresFilter: any = {};
 
-    // Si es Apoyo, solo ver instructores asignados a fichas de su sede
-    if (user.rol === "APOYO_COORDINACION") {
+    // Si es Apoyo o Coordinador de Sede, solo ver instructores asignados a fichas de su sede
+    if (user.rol === "APOYO_COORDINACION" || isCoordSede) {
       if (!user.sedeId) {
-        // Fallback global if test user doesn't have a sedeId
+        // Fallback global if user doesn't have a sedeId
         if (!user.institucionId) {
           instructoresFilter = {};
         } else {

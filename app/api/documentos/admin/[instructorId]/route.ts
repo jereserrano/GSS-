@@ -17,7 +17,8 @@ export async function GET(
       where: { email: session.user.email },
     });
 
-    if (!user || (user.rol !== "ADMINISTRADOR" && user.rol !== "COORDINADOR" && user.rol !== "APOYO_COORDINACION")) {
+    const rolUpper = user?.rol?.toUpperCase() || "";
+    if (!user || (!rolUpper.includes("ADMIN") && !rolUpper.includes("COORD") && rolUpper !== "APOYO_COORDINACION")) {
       return NextResponse.json({ success: false, error: "Rol no autorizado" }, { status: 403 });
     }
 

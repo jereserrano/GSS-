@@ -88,7 +88,8 @@ async function getCurrentUserCtx(): Promise<CurrentUserCtx | null> {
 export async function getUsers() {
   try {
     const currentUser = await getCurrentUserCtx();
-    if (!currentUser || (currentUser.role !== "ADMINISTRADOR" && !currentUser.role.includes("ADMIN") && !currentUser.role.includes("COORD"))) {
+    const roleUpper = (currentUser?.role || "").toUpperCase();
+    if (!currentUser || roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE")) || (!roleUpper.includes("ADMIN") && !roleUpper.includes("COORD") && roleUpper !== "APOYO_COORDINACION")) {
       return [];
     }
 

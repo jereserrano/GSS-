@@ -214,18 +214,17 @@ export async function getExcusasPorRolAction() {
       return { success: true, data: excusas };
     }
 
-    // ── APOYO_COORDINACION: excusas de aprendices de fichas de su sede
-    // FIX BUG-03: Sede no tiene relación "personal" — se busca por sedeId del User
-    if (rol === "APOYO_COORDINACION") {
-      const userApoyo = await prisma.user.findUnique({ where: { id: userId } });
+    // ── APOYO_COORDINACION / COORDINADOR_SEDE: excusas de aprendices de fichas de su sede
+    if (rol === "APOYO_COORDINACION" || rol === "COORDINADOR_SEDE" || (rol.includes("COORD") && rol.includes("SEDE"))) {
+      const userRecord = await prisma.user.findUnique({ where: { id: userId } });
 
-      if (!userApoyo?.sedeId) {
+      if (!userRecord?.sedeId) {
         return { success: true, data: [] };
       }
 
       // Fichas de esa sede
       const fichasDeSede = await prisma.ficha.findMany({
-        where: { sedeId: userApoyo.sedeId },
+        where: { sedeId: userRecord.sedeId },
         select: { id: true },
       });
       const fichaIds = fichasDeSede.map((f) => f.id);

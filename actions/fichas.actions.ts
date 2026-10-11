@@ -255,6 +255,16 @@ export async function getFichasSelectAction() {
           // El aprendiz no tiene ficha asociada
           return { success: true, data: [], unlinkedAprendiz: true };
         }
+      } else if (rolNombre === "COORDINADOR_SEDE" || (rolNombre.includes("COORD") && rolNombre.includes("SEDE"))) {
+        if (userRecord?.sedeId) {
+          where = { sedeId: userRecord.sedeId };
+        }
+      } else if (rolNombre.includes("INSTRUCT") && userRecord?.instructor?.id) {
+        where = {
+          instructores: {
+            some: { instructorId: userRecord.instructor.id }
+          }
+        };
       }
     }
     const fichas = await prisma.ficha.findMany({

@@ -14,7 +14,8 @@ export default async function MensajesPage() {
   const isCoordinador =
     rol === "ADMINISTRADOR" ||
     rol === "ADMIN" || // compatibilidad con sesiones antiguas
-    rol === "COORDINADOR";
+    rol === "COORDINADOR" ||
+    rol === "COORDINADOR_SEDE";
 
   return (
     <div className="page-container h-[calc(100vh-80px)] overflow-hidden flex flex-col">

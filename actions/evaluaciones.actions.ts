@@ -68,6 +68,9 @@ export async function createEvaluacion(data: any) {
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    if (user.rol === "COORDINADOR_SEDE" || user.rol.includes("SEDE")) {
+      return { error: "El Coordinador de Sede tiene acceso de solo lectura en calificaciones." };
+    }
     const existing = await EvaluacionAprendizRepository.findFirst({
       where: {
         resultadoAprendizajeId: data.resultadoAprendizajeId,
@@ -138,6 +141,9 @@ export async function updateEvaluacion(id: string, data: any) {
     if (!parsed.success) return { success: false, error: "Datos inválidos", issues: parsed.error.errors };
     
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    if (user.rol === "COORDINADOR_SEDE" || user.rol.includes("SEDE")) {
+      return { error: "El Coordinador de Sede tiene acceso de solo lectura en calificaciones." };
+    }
     const evaluacion = await EvaluacionAprendizRepository.update({
       where: { id },
       data: {
@@ -193,6 +199,9 @@ export async function updateEvaluacion(id: string, data: any) {
 export async function deleteEvaluacion(id: string) {
   try {
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]); // Instructores no pueden borrar
+    if (user.rol === "COORDINADOR_SEDE" || user.rol.includes("SEDE")) {
+      return { error: "El Coordinador de Sede tiene acceso de solo lectura en calificaciones." };
+    }
     await EvaluacionAprendizRepository.delete({ where: { id } });
     
     await logAudit({
@@ -284,6 +293,9 @@ export async function getSabanaNotasAction(fichaId: string) {
 export async function calificarMasivoAction(fichaId: string, raId: string, calificaciones: { aprendizId: string; nota: number }[]) {
   try {
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    if (user.rol === "COORDINADOR_SEDE" || user.rol.includes("SEDE")) {
+      return { success: false, error: "El Coordinador de Sede tiene acceso de solo lectura en calificaciones." };
+    }
     
     if (!calificaciones || calificaciones.length === 0) {
       return { success: false, error: "No hay calificaciones para guardar" };

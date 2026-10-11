@@ -345,19 +345,18 @@ export async function getContactosDisponiblesAction() {
       );
 
       contactos = [...coordAdmin.map((u: any) => ({ ...u, nombre: resolveName(u), fichaId: null, fichaCodigo: null, programaId: null, programaNombre: null, etiqueta: "" })), ...aprendices];
-    } else if (role === "APOYO_COORDINACION") {
-      // FIX #4: APOYO puede ver coord + todos los de su sede,
-      // incluyendo aprendices cuya FICHA pertenece a esa sede (no solo User.sedeId)
+    } else if (role === "APOYO_COORDINACION" || role === "COORDINADOR_SEDE" || (role.includes("COORD") && role.includes("SEDE"))) {
       const coordAdmin = await prisma.user.findMany({ where: { rol: { in: ["ADMINISTRADOR", "COORDINADOR"] }, estado: "ACTIVO" }, select: userSelectWithNames });
 
-      const userApoyo = await prisma.user.findUnique({ where: { id: userId } });
+      const userRecord = await prisma.user.findUnique({ where: { id: userId } });
       let sedeUsers: any[] = [];
       let aprendicesDeSede: any[] = [];
+      let instructoresDeSede: any[] = [];
 
-      if (userApoyo?.sedeId) {
-        // Usuarios con sedeId directo (instructores, otros apoyos, etc.)
+      if (userRecord?.sedeId) {
+        // Usuarios con sedeId directo (otros administrativos, etc.)
         const usersDirectos = await prisma.user.findMany({
-          where: { sedeId: userApoyo.sedeId, id: { not: userId }, estado: "ACTIVO" },
+          where: { sedeId: userRecord.sedeId, id: { not: userId }, estado: "ACTIVO" },
           select: userSelectWithNames,
         });
         sedeUsers = usersDirectos.map((u) => ({
@@ -367,42 +366,62 @@ export async function getContactosDisponiblesAction() {
           fichaCodigo: null,
           programaId: null,
           programaNombre: null,
-          etiqueta: "",
+          etiqueta: "Personal de Sede",
         }));
 
-        // Aprendices cuya ficha pertenece a la misma sede
+        // Fichas de la sede con sus aprendices e instructores
         const fichasDeSede = await prisma.ficha.findMany({
-          where: { sedeId: userApoyo.sedeId, estado: "ACTIVO" },
-          include: { programa: { select: { id: true, nombre: true } } },
+          where: { sedeId: userRecord.sedeId },
+          include: {
+            programa: { select: { id: true, nombre: true } },
+            instructores: { include: { instructor: { include: { user: { select: { ...userSelectWithNames, estado: true } } } } } },
+            aprendices: { include: { user: { select: { ...userSelectWithNames, estado: true } } } },
+          },
         });
-        const fichaIds = fichasDeSede.map((f) => f.id);
-        const fichaMap = new Map(fichasDeSede.map((f) => [f.id, f]));
 
-        const rawAprendices = await prisma.aprendiz.findMany({
-          where: { fichaId: { in: fichaIds } },
-          include: { user: { select: { ...userSelectWithNames, estado: true } } },
-        });
-        aprendicesDeSede = rawAprendices
-          .filter((a) => a.user && a.user.estado === "ACTIVO" && a.user.id !== userId)
-          .map((a) => {
-            const ficha = fichaMap.get(a.fichaId);
-            return {
-              id: a.user!.id,
-              nombre: resolveName(a.user),
-              email: a.user!.email,
-              rol: a.user!.rol,
-              fichaId: a.fichaId,
-              fichaCodigo: ficha?.codigo || null,
-              programaId: ficha?.programa?.id || null,
-              programaNombre: ficha?.programa?.nombre || null,
-              etiqueta: ficha ? `Ficha: ${ficha.codigo} - ${ficha.programa?.nombre || ""}` : "",
-            };
+        fichasDeSede.forEach((f) => {
+          // Instructores vinculados a la ficha
+          f.instructores.forEach((instFicha) => {
+            const u = instFicha.instructor?.user;
+            if (u && (u as any).estado === "ACTIVO" && u.id !== userId) {
+              instructoresDeSede.push({
+                id: u.id,
+                nombre: resolveName(u),
+                email: u.email,
+                rol: u.rol,
+                fichaId: f.id,
+                fichaCodigo: f.codigo,
+                programaId: f.programa?.id || null,
+                programaNombre: f.programa?.nombre || null,
+                etiqueta: `Instructor - Ficha: ${f.codigo}`,
+              });
+            }
           });
+
+          // Aprendices matriculados en la ficha
+          f.aprendices.forEach((ap) => {
+            const u = ap.user;
+            if (u && (u as any).estado === "ACTIVO" && u.id !== userId) {
+              aprendicesDeSede.push({
+                id: u.id,
+                nombre: resolveName(u),
+                email: u.email,
+                rol: u.rol,
+                fichaId: f.id,
+                fichaCodigo: f.codigo,
+                programaId: f.programa?.id || null,
+                programaNombre: f.programa?.nombre || null,
+                etiqueta: `Aprendiz - Ficha: ${f.codigo}`,
+              });
+            }
+          });
+        });
       }
 
       contactos = [
-        ...coordAdmin.map((u) => ({ ...u, nombre: resolveName(u), fichaId: null, fichaCodigo: null, programaId: null, programaNombre: null, etiqueta: "" })),
+        ...coordAdmin.map((u) => ({ ...u, nombre: resolveName(u), fichaId: null, fichaCodigo: null, programaId: null, programaNombre: null, etiqueta: "Coordinación / Admin" })),
         ...sedeUsers,
+        ...instructoresDeSede,
         ...aprendicesDeSede,
       ];
     }

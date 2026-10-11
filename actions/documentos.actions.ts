@@ -112,7 +112,10 @@ export async function getTodasSolicitudesCartasAction() {
   try {
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
     const whereClause: any = {};
-    if ((user as any).rol !== "ADMINISTRADOR" && user.institucionId) {
+    const rolUpper = ((user as any).rol || "").toUpperCase();
+    if (rolUpper === "COORDINADOR_SEDE" && user.sedeId) {
+      whereClause.user = { sedeId: user.sedeId };
+    } else if (rolUpper !== "ADMINISTRADOR" && user.institucionId) {
       whereClause.user = { institucionId: user.institucionId };
     }
 

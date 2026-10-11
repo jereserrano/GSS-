@@ -4,7 +4,7 @@
 export type UserRole = "ADMINISTRADOR" | "SUBDIRECTOR" | "COORDINADOR" | "APCOORDINADOR" | "INSTRUCTOR" | "APRENDIZ" | string;
 
 // Rutas base comunes para todos los roles permitidos en el dashboard
-const RUTAS_COMUNES = ["/dashboard", "/perfil", "/notificaciones", "/mensajes", "/usuarios", "/seguridad", "/clases-virtuales"];
+const RUTAS_COMUNES = ["/dashboard", "/perfil", "/notificaciones", "/mensajes", "/seguridad", "/clases-virtuales"];
 
 // Listas Blancas (Whitelists) estrictas por Rol:
 
@@ -52,6 +52,32 @@ export const RUTAS_COORDINADOR = [
   "/gestor-excusas"
 ];
 
+export const RUTAS_COORDINADOR_SEDE = [
+  ...RUTAS_COMUNES,
+  "/programas",
+  "/fichas",
+  "/aprendices",
+  "/instructores",
+  "/competencias",
+  "/resultados-aprendizaje",
+  "/plan-formacion",
+  "/seguimiento",
+  "/riesgos",
+  "/reportes",
+  "/actividades",
+  "/entregas",
+  "/asistencia",
+  "/evaluaciones",
+  "/resultados",
+  "/documentos",
+  "/diseno-curricular",
+  "/gestor-actividades",
+  "/centro-calificaciones",
+  "/seguimiento-riesgos",
+  "/auditoria",
+  "/gestor-excusas"
+];
+
 export const RUTAS_APOYO_COORDINACION = [
   ...RUTAS_COMUNES,
   "/programas",
@@ -74,7 +100,6 @@ export const RUTAS_APOYO_COORDINACION = [
   "/gestor-actividades",
   "/centro-calificaciones",
   "/seguimiento-riesgos",
-  "/usuarios",
   "/gestor-excusas"
 ];
 
@@ -198,6 +223,10 @@ export function canAccessRoute(role: string | undefined | null, pathname: string
   // 2. Comprobaciones por Whitelists
   if (normalRole === "SUBDIRECTOR" || normalRole.includes("SUBDIR")) {
     return isAllowed(RUTAS_SUBDIRECTOR);
+  }
+
+  if (normalRole === "COORDINADOR_SEDE" || (normalRole.includes("COORD") && normalRole.includes("SEDE"))) {
+    return isAllowed(RUTAS_COORDINADOR_SEDE);
   }
 
   if (normalRole === "COORDINADOR" || normalRole.includes("COORD")) {

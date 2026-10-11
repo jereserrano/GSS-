@@ -26,7 +26,7 @@ export default async function DashboardPage() {
   const isAprendiz = userRole === "APRENDIZ" || userRole.includes("APRENDIZ");
   const isInstructor = userRole === "INSTRUCTOR" || userRole.includes("INSTRUCT");
   const isApoyo = userRole === "APOYO_COORDINACION";
-  const isAdminOrCoord = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR";
+  const isAdminOrCoord = userRole === "ADMINISTRADOR" || userRole === "COORDINADOR" || userRole === "COORDINADOR_SEDE" || (userRole.includes("COORD") && !userRole.includes("APRENDIZ"));
 
   // Definir las 4 métricas adaptadas para responder preguntas pedagógicas concretas
   const kpis: KpiData[] = [

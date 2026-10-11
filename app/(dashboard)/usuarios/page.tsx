@@ -11,6 +11,11 @@ export default async function UsuariosPage() {
   if (!session?.user) redirect("/login");
 
   const u = session.user as any;
+  const roleUpper = (u.role || "").toUpperCase();
+  if (roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE")) || roleUpper.includes("APRENDIZ") || roleUpper.includes("INSTRUCT")) {
+    redirect("/dashboard");
+  }
+
   const currentUserSession = {
     id: u.id,
     role: u.role || "",

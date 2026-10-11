@@ -43,7 +43,29 @@ export default async function ClasesVirtualesPage() {
   } else if (user.rol.includes("APRENDIZ") && user.aprendiz) {
     clases = await prisma.claseVirtual.findMany({
       where: { fichaId: user.aprendiz.fichaId },
-      include: { instructor: { select: { nombres: true, apellidos: true } } },
+      include: { 
+        ficha: { select: { codigo: true, programa: { select: { nombre: true } } } },
+        instructor: { select: { nombres: true, apellidos: true } } 
+      },
+      orderBy: { fechaInicio: "desc" }
+    });
+  } else {
+    // Coordinador de Sede, Coordinador General, Administrador, Apoyo
+    const isCoordSede = user.rol === "COORDINADOR_SEDE" || user.rol.includes("SEDE");
+    const whereClause: any = {};
+
+    if (isCoordSede && user.sedeId) {
+      whereClause.ficha = { sedeId: user.sedeId };
+    } else if (user.institucionId && !user.rol.includes("ADMIN") && !user.rol.includes("REGIONAL")) {
+      whereClause.ficha = { institucionId: user.institucionId };
+    }
+
+    clases = await prisma.claseVirtual.findMany({
+      where: whereClause,
+      include: {
+        ficha: { select: { codigo: true, programa: { select: { nombre: true } } } },
+        instructor: { select: { nombres: true, apellidos: true } }
+      },
       orderBy: { fechaInicio: "desc" }
     });
   }

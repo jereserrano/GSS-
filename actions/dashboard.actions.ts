@@ -209,7 +209,11 @@ export async function getDashboardKpis() {
       };
     }
 
-    // 3. Caso ADMINISTRADOR / COORDINADOR: Vista Global
+    // 3. Caso ADMINISTRADOR / COORDINADOR: Vista Global (o acotada a sede si es COORDINADOR_SEDE)
+    const isCoordSede = rolNombre === "COORDINADOR_SEDE" || (rolNombre.includes("COORD") && rolNombre.includes("SEDE"));
+    const sedeFilter = isCoordSede && userContext?.sedeId ? { sedeId: userContext.sedeId } : {};
+    const fichaWhere = isCoordSede && userContext?.sedeId ? { ficha: { sedeId: userContext.sedeId } } : {};
+
     const [
       totalAprendicesActivos,
       totalInstitucionesActivas,
@@ -220,13 +224,13 @@ export async function getDashboardKpis() {
       actividadesCierres
     ] = await Promise.all([
       AprendizRepository.count({
-        where: { estado: "EN_FORMACION" },
+        where: { estado: "EN_FORMACION", ...fichaWhere },
       }),
       InstitucionRepository.count({
-        where: { estado: "ACTIVO" },
+        where: { estado: "ACTIVO", ...(isCoordSede && userContext?.sedeId ? { sedes: { some: { id: userContext.sedeId } } } : {}) },
       }),
       FichaRepository.count({
-        where: { estado: "ACTIVO" },
+        where: { estado: "ACTIVO", ...sedeFilter },
       }),
       AprendizRepository.aggregate({
         _avg: {
@@ -234,10 +238,11 @@ export async function getDashboardKpis() {
         },
         where: {
           estado: "EN_FORMACION",
+          ...fichaWhere,
         },
       }),
       AprendizRepository.findMany({
-        where: { nivelRiesgo: "ALTO", estado: "EN_FORMACION" },
+        where: { nivelRiesgo: "ALTO", estado: "EN_FORMACION", ...fichaWhere },
         take: 5,
         include: {
           ficha: {
@@ -250,7 +255,7 @@ export async function getDashboardKpis() {
         orderBy: { porcentajeAsistencia: "asc" }
       }),
       AprendizRepository.findMany({
-        where: { nivelRiesgo: "MEDIO", estado: "EN_FORMACION" },
+        where: { nivelRiesgo: "MEDIO", estado: "EN_FORMACION", ...fichaWhere },
         take: 5,
         include: {
           ficha: {
@@ -263,7 +268,7 @@ export async function getDashboardKpis() {
         orderBy: { porcentajeAsistencia: "asc" }
       }),
       prisma.actividad.findMany({
-        where: { fechaVencimiento: { gte: new Date() } },
+        where: { fechaVencimiento: { gte: new Date() }, ...fichaWhere },
         take: 4,
         include: { ficha: { select: { codigo: true } } },
         orderBy: { fechaVencimiento: "asc" }

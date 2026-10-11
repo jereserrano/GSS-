@@ -165,6 +165,63 @@ const navCoordinador: NavSection[] = [
   },
 ];
 
+// Menú para COORDINADOR DE SEDE (Sin acceso a Usuarios, Roles ni Configuración)
+const navCoordinadorSede: NavSection[] = [
+  {
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+      { icon: User, label: "Mi Perfil", href: "/perfil" },
+    ],
+  },
+  {
+    title: "Gestión Institucional",
+    items: [
+      { icon: BookOpen, label: "Programas", href: "/programas" },
+      { icon: Users, label: "Fichas / Grupos", href: "/fichas" },
+    ],
+  },
+  {
+    title: "Actores",
+    items: [
+      { icon: GraduationCap, label: "Aprendices", href: "/aprendices" },
+      { icon: UserCheck, label: "Instructores", href: "/instructores" },
+    ],
+  },
+  {
+    title: "Académico",
+    items: [
+      { icon: Target, label: "Diseño Curricular", href: "/diseno-curricular" },
+    ],
+  },
+  {
+    title: "Ejecución",
+    items: [
+      { icon: BookCheck, label: "Gestor de Actividades", href: "/gestor-actividades" },
+      { icon: VideoIcon, label: "Clases Virtuales", href: "/clases-virtuales" },
+      { icon: CalendarCheck, label: "Asistencia", href: "/asistencia" },
+      { icon: TrendingUp, label: "Centro de Calificaciones", href: "/centro-calificaciones" },
+    ],
+  },
+  {
+    title: "Seguimiento y Reportes",
+    items: [
+      { icon: Activity, label: "Seguimiento a Riesgos", href: "/seguimiento-riesgos" },
+      { icon: PieChart, label: "Reportes", href: "/reportes" },
+      { icon: FolderOpen, label: "Documentos", href: "/documentos" },
+      { icon: FileText, label: "Gestor de Excusas", href: "/gestor-excusas" },
+      { icon: Mail, label: "Mensajería", href: "/mensajes" },
+    ],
+  },
+  {
+    title: "Supervisión",
+    items: [
+      { icon: Search, label: "Auditoría", href: "/auditoria" },
+      { icon: Bell, label: "Notificaciones", href: "/notificaciones" },
+      { icon: Shield, label: "Seguridad (2FA)", href: "/seguridad" },
+    ],
+  },
+];
+
 // Menú para SUBDIRECTOR (Visión global directiva)
 const navSubdirector: NavSection[] = [
   {
@@ -331,7 +388,8 @@ export function Sidebar({ branding }: SidebarProps) {
   const isAdmin = rawRole === "ADMINISTRADOR" || rawRole.includes("ADMIN");
   const isSubdirector = rawRole === "SUBDIRECTOR" || rawRole.includes("SUBDIR");
   const isApoyoAdmin = rawRole === "APOYO_COORDINACION" || rawRole.includes("APOYO");
-  const isCoordinador = !isAdmin && !isSubdirector && !isApoyoAdmin && (rawRole.includes("COORD") || rawRole.includes("APCOORD"));
+  const isCoordSede = !isAdmin && (rawRole === "COORDINADOR_SEDE" || (rawRole.includes("COORD") && rawRole.includes("SEDE")));
+  const isCoordinador = !isAdmin && !isSubdirector && !isApoyoAdmin && !isCoordSede && (rawRole.includes("COORD") || rawRole.includes("APCOORD"));
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   const closeMobile = () => setMobileOpen(false);
@@ -343,6 +401,8 @@ export function Sidebar({ branding }: SidebarProps) {
     ? navAdmin
     : isSubdirector
     ? navSubdirector
+    : isCoordSede
+    ? navCoordinadorSede
     : isCoordinador
     ? navCoordinador
     : isInstructor

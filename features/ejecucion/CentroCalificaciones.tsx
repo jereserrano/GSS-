@@ -18,7 +18,8 @@ export function CentroCalificaciones({ initialFichaId = "", hideSelector = false
   const userRole = (session?.user as any)?.role?.toUpperCase() || "";
   const isAprendiz = userRole === "APRENDIZ";
   const isApoyo = userRole === "APOYO_COORDINACION";
-  const canGrade = !isAprendiz && !isApoyo;
+  const isCoordSede = userRole === "COORDINADOR_SEDE" || userRole.includes("SEDE");
+  const canGrade = !isAprendiz && !isApoyo && !isCoordSede;
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

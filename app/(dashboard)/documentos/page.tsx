@@ -12,7 +12,7 @@ export default async function DocumentosPage() {
 
   const rol = (session.user as any).role?.toUpperCase() || "";
   const isAprendiz = rol.includes("APRENDIZ");
-  const isRevisor = rol === "ADMINISTRADOR" || rol === "COORDINADOR" || rol === "APOYO_COORDINACION";
+  const isRevisor = rol === "ADMINISTRADOR" || rol.includes("COORD") || rol === "APOYO_COORDINACION";
   const isInstructor = rol.includes("INSTRUCT");
 
   const titulo = isRevisor

@@ -181,15 +181,28 @@ export function MensajeriaView({
     return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }));
   }, [contactos]);
 
-  const fichasDePrograma = React.useMemo(() => {
-    if (!filtroProgramaId) return [];
+  const fichasDisponibles = React.useMemo(() => {
     const map = new Map<string, string>();
     contactos.forEach((c) => {
-      if (c.programaId === filtroProgramaId && c.fichaId && c.fichaCodigo)
-        map.set(c.fichaId, c.fichaCodigo);
+      if (c.fichaId && c.fichaCodigo) {
+        if (!filtroProgramaId || c.programaId === filtroProgramaId) {
+          map.set(c.fichaId, c.fichaCodigo);
+        }
+      }
     });
     return Array.from(map.entries()).map(([id, codigo]) => ({ id, codigo }));
   }, [contactos, filtroProgramaId]);
+
+  const fichasDePrograma = React.useMemo(() => {
+    const targetProg = segmentoProgramaId || filtroProgramaId;
+    if (!targetProg) return [];
+    const map = new Map<string, string>();
+    contactos.forEach((c) => {
+      if (c.programaId === targetProg && c.fichaId && c.fichaCodigo)
+        map.set(c.fichaId, c.fichaCodigo);
+    });
+    return Array.from(map.entries()).map(([id, codigo]) => ({ id, codigo }));
+  }, [contactos, segmentoProgramaId, filtroProgramaId]);
 
   const contactosFiltrados = React.useMemo(() => {
     return contactos.filter((c) => {
@@ -354,9 +367,11 @@ export function MensajeriaView({
     (userRole === "ADMINISTRADOR" ||
       userRole === "ADMIN" ||
       userRole === "COORDINADOR" ||
+      userRole === "COORDINADOR_SEDE" ||
+      userRole?.includes("COORD") ||
       userRole === "APOYO_COORDINACION" ||
       userRole === "INSTRUCTOR") &&
-    programasDisponibles.length > 0;
+    (programasDisponibles.length > 0 || fichasDisponibles.length > 0);
 
   // ─────────────────────────────────────────────
   // RENDER
@@ -386,7 +401,7 @@ export function MensajeriaView({
             >
               <span className="flex items-center gap-1">
                 <Filter size={12} />
-                Filtrar por programa / ficha
+                Filtrar por ficha / programa
               </span>
               <ChevronDown
                 size={12}
@@ -398,30 +413,8 @@ export function MensajeriaView({
           {/* ── Panel de filtros */}
           {mostrarFiltros && mostrarFiltroFichas && (
             <div className="space-y-2 pt-1 border-t">
-              {/* Selector Programa */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">
-                  Programa
-                </label>
-                <select
-                  value={filtroProgramaId}
-                  onChange={(e) => {
-                    setFiltroProgramaId(e.target.value);
-                    setFiltroFichaId(""); // resetear ficha al cambiar programa
-                  }}
-                  className="w-full text-xs py-1.5 px-2 rounded-md bg-slate-100 border-none outline-none focus:ring-2 focus:ring-[#39A900]"
-                >
-                  <option value="">Todos los programas</option>
-                  {programasDisponibles.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Selector Ficha (solo si hay programa seleccionado) */}
-              {filtroProgramaId && fichasDePrograma.length > 0 && (
+              {/* Selector Ficha */}
+              {fichasDisponibles.length > 0 && (
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">
                     Ficha
@@ -432,9 +425,33 @@ export function MensajeriaView({
                     className="w-full text-xs py-1.5 px-2 rounded-md bg-slate-100 border-none outline-none focus:ring-2 focus:ring-[#39A900]"
                   >
                     <option value="">Todas las fichas</option>
-                    {fichasDePrograma.map((f) => (
+                    {fichasDisponibles.map((f) => (
                       <option key={f.id} value={f.id}>
-                        {f.codigo}
+                        Ficha {f.codigo}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Selector Programa */}
+              {programasDisponibles.length > 0 && (
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">
+                    Programa
+                  </label>
+                  <select
+                    value={filtroProgramaId}
+                    onChange={(e) => {
+                      setFiltroProgramaId(e.target.value);
+                      setFiltroFichaId(""); // resetear ficha al cambiar programa
+                    }}
+                    className="w-full text-xs py-1.5 px-2 rounded-md bg-slate-100 border-none outline-none focus:ring-2 focus:ring-[#39A900]"
+                  >
+                    <option value="">Todos los programas</option>
+                    {programasDisponibles.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nombre}
                       </option>
                     ))}
                   </select>

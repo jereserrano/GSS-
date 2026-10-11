@@ -20,12 +20,24 @@ export async function GET(request: NextRequest) {
       where: { email: session.user.email },
     });
 
-    if (user?.rol !== "ADMINISTRADOR" && user?.rol !== "COORDINADOR") {
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Usuario no encontrado" }, { status: 404 });
+    }
+
+    const rolUpper = user.rol?.toUpperCase() || "";
+    const isCoordSede = rolUpper === "COORDINADOR_SEDE" || (rolUpper.includes("COORD") && rolUpper.includes("SEDE"));
+
+    if (user.rol !== "ADMINISTRADOR" && user.rol !== "COORDINADOR" && !isCoordSede) {
       return NextResponse.json({ success: false, error: "Rol no válido" }, { status: 403 });
     }
 
     // 1. Obtener todos los programas para el filtro
+    const programasWhere = isCoordSede && user.sedeId
+      ? { fichas: { some: { sedeId: user.sedeId } } }
+      : {};
+
     const programas = await prisma.programa.findMany({
+      where: programasWhere,
       select: { id: true, nombre: true }
     });
 
@@ -42,8 +54,13 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. Obtener fichas del programa seleccionado
+    const fichasWhere: any = { programaId: programaIdParam };
+    if (isCoordSede && user.sedeId) {
+      fichasWhere.sedeId = user.sedeId;
+    }
+
     const fichasAsignadas = await prisma.ficha.findMany({
-      where: { programaId: programaIdParam },
+      where: fichasWhere,
       select: { id: true, codigo: true, programa: { select: { nombre: true, id: true } } }
     });
 

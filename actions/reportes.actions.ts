@@ -44,11 +44,28 @@ export async function logAudit(data: {
 
 export async function getAuditLogsAction(filtros: any = {}) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return { success: false, error: "No autorizado" };
+    }
+    const sessionUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, rol: true, sedeId: true }
+    });
+    if (!sessionUser) return { success: false, error: "Usuario no encontrado" };
+
+    const rolUpper = (sessionUser.rol || "").toUpperCase();
+    const isCoordSede = rolUpper === "COORDINADOR_SEDE" || (rolUpper.includes("COORD") && rolUpper.includes("SEDE"));
+
     const pagina = filtros.pagina || 1;
     const tamano = 20;
     const skip = (pagina - 1) * tamano;
 
-    const where = filtros.modulo ? { modulo: filtros.modulo } : {};
+    const where: any = filtros.modulo ? { modulo: filtros.modulo } : {};
+
+    if (isCoordSede && sessionUser.sedeId) {
+      where.user = { sedeId: sessionUser.sedeId };
+    }
 
     const [data, total] = await TransactionRepository.$transaction([
       AuditLogRepository.findMany({

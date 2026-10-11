@@ -18,19 +18,7 @@ async function main() {
     }
   });
 
-  const ivan = await prisma.user.upsert({
-    where: { email: 'ivan@sena.edu.co' },
-    update: { passwordHash, rol: 'ADMINISTRADOR' },
-    create: {
-      nombre: 'Ivan',
-      email: 'ivan@sena.edu.co',
-      passwordHash: passwordHash,
-      rol: 'ADMINISTRADOR',
-      estado: 'ACTIVO'
-    }
-  });
-
-  console.log('Usuarios creados:', admin.email, ivan.email);
+  console.log('Usuario administrador creado:', admin.email);
 }
 
 main()

@@ -97,8 +97,9 @@ Este documento servirá como bitácora de registro de cada paso ejecutado para d
   4. Persistencia en Backend: Se ajustaron las mutaciones `createUser` y `updateUser` en `actions/user.actions.ts` para persistir `sedeId` en el repositorio de usuarios.
   5. Contexto de Sesión JWT: Se integraron `sedeId` e `institucionId` en los callbacks de `authorize`, `jwt` y `session` de `lib/auth.ts` y en las extensiones de tipos de NextAuth (`types/next-auth.d.ts`), permitiendo que los filtros de seguridad por sede operen desde el inicio de sesión.
   6. Despliegue y verificación: Sincronización vía Git hacia el servidor Linux remoto, compilación limpia de producción con Next.js y reinicio del proceso PM2 `gss-backend`. ✅ Exitoso.
-
-
-
-
-
+- **[2026-10-11 14:36]** (Fase 4 - Corrección / Notificaciones por correo) Enrutamiento al correo personal del aprendiz y notificaciones automáticas por email:
+  1. Diagnóstico: `createActividad` únicamente creaba la notificación en la plataforma (in-app en tabla `Notificacion`), sin invocar el despachador de correos. Se verificó conectividad y autenticación SMTP exitosa desde el servidor Linux (puerto 587 TLS a Gmail y `transporter.verify()` activo).
+  2. Notificación al publicar actividad: En `actions/actividades.actions.ts`, al publicar una actividad se despacha un correo HTML personalizado a cada aprendiz `EN_FORMACION` de la ficha utilizando prioritariamente `emailPersonal` (con respaldo en `emailSena` y en `user.email`). Se diseñó la plantilla `getActividadEmailTemplate` en `lib/email-templates.ts` detallando instructor, ficha, RAP, descripción, fecha de vencimiento y enlace directo.
+  3. Despacho centralizado en el sistema: En `actions/notificaciones.actions.ts`, toda llamada a `crearNotificacionSistema` (entregas de aprendices, justificación de inasistencias, etc.) envía automáticamente un correo al destinatario (aprendices a su correo personal; instructores/coordinadores a su correo de cuenta). Se incluyó el flag `enviarCorreo=false` para eventos que ya disponen de correo dedicado (calificación masiva) o mensajes de chat/comunicados masivos in-app.
+  4. Rendimiento y límites SMTP: Se configuró en `lib/mail.ts` una cola con pool de conexiones (`pool: true`, `maxConnections: 3`, `maxMessages: 100`, tasa limitada a 5 msg/s) para despachar sin bloqueos ni rechazos por spam de Gmail al notificar a fichas completas.
+  5. Despliegue: Sincronización vía Git, compilación de Next.js sin errores y reinicio de proceso PM2 `gss-backend` en el servidor Linux. ✅ Exitoso.

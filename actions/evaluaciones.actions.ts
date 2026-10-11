@@ -403,7 +403,8 @@ export async function calificarMasivoAction(fichaId: string, raId: string, calif
               `Nueva calificación: ${rap.codigo} - ${rap.nombre}`,
               `Se ha registrado tu calificación (${cal.nota} - ${juicio}) en el Centro de Calificaciones y en tus actividades asociadas.`,
               "INFO",
-              "/centro-calificaciones"
+              "/centro-calificaciones",
+              false
             );
           }
 

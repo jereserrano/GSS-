@@ -25,6 +25,8 @@ import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { crearNotificacionSistema } from "./notificaciones.actions";
+import { sendEmail } from "@/lib/mail";
+import { getActividadEmailTemplate } from "@/lib/email-templates";
 
 export async function getActividadesAction(filtros: any = {}) {
   try {
@@ -169,20 +171,59 @@ export async function createActividad(data: z.infer<typeof actividadSchema>) {
     if (estadoActividad === "PUBLICADA" || estadoActividad === "ACTIVA") {
       try {
         const aprendices = await prisma.aprendiz.findMany({
-          where: { fichaId: data.fichaId, estado: "EN_FORMACION", userId: { not: null } },
-          select: { userId: true }
+          where: { fichaId: data.fichaId, estado: "EN_FORMACION" },
+          select: {
+            userId: true,
+            nombres: true,
+            emailPersonal: true,
+            emailSena: true,
+            user: { select: { email: true } },
+          }
         });
+
+        const [fichaInfo, instructorInfo, rapInfo] = await Promise.all([
+          prisma.ficha.findUnique({ where: { id: data.fichaId }, select: { codigo: true } }),
+          instructorId
+            ? prisma.instructor.findUnique({ where: { id: instructorId }, select: { nombres: true, apellidos: true } })
+            : Promise.resolve(null),
+          data.resultadoAprendizajeId
+            ? prisma.resultadoAprendizaje.findUnique({ where: { id: data.resultadoAprendizajeId }, select: { nombre: true } })
+            : Promise.resolve(null),
+        ]);
 
         const fechaVenceFormatted = new Date((data.fechaFin || data.fechaVencimiento) as string | number | Date).toLocaleDateString("es-CO");
         for (const ap of aprendices) {
+          // Notificación in-app (el correo se envía abajo con la plantilla específica de actividad)
           if (ap.userId) {
             await crearNotificacionSistema(
               ap.userId,
               `Nueva actividad: ${data.nombre}`,
               `Se ha publicado la actividad "${data.nombre}". Fecha límite de entrega: ${fechaVenceFormatted}.`,
               "INFO",
-              "/actividades"  // ← enlace para el aprendiz
+              "/actividades",  // ← enlace para el aprendiz
+              false
             );
+          }
+
+          // Correo al correo PERSONAL del aprendiz (respaldo: institucional / correo de cuenta)
+          const destino = ap.emailPersonal || ap.emailSena || ap.user?.email;
+          if (destino) {
+            sendEmail({
+              to: destino,
+              subject: `Nueva actividad: ${data.nombre} - GSS`,
+              html: getActividadEmailTemplate({
+                aprendizNombre: ap.nombres,
+                actividadNombre: data.nombre,
+                descripcion: data.descripcion || null,
+                instructorNombre: instructorInfo ? `${instructorInfo.nombres} ${instructorInfo.apellidos}` : null,
+                fichaCodigo: fichaInfo?.codigo || null,
+                rapNombre: rapInfo?.nombre || null,
+                fechaVencimiento: fechaVenceFormatted,
+                enlace: "/actividades",
+              }),
+            }).catch((err) => console.error(`Error enviando correo de actividad a ${destino}:`, err));
+          } else {
+            console.warn(`Aprendiz ${ap.nombres} no tiene correo registrado; no se envió el correo de la actividad.`);
           }
         }
       } catch (notifErr) {

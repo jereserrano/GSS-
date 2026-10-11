@@ -60,7 +60,8 @@ export async function enviarMensajeAction(data: {
             `📢 Comunicado de ${emisorNombre}`,
             contenido.length > 120 ? contenido.slice(0, 120) + "…" : contenido,
             "INFO",
-            "/mensajes"
+            "/mensajes",
+            false
           )
         )
       );
@@ -89,7 +90,8 @@ export async function enviarMensajeAction(data: {
       `💬 Nuevo mensaje de ${emisorNombre}`,
       contenido.length > 120 ? contenido.slice(0, 120) + "…" : contenido,
       "INFO",
-      "/mensajes"
+      "/mensajes",
+      false
     );
 
     revalidatePath("/mensajes");
@@ -566,7 +568,8 @@ export async function enviarMensajeMasivoAction(data: {
             "📢 Mensaje masivo",
             `${session.user.name || "Coordinación"}: ${contenido.slice(0, 80)}${contenido.length > 80 ? "..." : ""}`,
             "INFO",
-            "/mensajes"
+            "/mensajes",
+            false
           )
         )
       );

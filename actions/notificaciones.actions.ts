@@ -7,6 +7,9 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next";
 import { requireRole, requireInstitutionAccess } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit.service";
+import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/mail";
+import { getNotificacionEmailTemplate } from "@/lib/email-templates";
 
 async function getSessionUserId() {
   const session = await getServerSession();
@@ -69,7 +72,16 @@ export async function marcarTodasComoLeidasAction() {
 }
 
 // Función auxiliar para uso interno del sistema (no llamada desde el cliente directamente)
-export async function crearNotificacionSistema(userId: string, titulo: string, mensaje: string, tipo: string = "INFO", enlace?: string) {
+// Por defecto también envía correo al usuario (aprendiz → correo personal; otros roles → correo de la cuenta).
+// Pasar enviarCorreo=false cuando el llamador ya envía su propio correo o no aplica (ej. chat).
+export async function crearNotificacionSistema(
+  userId: string,
+  titulo: string,
+  mensaje: string,
+  tipo: string = "INFO",
+  enlace?: string,
+  enviarCorreo: boolean = true
+) {
   try {
     await NotificacionRepository.create({
       data: {
@@ -82,5 +94,32 @@ export async function crearNotificacionSistema(userId: string, titulo: string, m
     });
   } catch (error) {
     console.error("Error creando notificación automática:", error);
+  }
+
+  if (!enviarCorreo) return;
+
+  try {
+    const destino = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        nombre: true,
+        email: true,
+        aprendiz: { select: { nombres: true, emailPersonal: true, emailSena: true } },
+      },
+    });
+    if (!destino) return;
+
+    const to = destino.aprendiz?.emailPersonal || destino.aprendiz?.emailSena || destino.email;
+    if (!to) return;
+
+    const nombre = destino.aprendiz?.nombres || destino.nombre;
+    // Fire-and-forget: un fallo SMTP nunca debe bloquear la operación principal
+    sendEmail({
+      to,
+      subject: `${titulo} - GSS`,
+      html: getNotificacionEmailTemplate(nombre, titulo, mensaje, enlace),
+    }).catch((err) => console.error("Error enviando correo de notificación:", err));
+  } catch (error) {
+    console.error("Error preparando correo de notificación:", error);
   }
 }

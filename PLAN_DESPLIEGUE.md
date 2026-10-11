@@ -79,6 +79,12 @@ Este documento servirá como bitácora de registro de cada paso ejecutado para d
   2. Implementación de modal interactivo de confirmación de eliminación con aviso sobre entregas asociadas y borrado seguro en cascada en `deleteActividad` (`actions/actividades.actions.ts`).
   3. Soporte de edición en `ActividadFormDialog.tsx` con precarga correcta de fecha de vencimiento en hora local, código y descripción.
   4. Despliegue hacia el servidor Linux remoto vía Git y actualización del servicio PM2. ✅ Exitoso.
+- **[2026-10-11 10:00]** (Fase 4 - Corrección / Centro de Calificaciones y Gestor de Actividades) Sincronización automática de Calificación Masiva y visualización de notas en rol Aprendiz:
+  1. Causa: `calificarMasivoAction` solo guardaba en la tabla `EvaluacionAprendiz`, sin actualizar las entregas de las actividades asociadas a dicho RAP en la ficha. Esto ocasionaba que en el Gestor de Actividades siguieran saliendo como "Por Calificar" y que al aprendiz no se le reflejara la entrega calificada en su historial.
+  2. Solución en backend: Se actualizó `calificarMasivoAction` en `actions/evaluaciones.actions.ts` para realizar sincronización automática (`upsert` en modelo `Entrega`) en todas las actividades vinculadas al RAP en esa ficha, registrar retroalimentación, generar notificaciones en el sistema para los aprendices evaluados y revalidar las rutas `/centro-calificaciones`, `/gestor-actividades`, `/actividades` y `/evaluaciones`.
+  3. Solución en frontend: Se mejoró `CentroCalificaciones.tsx` para incluir búsqueda resiliente de la cuenta de aprendiz (por `userId` y `email`), expansión automática de competencias por defecto en la vista de aprendiz, y alertas informativas mediante `sonner` `toast` tras la calificación masiva.
+  4. Sincronización retroactiva: Se sincronizaron las evaluaciones existentes en base de datos para que actividades previas queden en estado `CALIFICADA` con su nota correspondiente.
+  5. Despliegue en servidor Linux remoto mediante Git y reinicio de servicio PM2. ✅ Exitoso.
 
 
 

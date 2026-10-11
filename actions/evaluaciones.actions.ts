@@ -12,6 +12,7 @@ import { requireRole } from "@/lib/rbac";
 import { recalcularRiesgoAprendiz } from "@/services/riesgo.service";
 import { sendEmail } from "@/lib/mail";
 import { getEvaluacionEmailTemplate } from "@/lib/email-templates";
+import { crearNotificacionSistema } from "./notificaciones.actions";
 
 export async function getEvaluacionesAction(filtros: any = {}) {
   try {
@@ -264,6 +265,7 @@ export async function getSabanaNotasAction(fichaId: string) {
         },
         aprendices: {
           include: {
+            user: { select: { id: true, email: true } },
             evaluaciones: true
           }
         }
@@ -287,6 +289,11 @@ export async function calificarMasivoAction(fichaId: string, raId: string, calif
       return { success: false, error: "No hay calificaciones para guardar" };
     }
 
+    const instructorRecord = await prisma.instructor.findUnique({
+      where: { userId: user.id }
+    });
+
+    // 1. Guardar o actualizar en EvaluacionAprendiz
     await prisma.$transaction(
       calificaciones.map((cal) => {
         const juicio = cal.nota >= 3.5 ? "APROBADO" : "DEFICIENTE";
@@ -300,7 +307,7 @@ export async function calificarMasivoAction(fichaId: string, raId: string, calif
           },
           update: {
             nota: cal.nota,
-            juicio: juicio as any, // Cast to any to avoid type errors if DB schema hasn't fully synced type
+            juicio: juicio as any,
             fecha: new Date(),
           },
           create: {
@@ -314,33 +321,94 @@ export async function calificarMasivoAction(fichaId: string, raId: string, calif
       })
     );
 
+    // 2. Sincronizar automáticamente con las actividades de la ficha vinculadas a este RAP
+    const actividadesVinculadas = await prisma.actividad.findMany({
+      where: {
+        fichaId,
+        resultadoAprendizajeId: raId
+      }
+    });
+
+    if (actividadesVinculadas.length > 0) {
+      for (const act of actividadesVinculadas) {
+        for (const cal of calificaciones) {
+          const estadoEntrega = cal.nota >= 3.5 ? "CALIFICADA" : "NO_APROBADA";
+          const juicioTexto = cal.nota >= 3.5 ? "Aprobado" : "Deficiente";
+          const calificacionTexto = cal.nota.toString();
+
+          await prisma.entrega.upsert({
+            where: {
+              actividadId_aprendizId: {
+                actividadId: act.id,
+                aprendizId: cal.aprendizId
+              }
+            },
+            update: {
+              estado: estadoEntrega as any,
+              calificacion: calificacionTexto,
+              retroalimentacion: `Calificación asignada en evaluación del Resultado de Aprendizaje (${juicioTexto})`,
+              instructorId: instructorRecord?.id || null,
+              fechaEvaluacion: new Date()
+            },
+            create: {
+              actividadId: act.id,
+              aprendizId: cal.aprendizId,
+              estado: estadoEntrega as any,
+              calificacion: calificacionTexto,
+              comentario: "Evaluación registrada masivamente en Centro de Calificaciones",
+              retroalimentacion: `Calificación asignada en evaluación del Resultado de Aprendizaje (${juicioTexto})`,
+              instructorId: instructorRecord?.id || null,
+              fechaEvaluacion: new Date(),
+              fechaEntrega: new Date()
+            }
+          });
+        }
+      }
+    }
+
+    // 3. Recalcular riesgos en background
+    for (const cal of calificaciones) {
+      recalcularRiesgoAprendiz(cal.aprendizId).catch(console.error);
+    }
+
     await logAudit({
       userId: user.id,
       modulo: "Evaluaciones",
       accion: "ACTUALIZAR",
-      detalle: `Calificación masiva para RAP ID: ${raId} en Ficha ID: ${fichaId} (${calificaciones.length} aprendices)`,
+      detalle: `Calificación masiva para RAP ID: ${raId} en Ficha ID: ${fichaId} (${calificaciones.length} aprendices) y sincronización con ${actividadesVinculadas.length} actividad(es)`,
     });
     
-    // Notificar masivamente a los aprendices en background
+    // 4. Notificar a los aprendices (email + notificación de sistema)
     (async () => {
       try {
         const rap = await prisma.resultadoAprendizaje.findUnique({
           where: { id: raId },
-          select: { nombre: true }
+          select: { nombre: true, codigo: true }
         });
         if (!rap) return;
 
         const aprendicesIds = calificaciones.map(c => c.aprendizId);
         const aprendicesInfo = await prisma.aprendiz.findMany({
           where: { id: { in: aprendicesIds } },
-          select: { id: true, nombres: true, emailSena: true, emailPersonal: true }
+          select: { id: true, userId: true, nombres: true, emailSena: true, emailPersonal: true }
         });
 
         for (const cal of calificaciones) {
           const info = aprendicesInfo.find(a => a.id === cal.aprendizId);
+          const juicio = cal.nota >= 3.5 ? "APROBADO" : "DEFICIENTE";
+          
+          if (info?.userId) {
+            await crearNotificacionSistema(
+              info.userId,
+              `Nueva calificación: ${rap.codigo} - ${rap.nombre}`,
+              `Se ha registrado tu calificación (${cal.nota} - ${juicio}) en el Centro de Calificaciones y en tus actividades asociadas.`,
+              "INFO",
+              "/centro-calificaciones"
+            );
+          }
+
           const email = info?.emailPersonal || info?.emailSena;
           if (info && email) {
-            const juicio = cal.nota >= 3.5 ? "APROBADO" : "DEFICIENTE";
             const template = getEvaluacionEmailTemplate(info.nombres, rap.nombre, juicio);
             await sendEmail({ to: email, subject: "Calificación registrada - GSS", html: template });
           }
@@ -350,7 +418,11 @@ export async function calificarMasivoAction(fichaId: string, raId: string, calif
       }
     })();
 
+    revalidatePath("/centro-calificaciones");
+    revalidatePath("/gestor-actividades");
+    revalidatePath("/actividades");
     revalidatePath("/evaluaciones");
+    revalidatePath("/dashboard");
     
     return { success: true };
   } catch (error: any) {

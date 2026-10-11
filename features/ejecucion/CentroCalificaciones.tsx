@@ -6,6 +6,7 @@ import { getSabanaNotasAction, calificarMasivoAction } from "@/actions/evaluacio
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle, XCircle, Clock, BookOpen, Target, ChevronRight, ChevronDown, Users, BookCheck, FolderOpen, Save, ListChecks, Table, Download } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface CentroCalificacionesProps {
   initialFichaId?: string;
@@ -104,12 +105,13 @@ export function CentroCalificaciones({ initialFichaId = "", hideSelector = false
       // Limpiar y refrescar
       setNotaGlobal("");
       setCalificacionesBorrador({});
+      toast.success(res.message || "Calificaciones guardadas y actividades sincronizadas correctamente.");
       getSabanaNotasAction(fichaId).then(resData => {
         if (resData.success) setSabanaData(resData.data);
         setSaving(false);
       });
     } else {
-      alert("Error al guardar calificaciones: " + (res?.error || ""));
+      toast.error("Error al guardar calificaciones: " + (res?.error || ""));
       setSaving(false);
     }
   };
@@ -319,7 +321,7 @@ export function CentroCalificaciones({ initialFichaId = "", hideSelector = false
 
                   // Make keys unique per student if used in Instructor view
                   const uniqueKey = `${miAprendiz.id}-${comp.id}`;
-                  const isExpanded = !!expandedCompetencias[uniqueKey];
+                  const isExpanded = isAprendiz ? expandedCompetencias[uniqueKey] !== false : !!expandedCompetencias[uniqueKey];
 
                   return (
                     <React.Fragment key={uniqueKey}>
@@ -406,7 +408,18 @@ export function CentroCalificaciones({ initialFichaId = "", hideSelector = false
   }
 
   function renderAprendizView() {
-    const miAprendiz = sabanaData.aprendices?.find((a: any) => a.userId === session?.user?.id);
+    const userEmail = (session?.user?.email || "").toLowerCase();
+    const userId = session?.user?.id;
+
+    const miAprendiz = sabanaData.aprendices?.find((a: any) => 
+      (userId && a.userId === userId) ||
+      (userId && a.user?.id === userId) ||
+      (userEmail && (
+        a.emailSena?.toLowerCase() === userEmail ||
+        a.emailPersonal?.toLowerCase() === userEmail ||
+        a.user?.email?.toLowerCase() === userEmail
+      ))
+    );
 
     if (!miAprendiz) {
       return <div className="p-8 text-center text-gray-500 bg-gray-50 border rounded-lg">No se encontró tu registro en esta ficha.</div>;

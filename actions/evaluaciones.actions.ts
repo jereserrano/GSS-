@@ -13,6 +13,8 @@ import { recalcularRiesgoAprendiz } from "@/services/riesgo.service";
 import { sendEmail } from "@/lib/mail";
 import { getEvaluacionEmailTemplate } from "@/lib/email-templates";
 import { crearNotificacionSistema } from "./notificaciones.actions";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 export async function getEvaluacionesAction(filtros: any = {}) {
   try {
@@ -20,7 +22,20 @@ export async function getEvaluacionesAction(filtros: any = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
-    const where = {
+    const session = await getServerSession(authOptions);
+    let sedeIdFilter: string | null = null;
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        sedeIdFilter = userRecord.sedeId;
+      }
+    }
+
+    const where: any = {
       ...(filtros.busqueda ? {
         OR: [
           { aprendiz: { nombres: { contains: filtros.busqueda } } },
@@ -32,6 +47,7 @@ export async function getEvaluacionesAction(filtros: any = {}) {
       } : {}),
       ...(filtros.rapId ? { resultadoAprendizajeId: filtros.rapId } : {}),
       ...(filtros.instructorFichaIds?.length ? { aprendiz: { fichaId: { in: filtros.instructorFichaIds } } } : {}),
+      ...(sedeIdFilter ? { aprendiz: { ficha: { sedeId: sedeIdFilter } } } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([
@@ -260,6 +276,21 @@ export async function exportEvaluacionesCSV() {
 
 export async function getSabanaNotasAction(fichaId: string) {
   try {
+    const session = await getServerSession(authOptions);
+    let userSedeId: string | null = null;
+    let isCoordSede = false;
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if (roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) {
+        isCoordSede = true;
+        userSedeId = userRecord?.sedeId || null;
+      }
+    }
+
     const ficha = await prisma.ficha.findUnique({
       where: { id: fichaId },
       include: {
@@ -282,6 +313,10 @@ export async function getSabanaNotasAction(fichaId: string) {
     });
 
     if (!ficha) return { success: false, error: "Ficha no encontrada" };
+
+    if (isCoordSede && userSedeId && ficha.sedeId && ficha.sedeId !== userSedeId) {
+      return { success: false, error: "No tienes permiso para ver calificaciones de una ficha que no pertenece a tu sede asignada." };
+    }
 
     return { success: true, data: ficha };
   } catch (error: any) {

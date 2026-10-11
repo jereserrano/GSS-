@@ -76,7 +76,11 @@ export async function getActividadesAction(filtros: any = {}) {
     }
 
     if (filtros.institucionId) baseFichaWhere.institucionId = filtros.institucionId;
-    if (filtros.sedeId) baseFichaWhere.sedeId = filtros.sedeId;
+    if (isCoordSede && userContext?.sedeId) {
+      baseFichaWhere.sedeId = userContext.sedeId;
+    } else if (filtros.sedeId) {
+      baseFichaWhere.sedeId = filtros.sedeId;
+    }
     if (filtros.programaId) baseFichaWhere.programaId = filtros.programaId;
 
     const where: any = {
@@ -306,7 +310,21 @@ export async function deleteActividad(id: string) {
 
 export async function exportActividadesCSV() {
   try {
+    const session = await getServerSession();
+    let whereClause: any = {};
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        whereClause.ficha = { sedeId: userRecord.sedeId };
+      }
+    }
+
     const actividades = await ActividadRepository.findMany({
+      where: whereClause,
       orderBy: { fechaVencimiento: "desc" },
       include: {
         ficha: {
@@ -344,6 +362,21 @@ export async function exportActividadesCSV() {
 
 export async function getActividadesByFichaAction(fichaId: string) {
   try {
+    const session = await getServerSession();
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        const ficha = await prisma.ficha.findUnique({ where: { id: fichaId }, select: { sedeId: true } });
+        if (ficha && ficha.sedeId && ficha.sedeId !== userRecord.sedeId) {
+          return { success: false, error: "Esta ficha no pertenece a tu sede asignada." };
+        }
+      }
+    }
+
     const actividades = await prisma.actividad.findMany({
       where: { fichaId },
       include: {

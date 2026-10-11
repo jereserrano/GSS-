@@ -154,6 +154,19 @@ export async function getAprendicesAction(filtros: FiltrosAprendiz = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
+    const session = await getServerSession(authOptions);
+    let sedeIdFilter: string | null = null;
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        sedeIdFilter = userRecord.sedeId;
+      }
+    }
+
     const where: any = {
       ...(filtros.busqueda ? {
         OR: [
@@ -165,6 +178,7 @@ export async function getAprendicesAction(filtros: FiltrosAprendiz = {}) {
       ...(filtros.nivelRiesgo ? { nivelRiesgo: filtros.nivelRiesgo.toUpperCase() as NivelRiesgo } : {}),
       ...(filtros.estado ? { estado: filtros.estado.toUpperCase() as any } : {}),
       ...(filtros.fichaId ? { fichaId: filtros.fichaId } : {}),
+      ...(sedeIdFilter ? { ficha: { sedeId: sedeIdFilter } } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([
@@ -363,7 +377,21 @@ export async function deleteAprendiz(id: string) {
 
 export async function exportAprendicesCSV() {
   try {
+    const session = await getServerSession(authOptions);
+    let exportWhere: any = {};
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        exportWhere.ficha = { sedeId: userRecord.sedeId };
+      }
+    }
+
     const aprendices = await AprendizRepository.findMany({
+      where: exportWhere,
       orderBy: [{ apellidos: "asc" }, { nombres: "asc" }],
       include: {
         ficha: {

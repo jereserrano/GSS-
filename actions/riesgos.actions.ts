@@ -18,25 +18,27 @@ export async function getRiesgosAction(filtros: any = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
-    // --- SECURITY: if the caller is an APRENDIZ, ALWAYS restrict to their OWN records only ---
-    // This cannot be bypassed from the client side.
+    // --- SECURITY: Restrict to OWN records for APRENDIZ, or SEDE for COORDINADOR_SEDE ---
     const session = await getServerSession(authOptions);
-    const rol = session?.user?.role?.toUpperCase();
     let forcedAprendizId: string | null = null;
+    let sedeIdFilter: string | null = null;
 
-    if (rol === "APRENDIZ" && session?.user?.email) {
+    if (session?.user?.email) {
       const userRecord = await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { id: true }
+        select: { id: true, rol: true, sedeId: true }
       });
-      if (userRecord) {
-        const aprendizRecord = await prisma.aprendiz.findUnique({
+      const userRol = userRecord?.rol?.toUpperCase() || "";
+      if (userRol === "APRENDIZ" && userRecord?.id) {
+        const aprendizRecord = await prisma.aprendiz.findFirst({
           where: { userId: userRecord.id },
           select: { id: true }
         });
         if (aprendizRecord) {
           forcedAprendizId = aprendizRecord.id;
         }
+      } else if ((userRol === "COORDINADOR_SEDE" || (userRol.includes("COORD") && userRol.includes("SEDE"))) && userRecord?.sedeId) {
+        sedeIdFilter = userRecord.sedeId;
       }
     }
 
@@ -54,6 +56,10 @@ export async function getRiesgosAction(filtros: any = {}) {
 
     if (filtros.fichaIds && filtros.fichaIds.length > 0) {
       where.aprendiz = { ...where.aprendiz, fichaId: { in: filtros.fichaIds } };
+    }
+
+    if (sedeIdFilter) {
+      where.aprendiz = { ...where.aprendiz, ficha: { sedeId: sedeIdFilter } };
     }
 
     // Force aprendiz filter: if APRENDIZ role, use their own ID (ignore any client-supplied value)
@@ -172,7 +178,21 @@ export async function deleteRiesgo(id: string) {
 
 export async function exportRiesgosCSV() {
   try {
+    const session = await getServerSession(authOptions);
+    let whereClause: any = {};
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        whereClause.aprendiz = { ficha: { sedeId: userRecord.sedeId } };
+      }
+    }
+
     const riesgos = await AlertaRiesgoRepository.findMany({
+      where: whereClause,
       orderBy: { fechaDeteccion: "desc" },
       include: {
         aprendiz: { 

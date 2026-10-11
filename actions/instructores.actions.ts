@@ -22,6 +22,7 @@ async function getSessionUserId() {
   return null;
 }
 
+import { authOptions } from "@/lib/auth";
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -31,16 +32,39 @@ export async function getInstructoresAction(filtros: any = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
-    const where = {
-      ...(filtros.busqueda ? {
+    const session = await getServerSession(authOptions);
+    let sedeFilter: any = null;
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        sedeFilter = {
+          OR: [
+            { fichas: { some: { ficha: { sedeId: userRecord.sedeId } } } },
+            { user: { sedeId: userRecord.sedeId } }
+          ]
+        };
+      }
+    }
+
+    const whereConditions: any[] = [];
+    if (filtros.busqueda) {
+      whereConditions.push({
         OR: [
           { nombres: { contains: filtros.busqueda } },
           { apellidos: { contains: filtros.busqueda } },
           { numeroDocumento: { contains: filtros.busqueda } },
           { email: { contains: filtros.busqueda } },
         ]
-      } : {}),
-    };
+      });
+    }
+    if (sedeFilter) {
+      whereConditions.push(sedeFilter);
+    }
+    const where: any = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
     const [data, total] = await TransactionRepository.$transaction([
       InstructorRepository.findMany({
@@ -165,7 +189,24 @@ export async function deleteInstructor(id: string) {
 
 export async function exportInstructoresCSV() {
   try {
+    const session = await getServerSession(authOptions);
+    let whereClause: any = {};
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        whereClause.OR = [
+          { fichas: { some: { ficha: { sedeId: userRecord.sedeId } } } },
+          { user: { sedeId: userRecord.sedeId } }
+        ];
+      }
+    }
+
     const instructores = await InstructorRepository.findMany({
+      where: whereClause,
       orderBy: { apellidos: "asc" },
       include: {
         _count: { select: { asistencias: true } }
@@ -198,9 +239,16 @@ export async function exportInstructoresCSV() {
 
 export async function getFichasInstructor(instructorId: string) {
   try {
-    await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
+    const user = await requireRole(["ADMINISTRADOR", "COORDINADOR"]);
+    const roleUpper = (user as any).rol?.toUpperCase() || "";
+    const isCoordSede = roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"));
+    const fichaWhere: any = { estado: "ACTIVO" };
+    if (isCoordSede && (user as any).sedeId) {
+      fichaWhere.sedeId = (user as any).sedeId;
+    }
+
     const fichas = await prisma.ficha.findMany({
-      where: { estado: "ACTIVO" },
+      where: fichaWhere,
       include: { programa: { select: { nombre: true } } },
       orderBy: { codigo: "asc" }
     });

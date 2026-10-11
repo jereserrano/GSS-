@@ -22,6 +22,8 @@ async function getSessionUserId() {
   return null;
 }
 
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { getPaginacion, paginatedResponse } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
@@ -31,6 +33,19 @@ export async function getSeguimientosAction(filtros: any = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
+    const session = await getServerSession(authOptions);
+    let sedeIdFilter: string | null = null;
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        sedeIdFilter = userRecord.sedeId;
+      }
+    }
+
     const where: any = {
       ...(filtros.busqueda ? {
         OR: [
@@ -38,6 +53,7 @@ export async function getSeguimientosAction(filtros: any = {}) {
           { responsable: { contains: filtros.busqueda } },
         ]
       } : {}),
+      ...(sedeIdFilter ? { ficha: { sedeId: sedeIdFilter } } : {}),
     };
 
     if (filtros.aprendizId) {
@@ -195,7 +211,21 @@ export async function deleteSeguimiento(id: string) {
 
 export async function exportSeguimientosCSV() {
   try {
+    const session = await getServerSession(authOptions);
+    let whereClause: any = {};
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        whereClause.ficha = { sedeId: userRecord.sedeId };
+      }
+    }
+
     const seguimientos = await VisitaSeguimientoRepository.findMany({
+      where: whereClause,
       orderBy: { fecha: "desc" },
     });
 

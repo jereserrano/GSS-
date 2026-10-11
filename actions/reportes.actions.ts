@@ -108,6 +108,10 @@ async function getReporteFichaIds() {
     const fichas = await prisma.instructorFicha.findMany({ where: { instructorId: user.instructor.id } });
     return { restricted: true, ids: fichas.map(f => f.fichaId), userId: user.id };
   }
+  if ((rol === "COORDINADOR_SEDE" || (rol.includes("COORD") && rol.includes("SEDE"))) && user.sedeId) {
+    const fichas = await prisma.ficha.findMany({ where: { sedeId: user.sedeId }, select: { id: true } });
+    return { restricted: true, ids: fichas.map(f => f.id), userId: user.id };
+  }
   return { restricted: false, ids: [], userId: user.id };
 }
 

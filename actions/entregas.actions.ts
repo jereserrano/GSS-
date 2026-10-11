@@ -56,6 +56,8 @@ export async function getEntregasAction(filtros: any = {}) {
       aprendizFiltro = userContext.aprendiz.id;
     }
 
+    const isCoordSede = rolNombre === "COORDINADOR_SEDE" || (rolNombre.includes("COORD") && rolNombre.includes("SEDE"));
+
     const where: any = {
       ...(filtros.busqueda ? {
         OR: [
@@ -69,6 +71,7 @@ export async function getEntregasAction(filtros: any = {}) {
       ...(aprendizFiltro ? { aprendizId: aprendizFiltro } : {}),
       ...(filtros.estado ? { estado: filtros.estado } : {}),
       ...(filtros.fichaId ? { actividad: { fichaId: filtros.fichaId } } : {}),
+      ...(isCoordSede && userContext?.sedeId ? { actividad: { ...(filtros.fichaId ? { fichaId: filtros.fichaId } : {}), ficha: { sedeId: userContext.sedeId } } } : {}),
     };
 
     const [data, total] = await TransactionRepository.$transaction([
@@ -282,6 +285,9 @@ export async function evaluarEntregaAction(
 ) {
   try {
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    if (user.rol === "COORDINADOR_SEDE" || user.rol.includes("SEDE")) {
+      return { success: false, error: "El Coordinador de Sede tiene acceso de solo lectura en calificaciones y entregas." };
+    }
 
     const instructorRecord = await prisma.instructor.findUnique({
       where: { userId: user.id }
@@ -470,7 +476,21 @@ export async function deleteEntrega(id: string) {
 
 export async function exportEntregasCSV() {
   try {
+    const session = await getServerSession();
+    let whereClause: any = {};
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        whereClause.actividad = { ficha: { sedeId: userRecord.sedeId } };
+      }
+    }
+
     const entregas = await EntregaRepository.findMany({
+      where: whereClause,
       orderBy: { fechaEntrega: "desc" },
       include: {
         aprendiz: { select: { nombres: true, apellidos: true, numeroDocumento: true } },

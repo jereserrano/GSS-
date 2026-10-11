@@ -29,6 +29,7 @@ import { revalidatePath } from "next/cache";
 export async function getFichasAction(filtros: {
   busqueda?: string;
   institucionId?: string;
+  sedeId?: string;
   programaId?: string;
   estado?: string;
   pagina?: number;
@@ -42,6 +43,7 @@ export async function getFichasAction(filtros: {
     const session = await getServerSession(authOptions);
     let instructorIdFilter = null;
     let aprendizFichaId = null;
+    let sedeIdFilter = null;
     
     if (session?.user?.email) {
       const userRecord = await prisma.user.findUnique({
@@ -49,7 +51,11 @@ export async function getFichasAction(filtros: {
         include: { instructor: true, aprendiz: true }
       });
       const roleUpper = userRecord?.rol?.toUpperCase() || "";
-      if (roleUpper.includes("INSTRUCT")) {
+      if (roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) {
+        if (userRecord?.sedeId) {
+          sedeIdFilter = userRecord.sedeId;
+        }
+      } else if (roleUpper.includes("INSTRUCT")) {
         if (userRecord?.instructor?.id) {
           instructorIdFilter = userRecord.instructor.id;
         } else {
@@ -74,6 +80,7 @@ export async function getFichasAction(filtros: {
       ...(filtros.institucionId ? { institucionId: filtros.institucionId } : {}),
       ...(filtros.programaId ? { programaId: filtros.programaId } : {}),
       ...(filtros.estado ? { estado: filtros.estado.toUpperCase() } : {}),
+      ...(sedeIdFilter ? { sedeId: sedeIdFilter } : (filtros.sedeId ? { sedeId: filtros.sedeId } : {})),
       ...(instructorIdFilter ? { instructores: { some: { instructorId: instructorIdFilter } } } : {}),
       ...(aprendizFichaId ? { id: aprendizFichaId } : {}),
     };
@@ -201,7 +208,21 @@ export async function deleteFicha(id: string) {
 
 export async function exportFichasCSV() {
   try {
+    const session = await getServerSession(authOptions);
+    let exportWhere: any = {};
+    if (session?.user?.email) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { rol: true, sedeId: true }
+      });
+      const roleUpper = userRecord?.rol?.toUpperCase() || "";
+      if ((roleUpper === "COORDINADOR_SEDE" || (roleUpper.includes("COORD") && roleUpper.includes("SEDE"))) && userRecord?.sedeId) {
+        exportWhere.sedeId = userRecord.sedeId;
+      }
+    }
+
     const fichas = await FichaRepository.findMany({
+      where: exportWhere,
       orderBy: { codigo: "desc" },
       include: {
         programa: { select: { nombre: true, codigo: true } },

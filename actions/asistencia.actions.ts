@@ -22,8 +22,11 @@ export async function getAsistenciasAction(filtros: any = {}) {
     const tamano = filtros.tamano || 10;
     const { skip, take } = getPaginacion(pagina, tamano);
 
+    const userRole = (user as any).rol?.toUpperCase() || "";
+    const isCoordSede = userRole === "COORDINADOR_SEDE" || (userRole.includes("COORD") && userRole.includes("SEDE"));
+
     let instructorFiltroId: string | undefined;
-    if ((user as any).rol?.toUpperCase().includes("INSTRUCT")) {
+    if (userRole.includes("INSTRUCT")) {
       const instructorRecord = await prisma.instructor.findUnique({ where: { userId: user.id } });
       if (!instructorRecord) return { success: false, error: "No tienes perfil de instructor." };
       instructorFiltroId = instructorRecord.id;
@@ -38,6 +41,7 @@ export async function getAsistenciasAction(filtros: any = {}) {
         ]
       } : {}),
       ...(filtros.fichaId ? { fichaId: filtros.fichaId } : {}),
+      ...(isCoordSede && (user as any).sedeId ? { ficha: { sedeId: (user as any).sedeId } } : {}),
       ...(instructorFiltroId ? { instructorId: instructorFiltroId } : (filtros.instructorId ? { instructorId: filtros.instructorId } : {})),
     };
 
@@ -258,6 +262,8 @@ export async function deleteAsistencia(id: string) {
 export async function exportAsistenciasXLSX(fechaInicio?: string, fechaFin?: string, fichaId?: string) {
   try {
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    const userRole = (user as any).rol?.toUpperCase() || "";
+    const isCoordSede = userRole === "COORDINADOR_SEDE" || (userRole.includes("COORD") && userRole.includes("SEDE"));
 
     // Si es instructor, filtrar solo por sus propias asistencias
     let instructorFiltroId: string | undefined;
@@ -268,6 +274,7 @@ export async function exportAsistenciasXLSX(fechaInicio?: string, fechaFin?: str
 
     const whereClause: any = {
       ...(instructorFiltroId ? { instructorId: instructorFiltroId } : {}),
+      ...(isCoordSede && (user as any).sedeId ? { ficha: { sedeId: (user as any).sedeId } } : {}),
     };
 
     if (fichaId) {

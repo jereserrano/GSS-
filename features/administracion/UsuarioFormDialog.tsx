@@ -12,6 +12,7 @@ interface UsuarioFormDialogProps {
   user?: any;
   roles: any[];
   instituciones?: any[];
+  sedes?: any[];
   fichas?: any[];
   aprendicesSinUsuario?: any[];
   /** Sesión del usuario en sesión, para filtrar roles asignables. */
@@ -27,6 +28,7 @@ export function UsuarioFormDialog({
   user,
   roles,
   instituciones = [],
+  sedes = [],
   fichas = [],
   aprendicesSinUsuario = [],
   currentUserSession,
@@ -46,12 +48,17 @@ export function UsuarioFormDialog({
 
   const initialRolId = user?.rolId || (typeof user?.rol === "string" ? user?.rol : user?.rol?.id) || "";
   const [selectedRolId, setSelectedRolId] = useState(initialRolId);
+  const [selectedInstitucionId, setSelectedInstitucionId] = useState(user?.institucionId || "");
+  const [selectedSedeId, setSelectedSedeId] = useState(user?.sedeId || "");
   const [vinculacionModo, setVinculacionModo] = useState<"ficha" | "existente">("ficha");
   const [selectedFichaId, setSelectedFichaId] = useState(user?.aprendiz?.fichaId || "");
   const [selectedAprendizId, setSelectedAprendizId] = useState("");
 
   const selectedRoleObj = assignableRoles.find((r) => r.id === selectedRolId) || roles.find((r) => r.id === selectedRolId || r.nombre === selectedRolId);
-  const isAprendizRol = (selectedRoleObj?.nombre || selectedRolId || "").toUpperCase().includes("APRENDIZ");
+  const selectedRoleUpper = (selectedRoleObj?.nombre || selectedRolId || "").toUpperCase();
+  const isAprendizRol = selectedRoleUpper.includes("APRENDIZ");
+  const isSedeRol = selectedRoleUpper.includes("SEDE") || selectedRoleUpper.includes("APOYO");
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,6 +70,7 @@ export function UsuarioFormDialog({
       email: formData.get("email") as string,
       rolId: formData.get("rolId") as string,
       institucionId: (formData.get("institucionId") as string) || null,
+      sedeId: (formData.get("sedeId") as string) || null,
       password: formData.get("password") as string,
       estado: formData.get("estado") as string,
       fichaId: (formData.get("fichaId") as string) || null,
@@ -73,6 +81,12 @@ export function UsuarioFormDialog({
 
     if (isAprendizRol && !data.fichaId && !data.aprendizId) {
       toast.error("Para el rol APRENDIZ debes seleccionar una Ficha o vincular un aprendiz existente.");
+      setLoading(false);
+      return;
+    }
+
+    if (isSedeRol && !data.sedeId) {
+      toast.error("Para el rol Coordinador de Sede / Apoyo de Coordinación es obligatorio seleccionar una Sede asignada.");
       setLoading(false);
       return;
     }
@@ -245,7 +259,8 @@ export function UsuarioFormDialog({
             <select 
               id="select-institucion-usuario"
               name="institucionId" 
-              defaultValue={user?.institucionId || ""} 
+              value={selectedInstitucionId}
+              onChange={(e) => setSelectedInstitucionId(e.target.value)}
               className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <option value="">Ninguna / Global</option>
@@ -255,7 +270,37 @@ export function UsuarioFormDialog({
                 </option>
               ))}
             </select>
-            <p className="text-[10px] text-slate-500">Útil para Subdirectores, Coordinadores y roles limitados por sede.</p>
+            <p className="text-[10px] text-slate-500">Útil para Subdirectores, Coordinadores y roles limitados por institución.</p>
+          </div>
+
+          <div className={`space-y-2 rounded-lg border transition-all ${isSedeRol ? "bg-sky-50/70 border-sky-200 p-3.5" : "border-slate-200 p-3.5"}`}>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                🏛️ Sede Asignada {isSedeRol ? <span className="text-sky-700 font-bold">* (Obligatoria)</span> : <span className="text-slate-400 font-normal">(Opcional)</span>}
+              </label>
+            </div>
+            <select 
+              id="select-sede-usuario"
+              name="sedeId" 
+              value={selectedSedeId}
+              onChange={(e) => setSelectedSedeId(e.target.value)}
+              required={isSedeRol}
+              className={`flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                isSedeRol ? "border-sky-300 bg-white focus:ring-sky-500" : "border-input bg-background focus:ring-ring"
+              }`}
+            >
+              <option value="">{isSedeRol ? "Seleccione la sede asignada obligatoria *" : "Ninguna / No asignada"}</option>
+              {(selectedInstitucionId ? sedes.filter((s) => s.institucionId === selectedInstitucionId) : sedes).map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-500">
+              {isSedeRol
+                ? "El Coordinador de Sede o Apoyo a la Coordinación solo gestionará fichas, instructores y aprendices de esta sede."
+                : "Asigna una sede específica si el usuario debe estar vinculado a un centro o subsede."}
+            </p>
           </div>
 
           <div className="space-y-2">

@@ -22,12 +22,14 @@ interface Usuario {
   estado: "activo" | "inactivo" | "bloqueado";
   hierarchyLevel: number;
   aprendiz?: any;
+  sede?: any;
 }
 
 interface UsuariosTableProps {
   initialUsers: any[];
   roles: any[];
   instituciones: any[];
+  sedes?: any[];
   fichas?: any[];
   aprendicesSinUsuario?: any[];
   /** Sesión del usuario en sesión (pasado desde el Server Component padre). */
@@ -38,7 +40,7 @@ interface UsuariosTableProps {
   };
 }
 
-export function UsuariosTable({ initialUsers, roles, instituciones, fichas = [], aprendicesSinUsuario = [], currentUserSession }: UsuariosTableProps) {
+export function UsuariosTable({ initialUsers, roles, instituciones, sedes = [], fichas = [], aprendicesSinUsuario = [], currentUserSession }: UsuariosTableProps) {
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -103,6 +105,7 @@ export function UsuariosTable({ initialUsers, roles, instituciones, fichas = [],
     estado: u.estado.toLowerCase() as any,
     hierarchyLevel: getHierarchyLevel(u.rol?.nombre),
     aprendiz: u.aprendiz,
+    sede: u.sede,
   }));
 
   /**
@@ -145,11 +148,22 @@ export function UsuariosTable({ initialUsers, roles, instituciones, fichas = [],
       header: "Rol de Acceso",
       render: (u) => {
         const isAprendiz = u.rol.toUpperCase().includes("APRENDIZ");
+        const isSedeRole = u.rol.toUpperCase().includes("SEDE") || u.rol.toUpperCase().includes("APOYO");
         return (
           <div className="flex flex-col gap-1">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 w-fit">
               {u.rol}
             </span>
+            {u.sede?.nombre && (
+              <span className="text-[11px] text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 font-medium w-fit">
+                🏛️ {u.sede.nombre}
+              </span>
+            )}
+            {!u.sede?.nombre && isSedeRole && (
+              <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-semibold w-fit">
+                ⚠️ Sin Sede
+              </span>
+            )}
             {isAprendiz && (
               u.aprendiz?.ficha?.codigo ? (
                 <span className="text-[11px] text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 font-medium w-fit">
@@ -256,6 +270,7 @@ export function UsuariosTable({ initialUsers, roles, instituciones, fichas = [],
           user={selectedUser} 
           roles={roles}
           instituciones={instituciones}
+          sedes={sedes}
           fichas={fichas}
           aprendicesSinUsuario={aprendicesSinUsuario}
           currentUserSession={currentUserSession}

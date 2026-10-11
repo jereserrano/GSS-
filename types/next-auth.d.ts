@@ -22,6 +22,8 @@ declare module "next-auth" {
       hierarchyLevel: number;
       fotoPerfil?: string | null;
       twoFactorEnabled?: boolean;
+      sedeId?: string | null;
+      institucionId?: string | null;
     } & DefaultSession["user"];
   }
 
@@ -35,6 +37,8 @@ declare module "next-auth" {
     rolName: string;
     /** Nivel de jerarquía */
     hierarchyLevel: number;
+    sedeId?: string | null;
+    institucionId?: string | null;
   }
 }
 
@@ -47,5 +51,8 @@ declare module "next-auth/jwt" {
     rolName: string;
     /** Nivel de jerarquía numérico */
     hierarchyLevel: number;
+    sedeId?: string | null;
+    institucionId?: string | null;
   }
 }
+

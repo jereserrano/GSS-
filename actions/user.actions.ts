@@ -94,6 +94,18 @@ export async function getUsers() {
 
     const users = await UserRepository.findMany({
       include: {
+        sede: {
+          select: {
+            id: true,
+            nombre: true,
+          }
+        },
+        institucion: {
+          select: {
+            id: true,
+            nombre: true,
+          }
+        },
         aprendiz: {
           select: {
             id: true,
@@ -210,7 +222,8 @@ export async function createUser(data: any) {
         email, 
         passwordHash, 
         rol: rolId as any,
-        institucionId: data.institucionId || null 
+        institucionId: data.institucionId || null,
+        sedeId: data.sedeId || null,
       },
     });
 
@@ -396,12 +409,16 @@ export async function updateUser(id: string, data: any) {
     }
 
     // ── 4. Construir datos de actualización ─────────────────────────────────
-    const { nombre, email, password, rolId, estado, institucionId } = data;
+    const { nombre, email, password, rolId, estado, institucionId, sedeId } = data;
     let updateData: any = { nombre, email, estado };
     if (rolId) updateData.rol = rolId as any;
     
     if (institucionId !== undefined) {
       updateData.institucionId = institucionId || null;
+    }
+
+    if (sedeId !== undefined) {
+      updateData.sedeId = sedeId || null;
     }
 
     if (password && password.trim() !== "") {

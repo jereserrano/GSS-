@@ -26,6 +26,10 @@ export default async function UsuariosPage() {
   }
   const { prisma } = await import("@/lib/prisma");
   const instituciones = await prisma.institucion.findMany({ select: { id: true, nombre: true }, orderBy: { nombre: "asc" } });
+  const sedes = await prisma.sede.findMany({
+    select: { id: true, nombre: true, institucionId: true },
+    orderBy: { nombre: "asc" }
+  });
   const fichas = await prisma.ficha.findMany({
     select: {
       id: true,
@@ -58,6 +62,7 @@ export default async function UsuariosPage() {
         initialUsers={usuarios}
         roles={roles}
         instituciones={instituciones}
+        sedes={sedes}
         fichas={fichas}
         aprendicesSinUsuario={aprendicesSinUsuario}
         currentUserSession={currentUserSession}

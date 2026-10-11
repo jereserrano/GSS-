@@ -141,6 +141,8 @@ export const authOptions: AuthOptions = {
           hierarchyLevel,
           twoFactorEnabled: user.twoFactorEnabled,
           fotoPerfil: user.fotoPerfil,
+          sedeId: user.sedeId || null,
+          institucionId: user.institucionId || null,
         };
       },
     }),
@@ -158,6 +160,8 @@ export const authOptions: AuthOptions = {
         token.email = user.email || null;
         token.twoFactorEnabled = !!(user as any).twoFactorEnabled;
         token.fotoPerfil = (user as any).fotoPerfil || null;
+        token.sedeId = (user as any).sedeId || null;
+        token.institucionId = (user as any).institucionId || null;
       }
       // Actualización de sesión desde el cliente: SOLO campos seguros, NUNCA role/hierarchyLevel
       if (trigger === "update" && session) {
@@ -182,6 +186,8 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id;
         session.user.twoFactorEnabled = !!token.twoFactorEnabled;
         session.user.fotoPerfil = (token.fotoPerfil as string) || null;
+        session.user.sedeId = (token.sedeId as string) || null;
+        session.user.institucionId = (token.institucionId as string) || null;
         if (token.name) session.user.name = token.name;
         if (token.email) session.user.email = token.email;
       }

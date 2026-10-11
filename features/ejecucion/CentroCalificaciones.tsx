@@ -105,7 +105,7 @@ export function CentroCalificaciones({ initialFichaId = "", hideSelector = false
       // Limpiar y refrescar
       setNotaGlobal("");
       setCalificacionesBorrador({});
-      toast.success(res.message || "Calificaciones guardadas y actividades sincronizadas correctamente.");
+      toast.success((res as any)?.message || "Calificaciones guardadas y actividades sincronizadas correctamente.");
       getSabanaNotasAction(fichaId).then(resData => {
         if (resData.success) setSabanaData(resData.data);
         setSaving(false);

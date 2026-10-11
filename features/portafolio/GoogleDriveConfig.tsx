@@ -18,10 +18,10 @@ export function GoogleDriveConfig({ isLinked }: GoogleDriveConfigProps) {
     try {
       const res = await fetch("/api/google/auth-url");
       const data = await res.json();
-      if (data.url) {
+      if (res.ok && data.url) {
         window.location.href = data.url;
       } else {
-        alert("Error obteniendo URL de vinculación.");
+        alert(data.error || "Error obteniendo URL de vinculación.");
         setLoading(false);
       }
     } catch (e) {

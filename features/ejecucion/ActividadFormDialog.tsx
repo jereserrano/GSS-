@@ -67,10 +67,17 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
     }
   };
 
-  const formatDateForInput = (dateString?: string) => {
+  const formatDateForInput = (dateString?: string | Date) => {
     if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toISOString().slice(0, 16);
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "";
+      const offset = date.getTimezoneOffset() * 60000;
+      const localDate = new Date(date.getTime() - offset);
+      return localDate.toISOString().slice(0, 16);
+    } catch {
+      return "";
+    }
   };
 
   return (
@@ -104,7 +111,7 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
               <label className="text-sm font-medium text-text-primary">Código *</label>
               <Input
                 name="codigo"
-                defaultValue={actividad?.codigo}
+                defaultValue={actividad?.codigo || (actividad?.id ? `ACT-${actividad.id.slice(-4).toUpperCase()}` : "")}
                 required
                 placeholder="Ej: ACT-01"
                 className="font-mono"
@@ -134,7 +141,7 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
             <label className="text-sm font-medium text-text-primary">Descripción</label>
             <textarea
               name="descripcion"
-              defaultValue={actividad?.descripcion}
+              defaultValue={actividad?.descripcion || actividad?.instrucciones || ""}
               rows={3}
               placeholder="Instrucciones o detalles de la actividad..."
               className={selectClass + " h-auto resize-none"}
@@ -181,7 +188,7 @@ export function ActividadFormDialog({ actividad, fichas, fichaIdFijo, onClose, o
               <Input
                 name="fechaFin"
                 type="datetime-local"
-                defaultValue={formatDateForInput(actividad?.fechaFin)}
+                defaultValue={formatDateForInput(actividad?.fechaFin || actividad?.fechaVencimiento)}
                 required
                 className="[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:block [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />

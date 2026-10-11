@@ -18,7 +18,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
   }
 
-  const url = GoogleDriveService.getAuthUrl(user.id);
-  
-  return NextResponse.json({ url });
+  try {
+    const url = GoogleDriveService.getAuthUrl(user.id);
+    return NextResponse.json({ url });
+  } catch (err: any) {
+    console.error("Error al generar URL de Google Auth:", err);
+    return NextResponse.json(
+      { error: err?.message || "No se pudo generar la URL de vinculación con Google." },
+      { status: 500 }
+    );
+  }
 }
+

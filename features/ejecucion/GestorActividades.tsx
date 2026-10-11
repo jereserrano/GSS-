@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { getFichasSelectAction } from "@/actions/fichas.actions";
-import { getActividadesByFichaAction } from "@/actions/actividades.actions";
+import { getActividadesByFichaAction, deleteActividad } from "@/actions/actividades.actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, Calendar, FileText, CheckCircle, Clock, Users, BookCheck, FolderOpen, AlertTriangle } from "lucide-react";
+import { Loader2, Plus, Calendar, FileText, CheckCircle, Clock, Users, BookCheck, FolderOpen, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { ActividadFormDialog } from "./ActividadFormDialog";
 import { EntregaFormDialog } from "./EntregaFormDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 interface GestorActividadesProps {
   initialFichaId?: string;
@@ -29,6 +30,9 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
   const [actividades, setActividades] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showActividadForm, setShowActividadForm] = useState(false);
+  const [editingActividad, setEditingActividad] = useState<any>(null);
+  const [deletingActividad, setDeletingActividad] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchActividad, setSearchActividad] = useState("");
 
   // States for expanding an activity
@@ -36,6 +40,34 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
   const [gradingEntrega, setGradingEntrega] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<string>("");
   const [unlinkedAprendiz, setUnlinkedAprendiz] = useState(false);
+
+  const handleEditActividad = (act: any) => {
+    setEditingActividad(act);
+    setShowActividadForm(true);
+  };
+
+  const handleDeleteActividad = (act: any) => {
+    setDeletingActividad(act);
+  };
+
+  const confirmDeleteActividad = async () => {
+    if (!deletingActividad) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteActividad(deletingActividad.id);
+      if (res?.error) {
+        toast.error(res.error);
+      } else {
+        toast.success("Actividad eliminada correctamente");
+        setDeletingActividad(null);
+        fetchActividades(fichaId);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error al eliminar la actividad");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Fetch Fichas on load
   useEffect(() => {
@@ -168,7 +200,7 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
           No hay actividades registradas en esta ficha.
           {!isAprendiz && (
             <div className="mt-4">
-              <Button onClick={() => setShowActividadForm(true)} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={() => { setEditingActividad(null); setShowActividadForm(true); }} className="bg-green-600 hover:bg-green-700">
                 <Plus className="w-4 h-4 mr-2" /> Crear Primera Actividad
               </Button>
             </div>
@@ -190,7 +222,7 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
             </div>
             {!isAprendiz && (
               <div className="flex justify-end w-full sm:w-auto">
-                <Button onClick={() => setShowActividadForm(true)} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
+                <Button onClick={() => { setEditingActividad(null); setShowActividadForm(true); }} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
                   <Plus className="w-4 h-4 mr-2" /> Nueva Actividad
                 </Button>
               </div>
@@ -341,7 +373,35 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
                     </div>
                   </div>
                 </div>
-                <div>
+                <div className="flex items-center gap-2">
+                   {!isAprendiz && (
+                     <>
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleEditActividad(act);
+                         }}
+                         title="Editar actividad"
+                       >
+                         <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+                       </Button>
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleDeleteActividad(act);
+                         }}
+                         title="Eliminar actividad"
+                       >
+                         <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
+                       </Button>
+                     </>
+                   )}
                    <Button variant="outline" size="sm">
                      {expandedActividadId === act.id ? "Ocultar Detalles" : "Ver Detalles / Entregas"}
                    </Button>
@@ -453,11 +513,68 @@ export function GestorActividades({ initialFichaId = "", hideSelector = false }:
 
       {showActividadForm && !isAprendiz && (
          <ActividadFormDialog 
+           actividad={editingActividad}
            fichas={fichas}
            fichaIdFijo={fichaId} 
-           onClose={() => setShowActividadForm(false)} 
-           onSuccess={() => fetchActividades(fichaId)} 
+           onClose={() => {
+             setShowActividadForm(false);
+             setEditingActividad(null);
+           }} 
+           onSuccess={() => {
+             setShowActividadForm(false);
+             setEditingActividad(null);
+             fetchActividades(fichaId);
+           }} 
          />
+      )}
+
+      {deletingActividad && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-red-600">
+              <div className="p-2.5 bg-red-100 rounded-full shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-slate-900">¿Eliminar Actividad?</h3>
+                <p className="text-xs text-slate-500">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-600">
+              ¿Estás seguro de que deseas eliminar la actividad <strong className="text-slate-900">"{deletingActividad.nombre}"</strong>?
+            </p>
+            {deletingActividad.entregas?.length > 0 && (
+              <div className="text-amber-800 bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs leading-relaxed">
+                ⚠️ <strong>Atención:</strong> Esta actividad cuenta con <strong>{deletingActividad.entregas.length}</strong> entrega(s) de aprendices que también serán eliminadas.
+              </div>
+            )}
+            <div className="flex justify-end gap-3 pt-2 border-t">
+              <Button 
+                variant="outline" 
+                onClick={() => setDeletingActividad(null)}
+                disabled={isDeleting}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={confirmDeleteActividad}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-1.5" /> Confirmar Eliminación
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {gradingEntrega && (

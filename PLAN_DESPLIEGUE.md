@@ -61,9 +61,26 @@ Este documento servirá como bitácora de registro de cada paso ejecutado para d
 - **[2026-10-10 09:56]** (Fase 4) Compilación finalizada exitosamente del proyecto Next.js en el servidor (`npm run build`). ✅ Exitoso.
 - **[2026-10-10 09:57]** (Fase 5) Puesta en marcha de la aplicación con PM2 (`pm2 start npm --name "gss-app" -- run start`) y guardado de estado (`pm2 save`). ✅ Exitoso.
 - **[2026-10-10 10:17]** (Fase 4 - Corrección) Limpieza del caché estático de Next.js (`rm -rf .next`) y recompilación del proyecto tras reparar el error de autenticación del usuario root en MySQL, para eliminar el error 28000 persistente. Reinicio de PM2. ✅ Exitoso.
-- **[2026-10-10 10:29]** (Fase 3 - Corrección) Resolución de error de "Tabla no existe" en Linux debido a la sensibilidad a mayúsculas/minúsculas de MySQL (`lower_case_table_names=0`). Se renombró la tabla `_competenciatoprograma` a `_CompetenciaToPrograma` para coincidir con el esquema exacto de Prisma. Reinicio de PM2. ✅ Exitoso.
 - **[2026-10-10 19:10]** (Fase 4 - Corrección / Robustez) Corrección del enlace referencial obligatorio entre `User` y `Aprendiz` (`fichaId`):
   1. Integración en `actions/user.actions.ts` y `UsuarioFormDialog.tsx` de selector obligatorio de Ficha o vinculación a aprendiz existente para evitar usuarios huérfanos.
   2. Generación automática y enlace bidireccional de cuentas de usuario en `createAprendiz` y en la importación masiva (`importAprendicesMasivo`).
   3. Lógica de auto-reparación preventiva y mensajes amigables e instructivos en `createEntrega`, `getAprendizPropioAction` y en las interfaces de `GestorActividades` y `entregas/page.tsx`. ✅ Exitoso.
+- **[2026-10-11 06:54]** (Fase 4 - Corrección / Configuración) Diagnóstico de error en vinculación de Google Drive (`Missing required parameter: client_id / Error 400: invalid_request`):
+  1. Causa: Al actualizar el servidor con Git, los archivos `.env` no viajan en el repositorio (están en `.gitignore`). Faltaba configurar `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` en el `.env` del servidor.
+  2. Mejora de código: Se añadió validación defensiva en `GoogleDriveService`, `api/google/auth-url` y `GoogleDriveConfig.tsx` para alertar claramente al usuario en lugar de redirigir a una URL vacía en Google.
+  3. Documentación: Se actualizó `.env.example` con las variables de Google Drive, SMTP y Zoom para prevenir omisiones en nuevos despliegues.
+- **[2026-10-11 08:08]** (Fase 5 - Red y Acceso Multi-equipo / Google Drive) Configuración de acceso seguro mediante túnel persistente (`devtunnel`):
+  1. Identificación y activación de túnel fijo `fancy-dog-z2wkcxj.use` con URL pública HTTPS permanente: `https://f6zrl9t3-3000.use.devtunnels.ms`.
+  2. Concesión de permiso anónimo (`+Anonymous [connect]`) para permitir acceso a cualquier dispositivo sin requerir login de Microsoft.
+  3. Actualización en servidor `/var/www/gss/.env` de `NEXTAUTH_URL="https://f6zrl9t3-3000.use.devtunnels.ms"` y reinicio de PM2 `gss-backend` con `--update-env`.
+  4. Documentado procedimiento manual de arranque para ejecución diaria (`devtunnel host fancy-dog-z2wkcxj.use`). ✅ Exitoso.
+- **[2026-10-11 09:15]** (Fase 4 - Mejora / Gestión de Actividades) Incorporación de botones de edición y eliminación para instructores en el Gestor de Actividades:
+  1. Adición de botones "Editar" (icono Pencil) y "Eliminar" (icono Trash2) en cada tarjeta de actividad en `GestorActividades.tsx`.
+  2. Implementación de modal interactivo de confirmación de eliminación con aviso sobre entregas asociadas y borrado seguro en cascada en `deleteActividad` (`actions/actividades.actions.ts`).
+  3. Soporte de edición en `ActividadFormDialog.tsx` con precarga correcta de fecha de vencimiento en hora local, código y descripción.
+  4. Despliegue hacia el servidor Linux remoto vía Git y actualización del servicio PM2. ✅ Exitoso.
+
+
+
+
 

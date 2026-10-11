@@ -5,18 +5,31 @@ import path from "path";
 
 const prisma = new PrismaClient();
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  `${process.env.NEXTAUTH_URL}/api/google/callback`
-);
+function getOAuth2Client() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      "Credenciales de Google no configuradas: GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET no están definidas en el archivo .env del servidor."
+    );
+  }
+
+  return new google.auth.OAuth2(
+    clientId,
+    clientSecret,
+    `${baseUrl}/api/google/callback`
+  );
+}
 
 export class GoogleDriveService {
   /**
    * Genera la URL de autorización para que el usuario vincule su cuenta
    */
   static getAuthUrl(userId: string) {
-    return oauth2Client.generateAuthUrl({
+    const client = getOAuth2Client();
+    return client.generateAuthUrl({
       access_type: "offline", // Requerido para obtener el refresh_token
       scope: ["https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/userinfo.email"],
       state: userId, // Pasamos el userId en el state para saber a quién asignarle el token al volver
@@ -28,7 +41,8 @@ export class GoogleDriveService {
    * Procesa el código de autorización y guarda el refresh_token
    */
   static async linkAccount(userId: string, code: string) {
-    const { tokens } = await oauth2Client.getToken(code);
+    const client = getOAuth2Client();
+    const { tokens } = await client.getToken(code);
     
     if (tokens.refresh_token) {
       await prisma.user.update({

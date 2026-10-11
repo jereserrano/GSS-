@@ -210,13 +210,13 @@ export async function updateActividad(id: string, data: z.infer<typeof actividad
       data: {
         nombre: data.nombre,
         descripcion: data.descripcion || null,
-        instrucciones: data.instrucciones || null,
+        instrucciones: data.instrucciones || data.descripcion || null,
         tipo: data.tipo as any,
         fichaId: data.fichaId,
         resultadoAprendizajeId: data.resultadoAprendizajeId || null,
         ...(data.fechaInicio ? { fechaInicio: new Date(data.fechaInicio) } : {}),
         fechaVencimiento: new Date((data.fechaFin || data.fechaVencimiento) as string | number | Date),
-        estado: data.estado as any,
+        ...(data.estado ? { estado: data.estado as any } : {}),
       },
     });
 
@@ -227,6 +227,7 @@ export async function updateActividad(id: string, data: z.infer<typeof actividad
       detalle: `Actividad actualizada ID: ${id}`,
     });
     revalidatePath("/actividades");
+    revalidatePath("/gestor-actividades");
     revalidatePath("/dashboard");
     return { success: true, actividad };
   } catch (error: any) {
@@ -237,17 +238,24 @@ export async function updateActividad(id: string, data: z.infer<typeof actividad
 
 export async function deleteActividad(id: string) {
   try {
-    
     const user = await requireRole(["ADMINISTRADOR", "COORDINADOR", "INSTRUCTOR"]);
+    
+    // Eliminar primero las entregas asociadas para evitar restricción de clave foránea
+    await prisma.entrega.deleteMany({
+      where: { actividadId: id }
+    });
+
     await ActividadRepository.delete({ where: { id } });
     
     await logAudit({
       userId: user.id,
       modulo: "Actividades",
       accion: "ELIMINAR",
-      detalle: "Acción completada exitosamente.",
+      detalle: `Actividad eliminada ID: ${id}`,
     });
     revalidatePath("/actividades");
+    revalidatePath("/gestor-actividades");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting actividad:", error);

@@ -100,3 +100,27 @@ export function getActividadEmailTemplate(params: {
     </div>
   `;
 }
+
+export function getRecuperacionPasswordEmailTemplate(
+  nombre: string,
+  resetUrl: string
+) {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+      <h2 style="color: #00304D;">Recuperación de Contraseña - GSS</h2>
+      <p>Hola <strong>${escapeHtml(nombre)}</strong>,</p>
+      <p>Has solicitado restablecer tu contraseña para ingresar a la plataforma GSS (SENA Regional Magdalena).</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetUrl}" style="background-color: #39a900; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+          Restablecer mi Contraseña
+        </a>
+      </div>
+      <p style="font-size: 13px; color: #555;">Este enlace tiene una validez de <strong>1 hora</strong>. Si el botón no abre la página, copia y pega el siguiente enlace en tu navegador:</p>
+      <p style="font-size: 12px; word-break: break-all; color: #2980b9;">${resetUrl}</p>
+      <p style="font-size: 13px; color: #777; margin-top: 20px;">Si no solicitaste este cambio, puedes ignorar este correo de forma segura; tu contraseña actual continuará siendo la misma.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin-top: 25px;" />
+      <p style="font-size: 12px; color: #888;">GSS Media Técnica — SENA Regional Magdalena</p>
+    </div>
+  `;
+}
+

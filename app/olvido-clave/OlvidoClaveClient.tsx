@@ -58,10 +58,18 @@ export function OlvidoClaveClient() {
         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
           <Mail className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-bold text-[#00304D]">Correo Enviado</h2>
-        <p className="text-slate-500">
-          Revisa la bandeja de entrada o spam de <strong>{email}</strong>.
+        <h2 className="text-2xl font-bold text-[#00304D]">Enlace Despachado</h2>
+        <p className="text-slate-600 text-sm">
+          Si la cuenta está registrada en GSS, hemos enviado un enlace para restablecer tu contraseña.
         </p>
+        <div className="bg-slate-50 border border-slate-200 rounded-md p-3 text-xs text-slate-500 text-left space-y-1">
+          <p>💡 <strong>Recomendaciones:</strong></p>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>Revisa tu <strong>correo personal</strong> (ej: Gmail, Hotmail) y tu <strong>correo institucional SENA</strong>.</li>
+            <li>Revisa también la carpeta de <strong>Spam o Correo no deseado</strong>.</li>
+            <li>El enlace tiene una vigencia de <strong>1 hora</strong>.</li>
+          </ul>
+        </div>
         <Button onClick={() => router.push("/login")} variant="outline" className="w-full mt-4">
           Volver al Inicio
         </Button>
@@ -118,20 +126,20 @@ export function OlvidoClaveClient() {
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-[#00304D]">Recuperar Contraseña</h2>
-        <p className="text-slate-500 mt-2 text-sm">Ingresa tu correo y te enviaremos un enlace.</p>
+        <p className="text-slate-500 mt-2 text-sm">Ingresa tu correo o documento y te enviaremos un enlace.</p>
       </div>
       <form onSubmit={handleForgotSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Correo Electrónico</label>
+          <label className="text-sm font-medium text-slate-700">Correo Electrónico o Documento</label>
           <div className="relative">
             <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input
-              type="email"
+              type="text"
               required
               className="pl-10"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@correo.sena.edu.co"
+              placeholder="tu@correo.com o número de documento"
             />
           </div>
         </div>

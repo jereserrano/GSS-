@@ -5,50 +5,104 @@ import { sendEmail } from "@/lib/mail";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
-export async function forgotPasswordAction(email: string) {
+import { getRecuperacionPasswordEmailTemplate } from "@/lib/email-templates";
+
+export async function forgotPasswordAction(input: string) {
   try {
-    const user = await prisma.user.findUnique({ 
-      where: { email },
-      include: { instructor: true, aprendiz: true }
+    const cleanInput = (input || "").trim().toLowerCase();
+    if (!cleanInput) {
+      return { success: true };
+    }
+
+    // 1. Buscar en la tabla User (por email directo)
+    let user = await prisma.user.findFirst({
+      where: {
+        email: cleanInput,
+      },
+      include: { instructor: true, aprendiz: true },
     });
+
+    // 2. Si no se encontró por User.email, buscar en Aprendices (por emailPersonal, emailSena o numeroDocumento)
     if (!user) {
-      // Retornar success para no revelar si el correo existe (prevención de enumeración)
+      const aprendiz = await prisma.aprendiz.findFirst({
+        where: {
+          OR: [
+            { emailPersonal: cleanInput },
+            { emailSena: cleanInput },
+            { numeroDocumento: cleanInput },
+          ],
+        },
+        include: {
+          user: {
+            include: { instructor: true, aprendiz: true },
+          },
+        },
+      });
+
+      if (aprendiz?.user) {
+        user = aprendiz.user;
+      }
+    }
+
+    // 3. Si no se encontró, buscar en Instructores (por emailPersonal, email o numeroDocumento)
+    if (!user) {
+      const instructor = await prisma.instructor.findFirst({
+        where: {
+          OR: [
+            { email: cleanInput },
+            { emailPersonal: cleanInput },
+            { numeroDocumento: cleanInput },
+          ],
+        },
+        include: {
+          user: {
+            include: { instructor: true, aprendiz: true },
+          },
+        },
+      });
+
+      if (instructor?.user) {
+        user = instructor.user;
+      }
+    }
+
+    if (!user) {
+      // Retornar success para no revelar si la cuenta existe (prevención de enumeración)
       return { success: true };
     }
 
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hora
 
-    await prisma.passwordResetToken.create({
-      data: {
-        email,
-        token,
-        expires,
-      }
+    // Limpiar tokens anteriores para este usuario
+    await prisma.passwordResetToken.deleteMany({
+      where: { email: user.email },
     });
 
-    const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/olvido-clave?token=${token}`;
+    await prisma.passwordResetToken.create({
+      data: {
+        email: user.email,
+        token,
+        expires,
+      },
+    });
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #39A900;">Recuperación de Contraseña - GSS</h2>
-        <p>Hola ${user.nombre},</p>
-        <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetUrl}" style="background-color: #39A900; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Restablecer Contraseña</a>
-        </div>
-        <p>Este enlace expirará en 1 hora.</p>
-        <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
-        <hr style="border: 1px solid #eee; margin-top: 30px;" />
-        <p style="color: #888; font-size: 12px; text-align: center;">GSS Media Técnica - SENA</p>
-      </div>
-    `;
+    const baseUrl = (process.env.NEXTAUTH_URL || "http://localhost:3000").replace(/\/$/, "");
+    const resetUrl = `${baseUrl}/olvido-clave?token=${token}`;
 
-    let targetEmail = email;
-    if (user.instructor?.emailPersonal) {
-      targetEmail = user.instructor.emailPersonal;
-    } else if (user.aprendiz?.emailPersonal) {
+    const html = getRecuperacionPasswordEmailTemplate(user.nombre, resetUrl);
+
+    // Destino prioritario:
+    // Aprendiz: emailPersonal -> emailSena -> user.email
+    // Instructor: emailPersonal -> user.email
+    // Otros roles: user.email
+    let targetEmail = user.email;
+    if (user.aprendiz?.emailPersonal) {
       targetEmail = user.aprendiz.emailPersonal;
+    } else if (user.instructor?.emailPersonal) {
+      targetEmail = user.instructor.emailPersonal;
+    } else if (user.aprendiz?.emailSena) {
+      targetEmail = user.aprendiz.emailSena;
     }
 
     await sendEmail({

@@ -446,6 +446,8 @@ model User {
   twoFactorEnabled Boolean    @default(false)
   last2FADate      DateTime?
   fotoPerfil       String?    @db.Text
+  emailPersonal    String?
+  telefono         String?
   
   // Integración Google Drive
   googleDriveLinked    Boolean @default(false)

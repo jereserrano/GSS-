@@ -41,12 +41,12 @@ export function PerfilUsuario({ userId, role }: { userId: string; role: string }
     const fetchDatos = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/perfil");
+        const res = await fetch("/api/perfil", { cache: "no-store" });
         const json = await res.json();
         if (json.success) setDatos(json.data);
 
         if (isAprendiz) {
-          const resCartas = await fetch("/api/cartas");
+          const resCartas = await fetch("/api/cartas", { cache: "no-store" });
           const jsonCartas = await resCartas.json();
           if (jsonCartas.success) setCartas(jsonCartas.data);
         }

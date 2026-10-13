@@ -14,10 +14,13 @@ export async function forgotPasswordAction(input: string) {
       return { success: true };
     }
 
-    // 1. Buscar en la tabla User (por email directo)
+    // 1. Buscar en la tabla User (por email directo o emailPersonal)
     let user = await prisma.user.findFirst({
       where: {
-        email: cleanInput,
+        OR: [
+          { email: cleanInput },
+          { emailPersonal: cleanInput },
+        ],
       },
       include: { instructor: true, aprendiz: true },
     });
@@ -95,12 +98,14 @@ export async function forgotPasswordAction(input: string) {
     // Destino prioritario:
     // Aprendiz: emailPersonal -> emailSena -> user.email
     // Instructor: emailPersonal -> user.email
-    // Otros roles: user.email
+    // Otros roles: user.emailPersonal -> user.email
     let targetEmail = user.email;
     if (user.aprendiz?.emailPersonal) {
       targetEmail = user.aprendiz.emailPersonal;
     } else if (user.instructor?.emailPersonal) {
       targetEmail = user.instructor.emailPersonal;
+    } else if (user.emailPersonal) {
+      targetEmail = user.emailPersonal;
     } else if (user.aprendiz?.emailSena) {
       targetEmail = user.aprendiz.emailSena;
     }

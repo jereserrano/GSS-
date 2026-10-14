@@ -8,9 +8,8 @@
 /out/
 
 # Variables de entorno (NUNCA subir al repositorio)
-.env
-.env.local
-.env*.local
+.env*
+!.env.example
 
 # Uploads de usuarios (no versionar archivos subidos)
 /public/uploads/

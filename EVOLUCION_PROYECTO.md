@@ -403,3 +403,75 @@ El sistema **autenticaba correctamente** las credenciales (login → redirect a 
 3. **M�dulo de Reportes Visuales:** En lugar de solo permitir descargar CSV, se implement� una vista con pesta�as (Tabs) dentro de \ReportesPageClient.tsx\ para visualizar los datos principales (Aprendices, Alertas de Riesgo y Asistencias) directamente en tablas UI interactivas pre-descarga.
 4. **Correcciones T�cnicas:** Se agreg� manejo de errores tipo try-catch atrapando c�digos de violaci�n de unicidad de Prisma (\P2002\) en el m�dulo de competencias para prevenir pantallas de error por constraints en base de datos.
 
+
+---
+
+## V2.1.5 — Sincronización de Base de Datos y Endurecimiento RBAC
+**Fecha:** 19 de septiembre de 2026  
+**Tag:** `v2.1.5`  
+**Rama:** `develop` / `v2.0`  
+
+### Descripción de los cambios:
+1. **Migración Formal de Base de Datos:** Generación del snapshot canónico en `prisma/migrations/20260919_v2_1_5_schema_completo` para consolidar el esquema relacional íntegro en MySQL (`instituciones`, `sedes`, `programas`, `fichas`, `aprendices`, `instructores`, `competencias`, `actividades`, `entregas`, etc.).
+2. **Endurecimiento de Jerarquía RBAC:** Integración rigurosa de `lib/hierarchy.ts` y `lib/rbac.ts` para mitigar vulnerabilidades IDOR. Cada Server Action valida el rol y la pertenencia a la institución/sede antes de ejecutar mutaciones.
+3. **Optimización de Fichas y Sedes:** Refactorización de dropdowns dependientes para que la creación de una ficha actualice reactivamente la lista de sedes de la institución sin requerir recarga total de página.
+
+---
+
+## V2.2.0 a V2.2.5 — Seguridad Avanzada, Doble Factor (2FA), Mensajería y Excusas
+**Fecha:** Septiembre - Octubre 2026  
+**Tags:** `v2.2.1`, `v2.2.2`, `v2.2.3`, `v2.2.4`, `v2.2.5`  
+**Rama:** `main`  
+
+### Descripción de los cambios:
+1. **Doble Factor de Autenticación (2FA / TOTP):** Implementación de autenticación en dos pasos con `otplib` y `qrcode`. Soporte de dispositivos de confianza (`trustedUntil`) gestionados en la tabla `session_logs` para evitar fricción en accesos frecuentes desde navegadores reconocidos.
+2. **Mensajería Jerárquica Interna:** Creación de los modelos `Mensaje` y `MensajeLeido`, habilitando comunicación asíncrona bidireccional entre aprendices, instructores y coordinadores con filtrado contextual por ficha.
+3. **Gestor de Excusas:** Creación del modelo `Excusa` con soporte de adjuntos de soporte médico o laboral en PDF/DOCX, permitiendo a los instructores y coordinadores revisar, aprobar o desestimar inasistencias de manera auditada.
+4. **Módulo de Gestión de Cartas:** Creación del modelo `SolicitudCarta` para trámites administrativos de constancias y solicitudes laborales de instructores.
+5. **Soporte PWA y Offline:** Configuración de Service Worker mediante `@serwist/next` para almacenamiento en caché de assets estáticos y resiliencia de navegación.
+
+---
+
+## V3.0.0 — Despliegue en Servidor Institucional, Aislamiento por Sede y Notificaciones Automáticas
+**Fecha:** 16 de octubre de 2026  
+**Tag:** `v3.0.0` (Commit `36d38ea`)  
+**Rama:** `main` / `v3`  
+
+### Descripción de los cambios:
+1. **Aislamiento Estricto por Sede (`COORDINADOR_SEDE`):**
+   - Incorporación del rol `COORDINADOR_SEDE` con scope estricto a su subsede asignada (`sedeId`).
+   - Blindaje de Server Actions (`evaluaciones`, `asistencias`, `actividades`, `fichas`, `documentos`, `auditoria`, `dashboard`) denegando acceso a datos o mutaciones fuera de su subsede.
+   - Navegación dedicada en `Sidebar.tsx` suprimiendo submódulos de administración global (Usuarios, Roles, Configuración Global).
+2. **Recuperación Resiliente de Contraseñas:**
+   - Módulo `/olvido-clave` optimizado para aceptar correo institucional, correo personal (`emailPersonal`) o número de documento.
+   - Tokens temporales de 1 hora almacenados en la tabla `password_reset_tokens`.
+3. **Notificaciones Automáticas por Correo (SMTP):**
+   - Despacho automático de notificaciones HTML personalizadas al publicar actividades o registrar retroalimentaciones, dirigidas prioritariamente al correo personal (`emailPersonal`) del aprendiz.
+   - Pool de conexiones en `lib/mail.ts` con tasa controlada para evitar bloqueos por spam en envíos masivos.
+4. **Centro de Calificaciones y Calificación Masiva Sincronizada:**
+   - `calificarMasivoAction` sincroniza automáticamente registros nominales en `EvaluacionAprendiz` con `upsert` en la tabla `Entrega` para reflejar notas en el historial del aprendiz y actualizar contadores del Gestor de Actividades.
+5. **Robustez en Carga Masiva de Aprendices y Cálculo Real de Asistencias:**
+   - Normalización insensible a mayúsculas/acentos en encabezados Excel y tolerancia de valores vacíos en `lib/importer/`.
+   - Corrección de cálculo: aprendices sin sesiones registradas parten de 0.0% de asistencia (eliminando falso 100%).
+6. **Infraestructura de Despliegue en Servidor Ubuntu:**
+   - Despliegue en máquina virtual Ubuntu Server 26.04 LTS (VirtualBox `PEPE`, 4 vCPU, 4GB RAM, 2GB Swap).
+   - Base de datos MySQL 8.4 LTS, proxy inverso Nginx (puerto 80), aplicación Next.js 16 compilada y daemonizada con PM2 (`gss`).
+   - Sincronización aditiva segura con `npx prisma db push` totalizando 36 tablas operativas sin pérdida de datos.
+
+---
+
+## V3.0.1 — Saneamiento DevOps, Auditoría de Seguridad y Base Técnica Personal Oficial
+**Fecha:** 19 de octubre de 2026  
+**Tag:** `v3.0.1` (Commit `bffd8e1`)  
+**Rama:** `main` (Repositorio personal: `https://github.com/jereserrano/GSS-.git`)  
+
+### Descripción de los cambios:
+1. **Saneamiento del Repositorio Git:**
+   - Desindexación limpia (`git rm --cached`) de respaldos de base de datos (`Sena_Gss_backup.sql`, `Sena_Gss_backup_utf8.sql`), registros temporales (`build_output.log`, `eslint_out.log`, `tsc_full_errors.txt`), caché de TypeScript (`tsconfig.tsbuildinfo`) y uploads de prueba (`public/uploads/*.docx`).
+   - Creación de `public/uploads/.gitkeep` para versionar la carpeta sin almacenar documentos transaccionales.
+2. **Blindaje Integral de `.gitignore`:**
+   - Reglas estrictas para copias de seguridad (`*.sql`, exceptuando migraciones versionadas en `!prisma/**/*.sql`), claves criptográficas (`*.pem`, `*.key`, `*.ppk`), imágenes de VM (`*.ova`, `*.vdi`), registros (`*.log`) y archivos `.env*` (preservando `!.env.example`).
+   - Corrección de exclusiones erróneas previas (reincorporación de `PLAN_DESPLIEGUE.md` y `scripts/`).
+3. **Formalización de Documentación Oficial:**
+   - Incorporación formal del Informe Administrativo de Implantación V3.0 (`INFORME_ADMINISTRATIVO_IMPLANTACION_GSS_V3.docx`).
+   - Actualización del `README.md`, `PLAN_DESPLIEGUE.md`, `EVOLUCION_PROYECTO.md` y catálogo de incidencias para asegurar total coherencia entre el repositorio personal, la VM y Cloud Antigravity.

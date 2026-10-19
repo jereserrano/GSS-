@@ -1,6 +1,6 @@
 {
-  "name": "gss-media-tecnica",
-  "version": "3.0.0",
+  "name": "sistema-de-gestion-academico",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo -H 0.0.0.0",

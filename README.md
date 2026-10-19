@@ -1,9 +1,9 @@
-# GSS — Gestión de Seguimiento SENA
+# Sistema de Gestión Académico
 
 **Sistema de gestión académica para la Media Técnica SENA Regional Magdalena.**
 
-Versión funcional actual: `v3.0.0` | Versión de control y saneamiento: `v3.0.1`  
-Repositorio oficial: [https://github.com/jereserrano/GSS-.git](https://github.com/jereserrano/GSS-.git)  
+Versión oficial: `v1.0`  
+Repositorio oficial: [https://github.com/jereserrano/SISTEMA-DE-GESTION-ACADEMICO-.git](https://github.com/jereserrano/SISTEMA-DE-GESTION-ACADEMICO-.git)  
 Rama activa: `main`
 
 ---
@@ -35,8 +35,8 @@ Rama activa: `main`
 
 ```powershell
 # Clonar el repositorio personal
-git clone https://github.com/jereserrano/GSS-.git
-cd GSS-
+git clone https://github.com/jereserrano/SISTEMA-DE-GESTION-ACADEMICO-.git
+cd SISTEMA-DE-GESTION-ACADEMICO-
 
 # Ejecutar el script de configuración inicial
 .\scripts\setup.ps1

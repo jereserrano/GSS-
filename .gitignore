@@ -2,36 +2,106 @@
 /node_modules
 /.pnp
 .pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
 
-# Next.js build output
+# Next.js build output y exportación
 /.next/
 /out/
+/dist/
+/build/
 
-# Variables de entorno (NUNCA subir al repositorio)
+# Variables de entorno y secretos (NUNCA subir al repositorio)
 .env*
 !.env.example
 
-# Uploads de usuarios (no versionar archivos subidos)
-/public/uploads/
+# Uploads de usuarios (no versionar archivos subidos en tiempo de ejecución)
+/public/uploads/*
+!/public/uploads/.gitkeep
 
-# Archivos temporales y de debug
-fix_instructor*.js
-test_db.js
-tsc-errors.txt
-tsc_full_errors.txt
-generate_new_templates.js
-
-# TypeScript build info (regenerado automáticamente)
-tsconfig.tsbuildinfo
-
-# Misceláneos
-.DS_Store
+# Claves criptográficas, certificados y credenciales
 *.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.ppk
+
+# Volcados de bases de datos y copias de seguridad (Dumps / Backups)
+*.sql
+!prisma/**/*.sql
+!prisma/*.sql
+*.sql.gz
+*.dump
+*.bak
+*.backup
+/backups/
+/gss_backups/
+
+# Registros, logs y archivos temporales
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+*.tmp
+*.temp
+/build_output.log
+/eslint_out.log
+/tsc*.txt
+/tsc_full_errors.txt
 
-# Archivos de despliegue
-PLAN_DESPLIEGUE.md
+# Caché y artefactos de TypeScript / Bundlers
+tsconfig.tsbuildinfo
+.tsbuildinfo
+.turbo/
+.cache/
+.swc/
+
+# Pruebas y cobertura
+/coverage/
+/.nyc_output/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Archivos y artefactos de virtualización
+*.ova
+*.ovf
+*.vdi
+*.vmdk
+*.vbox
+*.vbox-prev
+
+# Archivos de empaquetado y compresión
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
 gss_project.zip
-/scripts/
+
+# Archivos de sistema y del editor
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+*.sublime-project
